@@ -1,5 +1,4 @@
-![alt text](img/tablebench.jpg "Tablebench Logo")
-
+<img src="./img/tablebench.jpg" width="200" alt="Image of a tablebench." />
 
 # Tablebench
 
