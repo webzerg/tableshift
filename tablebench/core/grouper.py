@@ -2,8 +2,7 @@ from typing import Mapping, Sequence, Any, List
 from dataclasses import dataclass
 
 import pandas as pd
-from sklearn.compose import ColumnTransformer, make_column_selector
-from sklearn.preprocessing import FunctionTransformer
+from sklearn.compose import ColumnTransformer
 
 
 @dataclass
