@@ -1,3 +1,9 @@
+"""
+An example script to train a model on the Adult dataset.
+
+Usage:
+    python run_expt.py
+"""
 from tablebench.core import FixedSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
 
