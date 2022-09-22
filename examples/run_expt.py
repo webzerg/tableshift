@@ -4,10 +4,8 @@ from tablebench.core import FixedSplitter, Grouper, TabularDataset, \
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import accuracy_score
 
-cache_dir = "./tmp"
-
 dataset_config = TabularDatasetConfig(
-    cache_dir=cache_dir,
+    cache_dir="./tmp",
     download=True,
     random_seed=12479)
 
