@@ -33,10 +33,10 @@ class DataSource(ABC):
         raw_data = self._load_data()
         return self.preprocess_fn(raw_data)
 
-    @abstractmethod
     def _download_if_not_cached(self):
-        """Download the dataset."""
-        raise
+        """Download files if they are not already cached."""
+        for url in self.resources:
+            utils.download_file(url, self.cache_dir)
 
     @abstractmethod
     def _load_data(self) -> pd.DataFrame:
@@ -54,25 +54,15 @@ class DataSource(ABC):
         return True
 
 
-class UCIDataSource(DataSource):
-
-    def _download_if_not_cached(self):
-        # Download files if they are not already cached
-        for url in self.resources:
-            utils.download_file(url, self.cache_dir)
-
-
-class AdultDataSource(UCIDataSource):
+class AdultDataSource(DataSource):
     """Data source for the Adult dataset."""
 
-    def __init__(self, cache_dir: str, resources=ADULT_RESOURCES,
-                 download: bool = True,
-                 preprocess_fn=preprocess_adult):
-        super().__init__(cache_dir=cache_dir, resources=resources,
-                         download=download,
-                         preprocess_fn=preprocess_fn)
+    def __init__(self, resources=ADULT_RESOURCES,
+                 preprocess_fn=preprocess_adult, **kwargs):
+        super().__init__(resources=resources,
+                         preprocess_fn=preprocess_fn, **kwargs)
 
-    def _load_data(self):
+    def _load_data(self) -> pd.DataFrame:
         train_fp = os.path.join(self.cache_dir, "adult.data")
         train = pd.read_csv(
             train_fp,
@@ -93,8 +83,28 @@ class AdultDataSource(UCIDataSource):
         return pd.concat((train, test))
 
 
+class COMPASDataSource(DataSource):
+    def __init__(self, resources=COMPAS_RESOURCES,
+                 preprocess_fn=preprocess_compas, **kwargs):
+        super().__init__(resources=resources,
+                         preprocess_fn=preprocess_fn, **kwargs)
+
+    def _load_data(self) -> pd.DataFrame:
+        df = pd.read_csv(
+            os.path.join(self.cache_dir, "compas-scores-two-years.csv"))
+        return df
+
+
+# Mapping of dataset names to their DataSource classes.
+_DATA_SOURCE_CLS = {
+    "adult": AdultDataSource,
+    "compas": COMPASDataSource,
+}
+
+
 def get_data_source(name: str, **kwargs) -> DataSource:
-    if name == "adult":
-        return AdultDataSource(**kwargs)
+    if name in _DATA_SOURCE_CLS:
+        cls = _DATA_SOURCE_CLS[name]
+        return cls(**kwargs)
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"data source {name} not implemented.")

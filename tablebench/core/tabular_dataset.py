@@ -8,7 +8,7 @@ from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
 from .data_source import get_data_source
 from .features import FeatureList, PreprocessorConfig
-from tablebench.datasets import _DEFAULT_FEATURES, _PREPROCESS_FNS
+from tablebench.datasets import _DEFAULT_FEATURES
 
 
 @dataclass
@@ -84,10 +84,11 @@ class TabularDataset(ABC):
         """Dataset-specific preprocessing function.
 
         Conducts any preprocessing needed **before** splitting
-        (i.e. feature selection, filtering, etc.)."""
+        (i.e. feature selection, filtering, grouping etc.)."""
         cols = list(set(self.features + self.grouper.features + ["Target"]))
         if "Split" in data.columns:
             cols.append("Split")
+        data = self.grouper.transform(data)
         return data.loc[:, cols]
 
     def _generate_splits(self, data):
@@ -115,7 +116,6 @@ class TabularDataset(ABC):
         Conducts any processing required **after** splitting (e.g.
         normalization, drop features needed only for splitting)."""
         data = self._post_split_feature_selection(data)
-        data = self.grouper.transform(data)
         data = self.preprocessor_config.fit_transform(
             data,
             self.splits["train"],

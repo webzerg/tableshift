@@ -110,6 +110,7 @@ class FixedSplitter(Splitter):
         return {"train": train_idxs, "validation": val_idxs, "test": test_idxs}
 
 
+@dataclass
 class RandomSplitter(Splitter):
     test_size: float
 
