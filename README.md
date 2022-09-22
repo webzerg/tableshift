@@ -1,4 +1,4 @@
-<img src="./img/tablebench.jpg" width="200" alt="Image of a tablebench." align="middle"/>
+<img src="./img/tablebench.jpg" width="200" alt="Image of a tablebench."/>
 
 # Tablebench
 

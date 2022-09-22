@@ -1,7 +1,7 @@
 """Data sources for TableBench."""
 from abc import ABC, abstractmethod
 import os
-from typing import Sequence
+from typing import Sequence, Callable
 
 import pandas as pd
 
@@ -13,9 +13,12 @@ class DataSource(ABC):
     """Abstract class to represent a generic data source."""
 
     def __init__(self, cache_dir: str, resources: Sequence[str],
-                 download: bool = True):
+                 preprocess_fn: Callable[[pd.DataFrame], pd.DataFrame],
+                 download: bool = True,
+                 ):
         self.cache_dir = cache_dir
         self.download = download
+        self.preprocess_fn = preprocess_fn
         self.resources = resources
         self._initialize_cache_dir()
         self.get_data()
@@ -27,7 +30,8 @@ class DataSource(ABC):
     def get_data(self) -> pd.DataFrame:
         """Fetch data from local cache or download if necessary."""
         self._download_if_not_cached()
-        return self._load_data()
+        raw_data = self._load_data()
+        return self.preprocess_fn(raw_data)
 
     @abstractmethod
     def _download_if_not_cached(self):
@@ -62,9 +66,11 @@ class AdultDataSource(UCIDataSource):
     """Data source for the Adult dataset."""
 
     def __init__(self, cache_dir: str, resources=ADULT_RESOURCES,
-                 download: bool = True):
+                 download: bool = True,
+                 preprocess_fn=preprocess_adult):
         super().__init__(cache_dir=cache_dir, resources=resources,
-                         download=download)
+                         download=download,
+                         preprocess_fn=preprocess_fn)
 
     def _load_data(self):
         train_fp = os.path.join(self.cache_dir, "adult.data")

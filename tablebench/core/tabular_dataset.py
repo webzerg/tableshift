@@ -1,9 +1,8 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, List, Tuple
+from typing import Optional, Tuple, Callable
 
 import pandas as pd
-import sklearn.preprocessing as preprocessing
 
 from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
@@ -24,24 +23,20 @@ class TabularDataset(ABC):
                  splitter: Splitter,
                  preprocessor_config: PreprocessorConfig,
                  grouper: Optional[Grouper],
-                 feature_list: Optional[FeatureList] = None,
-                 ):
+                 feature_list: Optional[FeatureList] = None):
         self.name = name
         self.config = config
         self.grouper = grouper
         self.preprocessor_config = preprocessor_config
         self.splitter = splitter
 
-        # Dataset-specific info: features, data source, pre- and postprocessing.
-        # TODO(jpgard): There is a cleaner way to do this. Implement some kind
-        #  of object that can hold the (features, data_source, pre_fn)
-        #  for a given dataset name.
+        # Dataset-specific info: features, data source, preprocessing.
+
         self.feature_list = feature_list if feature_list else _DEFAULT_FEATURES[
             self.name]
         self.data_source = get_data_source(name=self.name,
                                            cache_dir=self.config.cache_dir,
                                            download=self.config.download)
-        self.preprocess_fn = _PREPROCESS_FNS[self.name]
 
         # Placeholders for data/labels/groups and split indices.
         self.data = None
@@ -90,7 +85,6 @@ class TabularDataset(ABC):
 
         Conducts any preprocessing needed **before** splitting
         (i.e. feature selection, filtering, etc.)."""
-        data = self.preprocess_fn(data)
         cols = list(set(self.features + self.grouper.features + ["Target"]))
         if "Split" in data.columns:
             cols.append("Split")
