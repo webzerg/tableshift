@@ -33,21 +33,5 @@ def preprocess_compas(df: pd.DataFrame):
     df = df[['id'] + columns].drop_duplicates()
     df = df[columns]
 
-    # race_dict = {'African-American': 1, 'Caucasian': 0}
-    # df['race'] = df.apply(
-    #     lambda x: race_dict[x['race']] if x['race'] in race_dict.keys() else 2,
-    #     axis=1).astype(
-    #     'category')
-
-    # # Screening dates are either in year 2013, or 2014.
-    # df['screening_year_is_2013'] = df['compas_screening_date'].apply(
-    #     lambda x: int(datetime.strptime(x, "%Y-%m-%d").year == 2013))
-    # df.drop(columns=['compas_screening_date'], inplace=True)
-
-    # sex_map = {'Female': 0, 'Male': 1}
-    # df['sex'] = df['sex'].map(sex_map)
-    #
-    # c_charge_degree_map = {'F': 0, 'M': 1}
-    # df['c_charge_degree'] = df['c_charge_degree'].map(c_charge_degree_map)
     df.rename(columns={"is_recid": "Target"}, inplace=True)
     return df

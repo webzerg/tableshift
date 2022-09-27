@@ -1,8 +1,8 @@
 """
-An example script to train a model on the COMPAS dataset.
+An example script to train a model on the German credit dataset.
 
 Usage:
-    python run_expt.py
+    python examples/run_expt_german.py
 """
 from tablebench.core import RandomSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
@@ -14,20 +14,20 @@ dataset_config = TabularDatasetConfig()
 
 preprocessor_config = PreprocessorConfig()
 
-splitter = RandomSplitter(test_size=0.2, val_size=0.05, random_state=90127)
-grouper = Grouper({"race": ["Caucasian", ], "sex": ["Male", ]}, drop=False)
-compas = TabularDataset("compas",
+splitter = RandomSplitter(test_size=0.1, val_size=0.05, random_state=90127)
+grouper = Grouper({"sex": [1, ], "age": [1, ]}, drop=False)
+german = TabularDataset("german",
                         config=dataset_config,
                         splitter=splitter,
                         grouper=grouper,
                         preprocessor_config=preprocessor_config)
 
-X_tr, y_tr, G_tr = compas.get_pandas(split="train")
+X_tr, y_tr, G_tr = german.get_pandas(split="train")
 
 estimator = HistGradientBoostingClassifier()
 estimator.fit(X_tr, y_tr)
 
-X_te, y_te, G_te = compas.get_pandas(split="test")
+X_te, y_te, G_te = german.get_pandas(split="test")
 
 y_hat_te = estimator.predict(X_te)
 test_accuracy = accuracy_score(y_te, y_hat_te)
