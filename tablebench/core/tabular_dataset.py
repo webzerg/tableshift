@@ -13,9 +13,9 @@ from tablebench.datasets import _DEFAULT_FEATURES
 
 @dataclass
 class TabularDatasetConfig:
-    cache_dir: str
-    download: bool
-    random_seed: int
+    cache_dir: str = "tmp"
+    download: bool = True
+    random_seed: int = 948324
 
 
 class TabularDataset(ABC):

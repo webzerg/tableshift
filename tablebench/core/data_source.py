@@ -40,7 +40,9 @@ class DataSource(ABC):
 
     @abstractmethod
     def _load_data(self) -> pd.DataFrame:
-        """Load the data from disk and return it."""
+        """Load the raw data from disk and return it.
+
+        Any preprocessing should be performed in preprocess_fn, not here."""
         raise
 
     @property
@@ -95,10 +97,23 @@ class COMPASDataSource(DataSource):
         return df
 
 
+class GermanDataSource(DataSource):
+    def __init__(self, resources=GERMAN_RESOURCES,
+                 preprocess_fn=preprocess_german, **kwargs):
+        super().__init__(resources=resources, preprocess_fn=preprocess_fn,
+                         **kwargs)
+
+    def _load_data(self) -> pd.DataFrame:
+        df = pd.read_csv(os.path.join(self.cache_dir, "german.data"),
+                         sep=" ", header=None)
+        return df
+
+
 # Mapping of dataset names to their DataSource classes.
 _DATA_SOURCE_CLS = {
     "adult": AdultDataSource,
     "compas": COMPASDataSource,
+    "german": GermanDataSource,
 }
 
 
