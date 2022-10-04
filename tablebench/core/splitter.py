@@ -158,6 +158,7 @@ class DomainSplitter(Splitter):
     are placed in the target (test) set; the remaining observations are split
     between the train and validation set.
     """
+    eval_size: float  # The "eval" set is the in-domain test set.
     domain_split_varname: str
     domain_split_ood_values: Sequence[str]
     drop_domain_split_col: bool = True  # Whether to drop column after splitting.
@@ -176,9 +177,15 @@ class DomainSplitter(Splitter):
 
         stratify = _stratify(labels, groups)
 
-        train_idxs, val_idxs = train_test_split(
+        train_idxs, valid_eval_idxs = train_test_split(
             data.iloc[id_idxs],
-            test_size=self.val_size,
+            test_size=(self.val_size + self.eval_size),
             random_state=self.random_state,
             stratify=stratify.iloc[id_idxs])
-        return {"train": train_idxs, "validation": val_idxs, "test": ood_idxs}
+        valid_idxs,eval_idxs = train_test_split(
+            data.loc[valid_eval_idxs],
+            test_size=self.eval_size/(self.val_size + self.eval_size),
+            random_state=self.random_state,
+            stratify=stratify.iloc[valid_eval_idxs])
+        return {"train": train_idxs, "validation": valid_idxs,
+                "id_test": eval_idxs, "ood_test": ood_idxs}
