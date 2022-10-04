@@ -1,6 +1,6 @@
 import pandas as pd
 
-from tablebench.core.features import Feature, FeatureList
+from tablebench.core.features import Feature, FeatureList, cat_dtype
 
 COMPAS_RESOURCES = [
     "https://raw.githubusercontent.com/propublica/compas-analysis/master/compas-scores-two-years.csv"]
@@ -12,9 +12,9 @@ COMPAS_FEATURES = FeatureList(features=[
     Feature('priors_count', int),
     Feature('age', int),
     Feature('c_charge_degree', int),
-    Feature('sex', str),
-    Feature('race', str),
-    Feature('Target', str),
+    Feature('sex', cat_dtype),
+    Feature('race', cat_dtype),
+    Feature('Target', cat_dtype),
 ])
 
 

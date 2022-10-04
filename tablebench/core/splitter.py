@@ -1,5 +1,6 @@
+from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Sequence, Mapping, Any, List, Optional
+from typing import Sequence, Mapping, Any, List, Optional, Tuple
 
 import pandas as pd
 
@@ -59,18 +60,32 @@ def concat_columns(data: pd.DataFrame) -> pd.DataFrame:
     return data.agg(lambda x: ''.join(x.values.astype(str)), axis=1).T
 
 
+def _stratify(labels, groups):
+    """Make a stratification vector by concatenating label and (optional) groups.
+
+    This ensures that splitting happens approximately uniformly over
+    labels and sensitive subgroups.
+    """
+    strata = labels
+    if groups is not None:
+        strata = pd.concat((strata, groups), axis=1)
+    strata = concat_columns(strata)
+    return strata
+
+
 @dataclass
 class Splitter:
     """Splitter for non-domain splits."""
     val_size: float
     random_state: int
 
+    @abstractmethod
     def __call__(self, data: pd.DataFrame, labels: pd.Series,
                  groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
         str, List[int]]:
         """Split a dataset.
 
-        Returns a dict mapping split names to indices of the data points
+        Returns a dictionary mapping split names to indices of the data points
         in that split."""
         raise
 
@@ -96,9 +111,7 @@ class FixedSplitter(Splitter):
         test_idxs = np.nonzero((data["Split"] == "test").values)[0]
         train_val_idxs = np.nonzero((data["Split"] == "train").values)[0]
 
-        stratify = labels
-        if groups is not None:
-            stratify = pd.concat((stratify, groups), axis=1)
+        stratify = _stratify(labels, groups)
 
         train_idxs, val_idxs = train_test_split(
             data.iloc[train_val_idxs],
@@ -121,14 +134,7 @@ class RandomSplitter(Splitter):
     def __call__(self, data: pd.DataFrame, labels: pd.Series,
                  groups: pd.DataFrame = None, *args, **kwargs
                  ) -> Mapping[str, List[int]]:
-        # Build a stratification DataFrame using the labels and (optionally)
-        # groups. This ensures that splitting happens approximately
-        # uniformly over labels and features.
-
-        stratify = labels
-        if groups is not None:
-            stratify = pd.concat((stratify, groups), axis=1)
-        stratify = concat_columns(stratify)
+        stratify = _stratify(labels, groups)
 
         train_val_idxs, test_idxs = train_test_split(
             data,
@@ -145,7 +151,34 @@ class RandomSplitter(Splitter):
 
 
 @dataclass
-class DomainSplitter(RandomSplitter):
-    """Splitter for domain splits."""
+class DomainSplitter(Splitter):
+    """Splitter for domain splits.
+
+    All observations with domain_split_varname values in domain_split_ood_values
+    are placed in the target (test) set; the remaining observations are split
+    between the train and validation set.
+    """
     domain_split_varname: str
     domain_split_ood_values: Sequence[str]
+    drop_domain_split_col: bool = True  # Whether to drop column after splitting.
+
+    def __call__(self, data: pd.DataFrame, labels: pd.Series,
+                 groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
+        str, List[int]]:
+
+        # Boolean series, where true indicates the column value is out
+        # of the source domain.
+        is_ood = data[self.domain_split_varname].isin(
+            self.domain_split_ood_values)
+
+        ood_idxs = np.nonzero(is_ood.values)[0]
+        id_idxs = np.nonzero(~is_ood.values)[0]
+
+        stratify = _stratify(labels, groups)
+
+        train_idxs, val_idxs = train_test_split(
+            data.iloc[id_idxs],
+            test_size=self.val_size,
+            random_state=self.random_state,
+            stratify=stratify.iloc[id_idxs])
+        return {"train": train_idxs, "validation": val_idxs, "test": ood_idxs}
