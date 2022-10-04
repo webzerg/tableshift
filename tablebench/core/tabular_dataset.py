@@ -36,7 +36,8 @@ class TabularDataset(ABC):
             self.name]
         self.data_source = get_data_source(name=self.name,
                                            cache_dir=self.config.cache_dir,
-                                           download=self.config.download)
+                                           download=self.config.download,
+                                           feature_list=self.feature_list)
 
         # Placeholders for data/labels/groups and split indices.
         self.data = None
