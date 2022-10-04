@@ -1,23 +1,28 @@
 """Data sources for TableBench."""
 from abc import ABC, abstractmethod
+from functools import partial
 import os
-from typing import Sequence, Callable
+from typing import Sequence, Callable, Optional
 
 import pandas as pd
 
 from . import utils
+from .features import FeatureList
 from tablebench.datasets import *
 
 
 class DataSource(ABC):
     """Abstract class to represent a generic data source."""
 
-    def __init__(self, cache_dir: str, resources: Sequence[str],
+    def __init__(self, cache_dir: str,
                  preprocess_fn: Callable[[pd.DataFrame], pd.DataFrame],
+                 resources: Sequence[str] = None,
                  download: bool = True,
+                 feature_list: Optional[FeatureList] = None
                  ):
         self.cache_dir = cache_dir
         self.download = download
+        self.feature_list = feature_list
         self.preprocess_fn = preprocess_fn
         self.resources = resources
         self._initialize_cache_dir()
@@ -54,6 +59,56 @@ class DataSource(ABC):
             if not os.path.exists(fp):
                 return False
         return True
+
+
+class ACSDataSource(DataSource):
+    def __init__(self,
+                 preprocess_fn=preprocess_acsincome,
+                 task="acsincome",
+                 year: int = 2018,
+                 states=ACS_STATE_LIST,
+                 feature_mapping="coarse",
+                 **kwargs):
+        self.acs_task = task.lower().replace("acs", "")
+        self.feature_mapping = get_feature_mapping(feature_mapping)
+        self.states = states
+        self.year = year
+        self.acs_data = None  # holds the cached data from folktables source.
+        super().__init__(preprocess_fn=preprocess_fn, **kwargs)
+
+    def _get_acs_data(self):
+        if self.acs_data is None:
+            print("fetching ACS data...")
+            data_source = get_acs_data_source(self.year, self.cache_dir)
+            self.acs_data = data_source.get_data(states=self.states,
+                                                 download=True)
+            print("fetching ACS data complete.")
+        else:
+            print("fetching cached ACS data.")
+        return self.acs_data
+
+    def _download_if_not_cached(self):
+        if self.acs_data is None:
+            return self._get_acs_data()
+        else:
+            return self.acs_data
+
+    def _load_data(self) -> pd.DataFrame:
+        acs_data = self._get_acs_data()
+        task_config = ACS_TASK_CONFIGS[self.acs_task]
+        target_transform = partial(task_config.target_transform,
+                                   threshold=task_config.threshold)
+        ACSProblem = folktables.BasicProblem(
+            features=task_config.features_to_use.names,
+            target=task_config.target,
+            target_transform=target_transform,
+            preprocess=task_config.preprocess,
+            postprocess=task_config.postprocess,
+        )
+        X, y, _ = ACSProblem.df_to_numpy(acs_data)
+        df = acs_data_to_df(X, y, task_config.features_to_use.names,
+                            feature_mapping=self.feature_mapping)
+        return df
 
 
 class AdultDataSource(DataSource):
@@ -111,6 +166,7 @@ class GermanDataSource(DataSource):
 
 # Mapping of dataset names to their DataSource classes.
 _DATA_SOURCE_CLS = {
+    "acsincome": ACSDataSource,
     "adult": AdultDataSource,
     "compas": COMPASDataSource,
     "german": GermanDataSource,
