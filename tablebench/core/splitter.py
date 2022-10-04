@@ -166,7 +166,6 @@ class DomainSplitter(Splitter):
     def __call__(self, data: pd.DataFrame, labels: pd.Series,
                  groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
         str, List[int]]:
-
         # Boolean series, where true indicates the column value is out
         # of the source domain.
         is_ood = data[self.domain_split_varname].isin(
@@ -182,10 +181,10 @@ class DomainSplitter(Splitter):
             test_size=(self.val_size + self.eval_size),
             random_state=self.random_state,
             stratify=stratify.iloc[id_idxs])
-        valid_idxs,eval_idxs = train_test_split(
+        valid_idxs, id_test_idxs = train_test_split(
             data.loc[valid_eval_idxs],
-            test_size=self.eval_size/(self.val_size + self.eval_size),
+            test_size=self.eval_size / (self.val_size + self.eval_size),
             random_state=self.random_state,
             stratify=stratify.iloc[valid_eval_idxs])
         return {"train": train_idxs, "validation": valid_idxs,
-                "id_test": eval_idxs, "ood_test": ood_idxs}
+                "id_test": id_test_idxs, "ood_test": ood_idxs}
