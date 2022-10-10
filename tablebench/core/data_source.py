@@ -245,11 +245,24 @@ class GermanDataSource(DataSource):
         return df
 
 
+class CommunitiesAndCrimeDataSource(DataSource):
+    def __init__(self, resources=CANDC_RESOURCES,
+                 preprocess_fn=preprocess_candc, **kwargs):
+        super().__init__(resources=resources, preprocess_fn=preprocess_fn,
+                         **kwargs)
+
+    def _load_data(self) -> pd.DataFrame:
+        df = pd.read_csv(os.path.join(self.cache_dir, 'communities.data'),
+                         names=CANDC_INPUT_FEATURES)
+        return df
+
+
 # Mapping of dataset names to their DataSource classes.
 _DATA_SOURCE_CLS = {
     "acsincome": ACSDataSource,
     "brfss": BRFSSDataSource,
     "adult": AdultDataSource,
+    "communities_and_crime": CommunitiesAndCrimeDataSource,
     "compas": COMPASDataSource,
     "german": GermanDataSource,
 }
