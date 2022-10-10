@@ -17,6 +17,7 @@ preprocessor_config = PreprocessorConfig()
 
 # splitter = RandomSplitter(test_size=0.1, val_size=0.05, random_state=90127)
 splitter = DomainSplitter(val_size=0.05,
+                          eval_size=0.2,
                           random_state=12406,
                           domain_split_varname="purpose",
                           domain_split_ood_values=["A41", "A42", "A43"])
@@ -28,12 +29,18 @@ german = TabularDataset("german",
                         preprocessor_config=preprocessor_config)
 
 X_tr, y_tr, G_tr = german.get_pandas(split="train")
-import ipdb;ipdb.set_trace()
+
 estimator = HistGradientBoostingClassifier()
 estimator.fit(X_tr, y_tr)
 
-X_te, y_te, G_te = german.get_pandas(split="test")
+X_te, y_te, G_te = german.get_pandas(split="id_test")
 
 y_hat_te = estimator.predict(X_te)
 test_accuracy = accuracy_score(y_te, y_hat_te)
-print(f"test accuracy is: {test_accuracy:.3f}")
+print(f"in-domain test accuracy is: {test_accuracy:.3f}")
+
+X_te, y_te, G_te = german.get_pandas(split="ood_test")
+
+y_hat_te = estimator.predict(X_te)
+test_accuracy = accuracy_score(y_te, y_hat_te)
+print(f"out-of-domain test accuracy is: {test_accuracy:.3f}")
