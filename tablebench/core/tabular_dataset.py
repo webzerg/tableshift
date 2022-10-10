@@ -23,7 +23,8 @@ class TabularDataset(ABC):
                  splitter: Splitter,
                  preprocessor_config: PreprocessorConfig,
                  grouper: Optional[Grouper],
-                 feature_list: Optional[FeatureList] = None):
+                 feature_list: Optional[FeatureList] = None,
+                 **kwargs):
         self.name = name
         self.config = config
         self.grouper = grouper
@@ -37,7 +38,8 @@ class TabularDataset(ABC):
         self.data_source = get_data_source(name=self.name,
                                            cache_dir=self.config.cache_dir,
                                            download=self.config.download,
-                                           feature_list=self.feature_list)
+                                           feature_list=self.feature_list,
+                                           **kwargs)
 
         # Placeholders for data/labels/groups and split indices.
         self.data = None
@@ -107,9 +109,9 @@ class TabularDataset(ABC):
         if isinstance(self.splitter, DomainSplitter):
             # Case: domain split; now that the split has been made, drop the
             # domain split feature.
-            return data.drop(columns=self.splitter.domain_split_varname)
-        else:
-            return data
+            data.drop(columns=self.splitter.domain_split_varname, inplace=True)
+        # TODO(jpgard): possibly apply the feature schema of self.features here.
+        return data
 
     def _process_post_split(self, data) -> pd.DataFrame:
         """Dataset-specific postprocessing function.

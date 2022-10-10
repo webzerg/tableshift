@@ -123,6 +123,20 @@ class FixedSplitter(Splitter):
         return {"train": train_idxs, "validation": val_idxs, "test": test_idxs}
 
 
+def _check_input_indices(data: pd.DataFrame):
+    """Helper function to validate input indices.
+
+    If a DataFrame is not indexed from (0, n), which happens e.g. when the
+    DataFrame has been filtered without resetting the index, it can cause
+    major downstream issues with splitting. This is because splitting will
+    assume that all values (0,...n) are represented in the index.
+    """
+    idxs = np.array(sorted(data.index.tolist()))
+    expected = np.arange(len(data))
+    assert np.all(idxs == expected)
+    return
+
+
 @dataclass
 class RandomSplitter(Splitter):
     test_size: float
@@ -134,6 +148,7 @@ class RandomSplitter(Splitter):
     def __call__(self, data: pd.DataFrame, labels: pd.Series,
                  groups: pd.DataFrame = None, *args, **kwargs
                  ) -> Mapping[str, List[int]]:
+        _check_input_indices(data)
         stratify = _stratify(labels, groups)
 
         train_val_idxs, test_idxs = train_test_split(
@@ -181,6 +196,7 @@ class DomainSplitter(Splitter):
             test_size=(self.val_size + self.eval_size),
             random_state=self.random_state,
             stratify=stratify.iloc[id_idxs])
+
         valid_idxs, id_test_idxs = train_test_split(
             data.loc[valid_eval_idxs],
             test_size=self.eval_size / (self.val_size + self.eval_size),
