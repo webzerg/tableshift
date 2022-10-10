@@ -1,6 +1,7 @@
 from .acs import *
 from .adult import *
 from .brfss import *
+from .communities_and_crime import *
 from .compas import *
 from .german import *
 
@@ -10,6 +11,7 @@ _DEFAULT_FEATURES = {
     "acsincome": ACS_INCOME_FEATURES,
     "brfss": BRFSS_FEATURES,
     "adult": ADULT_FEATURES,
+    "communities_and_crime": CANDC_FEATURES,
     "compas": COMPAS_FEATURES,
     "german": GERMAN_FEATURES,
 }
