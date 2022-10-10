@@ -2,7 +2,9 @@
 from abc import ABC, abstractmethod
 from functools import partial
 import os
+import subprocess
 from typing import Sequence, Callable, Optional
+import zipfile
 
 import pandas as pd
 
@@ -22,11 +24,13 @@ class DataSource(ABC):
                  ):
         self.cache_dir = cache_dir
         self.download = download
+        # The feature_list describes the schema of the data *after* the
+        # preprocess_fn is applied. It is used to check the output of the
+        # preprocess_fn, and features are dropped or type-cast as necessary.
         self.feature_list = feature_list
         self.preprocess_fn = preprocess_fn
         self.resources = resources
         self._initialize_cache_dir()
-        self.get_data()
 
     def _initialize_cache_dir(self):
         """Create cache_dir if it does not exist."""
@@ -59,6 +63,83 @@ class DataSource(ABC):
             if not os.path.exists(fp):
                 return False
         return True
+
+
+class KaggleDataSource(DataSource):
+    def __init__(
+            self,
+            kaggle_dataset_name: str,
+            kaggle_creds_dir="~/.kaggle",
+            **kwargs):
+        self.kaggle_creds_dir = kaggle_creds_dir
+        self.kaggle_dataset_name = kaggle_dataset_name
+        super().__init__(**kwargs)
+
+    @property
+    def kaggle_creds(self):
+        return os.path.expanduser(
+            os.path.join(self.kaggle_creds_dir, "kaggle.json"))
+
+    @abstractmethod
+    def _load_data(self) -> pd.DataFrame:
+        # Should be implemented by subclasses.
+        raise
+
+    def _download_kaggle_data(self):
+        """Download the data from Kaggle."""
+        # Check Kaggle authentication.
+        assert os.path.exists(self.kaggle_creds), \
+            f"No kaggle credentials found at {self.kaggle_creds}."
+        "Create an access token at https://www.kaggle.com/YOUR_USERNAME/account"
+        f"and store it at {self.kaggle_creds}."
+
+        # Download the dataset using Kaggle CLI.
+        cmd = "kaggle datasets download " \
+              f"-d {self.kaggle_dataset_name} " \
+              f"-p {self.cache_dir}"
+        print(f"running {cmd}")
+        res = subprocess.run(cmd, shell=True)
+        print(f"{cmd} returned {res}")
+        return
+
+    @abstractmethod
+    def _download_if_not_cached(self):
+        # Should be implemnented by subclasses.
+        raise
+
+
+class BRFSSDataSource(KaggleDataSource):
+    def __init__(
+            self,
+            kaggle_dataset_name="cdc/behavioral-risk-factor-surveillance-system",
+            preprocess_fn=preprocess_brfss,
+            years=(2015,),
+            **kwargs):
+        self.years = years  # Which years to use BRFSS survey data from.
+        super(BRFSSDataSource, self).__init__(
+            kaggle_dataset_name=kaggle_dataset_name,
+            preprocess_fn=preprocess_fn,
+            **kwargs)
+
+    def _download_if_not_cached(self):
+        self._download_kaggle_data()
+        # location of the local zip file
+        zip_fp = os.path.join(self.cache_dir,
+                              "behavioral-risk-factor-surveillance-system.zip")
+        # where to unzip the file to
+        unzip_dest = os.path.join(self.cache_dir, self.kaggle_dataset_name)
+        with zipfile.ZipFile(zip_fp, 'r') as zf:
+            zf.extractall(unzip_dest)
+
+    def _load_data(self) -> pd.DataFrame:
+        df_list = []
+        for year in self.years:
+            fp = os.path.join(self.cache_dir,
+                              self.kaggle_dataset_name,
+                              f"{year}.csv")
+            df = pd.read_csv(fp, usecols=BRFSS_INPUT_FEATURES)
+            df_list.append(df)
+        return pd.concat(df_list, axis=0)
 
 
 class ACSDataSource(DataSource):
@@ -167,6 +248,7 @@ class GermanDataSource(DataSource):
 # Mapping of dataset names to their DataSource classes.
 _DATA_SOURCE_CLS = {
     "acsincome": ACSDataSource,
+    "brfss": BRFSSDataSource,
     "adult": AdultDataSource,
     "compas": COMPASDataSource,
     "german": GermanDataSource,
