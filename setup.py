@@ -8,4 +8,6 @@ setup(name='tablebench',
       author='Josh Gardner',
       author_email='jpgard@cs.washington.edu',
       packages=['tablebench'],
-     )
+      data_files=[('tablebench/datasets',
+                   ['tablebench/datasets/nhanes_data_sources.json'])]
+      )
