@@ -12,15 +12,31 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler
 class Feature:
     name: str
     kind: Any  # a type to which the feature should be castable.
+    description: str = None
+    is_target: bool = False
 
 
 @dataclass
 class FeatureList:
     features: List[Feature]
+    documentation: str = None  # optional link to docs
+
+    @property
+    def predictors(self) -> List[str]:
+        """Fetch the names of non-target features."""
+        return [x.name for x in self.features if not x.is_target]
 
     @property
     def names(self):
         return [f.name for f in self.features]
+
+    @property
+    def target(self):
+        """Return the name of the target feature (if it exists)."""
+        for f in self.features:
+            if f.is_target:
+                return f.name
+        return None
 
     def __add__(self, other):
         self.features = list(set(self.features + other.features))
