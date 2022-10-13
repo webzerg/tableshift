@@ -1,3 +1,7 @@
+"""
+NHANES-related tools. See also the documentation at the link below:
+https://www.cdc.gov/Nchs/Nhanes/about_nhanes.htm
+"""
 from collections import defaultdict
 import json
 import os
