@@ -64,6 +64,33 @@ class DataSource(ABC):
         return True
 
 
+class OfflineDataSource(DataSource):
+
+    def get_data(self) -> pd.DataFrame:
+        raw_data = self._load_data()
+        return self.preprocess_fn(raw_data)
+
+    def _load_data(self) -> pd.DataFrame:
+        raise
+
+
+class ANESDataSource(OfflineDataSource):
+    def __init__(
+            self,
+            preprocess_fn=preprocess_anes,
+            resources=("anes_timeseries_cdf_csv_20220916/"
+                       "anes_timeseries_cdf_csv_20220916.csv",),
+            **kwargs):
+        super().__init__(resources=resources,
+                         preprocess_fn=preprocess_fn,
+                         **kwargs)
+
+    def _load_data(self) -> pd.DataFrame:
+        fp = os.path.join(self.cache_dir, self.resources[0])
+        df = pd.read_csv(fp, low_memory=False)
+        return df
+
+
 class KaggleDataSource(DataSource):
     def __init__(
             self,
@@ -322,6 +349,7 @@ class CommunitiesAndCrimeDataSource(DataSource):
 # Mapping of dataset names to their DataSource classes.
 _DATA_SOURCE_CLS = {
     "acsincome": ACSDataSource,
+    "anes": ANESDataSource,
     "brfss": BRFSSDataSource,
     "adult": AdultDataSource,
     "communities_and_crime": CommunitiesAndCrimeDataSource,

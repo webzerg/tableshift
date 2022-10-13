@@ -1,5 +1,6 @@
 from .acs import *
 from .adult import *
+from .anes import *
 from .brfss import *
 from .communities_and_crime import *
 from .compas import *
@@ -10,6 +11,7 @@ from .nhanes import *
 # dataset AFTER the preprocess_fn is applied.
 _DEFAULT_FEATURES = {
     "acsincome": ACS_INCOME_FEATURES,
+    "anes": ANES_FEATURES,
     "brfss": BRFSS_FEATURES,
     "adult": ADULT_FEATURES,
     "communities_and_crime": CANDC_FEATURES,

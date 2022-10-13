@@ -53,6 +53,10 @@ class TabularDataset(ABC):
     def features(self):
         return self.feature_list.names
 
+    @property
+    def predictors(self):
+        return self.feature_list.predictors
+
     def _initialize_data(self):
         """Load the data/labels/groups from a data source."""
         data = self.data_source.get_data()
@@ -88,7 +92,7 @@ class TabularDataset(ABC):
 
         Conducts any preprocessing needed **before** splitting
         (i.e. feature selection, filtering, grouping etc.)."""
-        cols = list(set(self.features + self.grouper.features + ["Target"]))
+        cols = list(set(self.predictors + self.grouper.features + ["Target"]))
         if "Split" in data.columns:
             cols.append("Split")
         data = self.grouper.transform(data)
