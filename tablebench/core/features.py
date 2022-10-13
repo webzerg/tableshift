@@ -22,6 +22,13 @@ class FeatureList:
     def names(self):
         return [f.name for f in self.features]
 
+    def __add__(self, other):
+        self.features = list(set(self.features + other.features))
+        return self
+
+    def __iter__(self):
+        yield from self.features
+
     def apply_schema(self, df: pd.DataFrame):
         """Apply the schema defined in the FeatureList to the DataFrame.
 

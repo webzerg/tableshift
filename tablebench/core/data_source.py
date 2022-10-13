@@ -1,15 +1,14 @@
 """Data sources for TableBench."""
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from functools import partial
+import glob
 import os
 import subprocess
-from typing import Sequence, Callable, Optional
+from typing import Sequence, Optional
 import zipfile
 
-import pandas as pd
-
 from . import utils
-from .features import FeatureList
 from tablebench.datasets import *
 
 
@@ -80,6 +79,11 @@ class KaggleDataSource(DataSource):
         return os.path.expanduser(
             os.path.join(self.kaggle_creds_dir, "kaggle.json"))
 
+    @property
+    def zip_file_name(self):
+        """Name of the zip file downloaded by Kaggle API."""
+        return os.path.basename(self.kaggle_dataset_name) + ".zip"
+
     @abstractmethod
     def _load_data(self) -> pd.DataFrame:
         # Should be implemented by subclasses.
@@ -102,10 +106,14 @@ class KaggleDataSource(DataSource):
         print(f"{cmd} returned {res}")
         return
 
-    @abstractmethod
     def _download_if_not_cached(self):
-        # Should be implemnented by subclasses.
-        raise
+        self._download_kaggle_data()
+        # location of the local zip file
+        zip_fp = os.path.join(self.cache_dir, self.zip_file_name)
+        # where to unzip the file to
+        unzip_dest = os.path.join(self.cache_dir, self.kaggle_dataset_name)
+        with zipfile.ZipFile(zip_fp, 'r') as zf:
+            zf.extractall(unzip_dest)
 
 
 class BRFSSDataSource(KaggleDataSource):
@@ -121,16 +129,6 @@ class BRFSSDataSource(KaggleDataSource):
             preprocess_fn=preprocess_fn,
             **kwargs)
 
-    def _download_if_not_cached(self):
-        self._download_kaggle_data()
-        # location of the local zip file
-        zip_fp = os.path.join(self.cache_dir,
-                              "behavioral-risk-factor-surveillance-system.zip")
-        # where to unzip the file to
-        unzip_dest = os.path.join(self.cache_dir, self.kaggle_dataset_name)
-        with zipfile.ZipFile(zip_fp, 'r') as zf:
-            zf.extractall(unzip_dest)
-
     def _load_data(self) -> pd.DataFrame:
         df_list = []
         for year in self.years:
@@ -140,6 +138,70 @@ class BRFSSDataSource(KaggleDataSource):
             df = pd.read_csv(fp, usecols=BRFSS_INPUT_FEATURES)
             df_list.append(df)
         return pd.concat(df_list, axis=0)
+
+
+class NHANESDataSource(DataSource):
+    def __init__(
+            self,
+            preprocess_fn=preprocess_nhanes_cholesterol,
+            **kwargs):
+        super().__init__(preprocess_fn=preprocess_fn,
+                         **kwargs)
+
+    def _download_if_not_cached(self):
+
+        def _add_suffix_to_fname_from_url(url: str, suffix: str):
+            """Helper function to add unique names to files by year."""
+            fname = utils.basename_from_url(url)
+            f, extension = fname.rsplit(".")
+            new_fp = f + suffix + "." + extension
+            return new_fp
+
+        sources = get_nhanes_data_sources()
+        for year, urls in sources.items():
+            for url in urls:
+                destfile = _add_suffix_to_fname_from_url(url, str(year))
+                utils.download_file(url, self.cache_dir,
+                                    dest_file_name=destfile)
+
+    def _load_data(self) -> pd.DataFrame:
+        files = glob.glob(os.path.join(self.cache_dir, "*.XPT"))
+
+        # Initialize a dict where keys are years, and values are lists
+        # containing the list of dataframes of data for that year; these
+        # can be joined on their index (not sure whether the index is
+        # unique across years).
+        year_dfs = defaultdict(list)
+
+        for f in files:
+            print(f"[DEBUG] reading {f}")
+            df = utils.read_xpt(f)
+            df.set_index("SEQN", inplace=True)
+            df_year = int(re.search(".*([0-9]{4})\\.XPT", f).group(1))
+            year_dfs[df_year].append(df)
+
+        df_list = []
+        for year in year_dfs.keys():
+            # Join the first dataframe with all others.
+            dfs = year_dfs[year]
+            src_df = dfs[0]
+            try:
+                print(
+                    f"[INFO] starting join of {len(dfs)} dataframes for {year}")
+                # df = reduce(lambda x, y: x.join(y, how="outer"), dfs)
+                df = src_df.join(dfs[1:], how="outer")
+                df["nhanes_year"] = year
+                print("[INFO] finished joins")
+                df_list.append(df)
+            except Exception as e:
+                print(e)
+
+        if len(df_list) > 1:
+            df = pd.concat(df_list, axis=0)
+        else:
+            df = df_list[0]
+
+        return df
 
 
 class ACSDataSource(DataSource):
@@ -265,6 +327,7 @@ _DATA_SOURCE_CLS = {
     "communities_and_crime": CommunitiesAndCrimeDataSource,
     "compas": COMPASDataSource,
     "german": GermanDataSource,
+    "nhanes_cholesterol": NHANESDataSource,
 }
 
 
