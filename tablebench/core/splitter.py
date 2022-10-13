@@ -133,7 +133,8 @@ def _check_input_indices(data: pd.DataFrame):
     """
     idxs = np.array(sorted(data.index.tolist()))
     expected = np.arange(len(data))
-    assert np.all(idxs == expected)
+    assert np.all(idxs == expected), "DataFrame is indexed non-sequentially;"\
+    "try passing the dataframe after "
     return
 
 
