@@ -215,7 +215,6 @@ class NHANESDataSource(DataSource):
             try:
                 print(
                     f"[INFO] starting join of {len(dfs)} dataframes for {year}")
-                # df = reduce(lambda x, y: x.join(y, how="outer"), dfs)
                 df = src_df.join(dfs[1:], how="outer")
                 df["nhanes_year"] = year
                 print("[INFO] finished joins")
@@ -334,6 +333,23 @@ class GermanDataSource(DataSource):
         return df
 
 
+class DiabetesReadmissionDataSource(DataSource):
+    def __init__(self, resources=DIABETES_READMISSION_RESOURCES,
+                 preprocess_fn=preprocess_diabetes_readmission, **kwargs):
+        super().__init__(resources=resources, preprocess_fn=preprocess_fn,
+                         **kwargs)
+
+    def _load_data(self) -> pd.DataFrame:
+        # unzip the file
+        zip_fp = os.path.join(self.cache_dir, "dataset_diabetes.zip")
+        with zipfile.ZipFile(zip_fp, 'r') as zf:
+            zf.extractall(self.cache_dir)
+        # read the dataframe
+        df = pd.read_csv(os.path.join(self.cache_dir, "dataset_diabetes",
+                                      "diabetic_data.csv"))
+        return df
+
+
 class CommunitiesAndCrimeDataSource(DataSource):
     def __init__(self, resources=CANDC_RESOURCES,
                  preprocess_fn=preprocess_candc, **kwargs):
@@ -354,6 +370,7 @@ _DATA_SOURCE_CLS = {
     "adult": AdultDataSource,
     "communities_and_crime": CommunitiesAndCrimeDataSource,
     "compas": COMPASDataSource,
+    "diabetes_readmission": DiabetesReadmissionDataSource,
     "german": GermanDataSource,
     "nhanes_cholesterol": NHANESDataSource,
 }
