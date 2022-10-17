@@ -7,6 +7,7 @@ from .compas import *
 from .diabetes_readmission import *
 from .german import *
 from .nhanes import *
+from .physionet import *
 
 # Default features for each dataset. These should describe the schema of the
 # dataset AFTER the preprocess_fn is applied.
@@ -20,4 +21,5 @@ _DEFAULT_FEATURES = {
     "diabetes_readmission": DIABETES_READMISSION_FEATURES,
     "german": GERMAN_FEATURES,
     "nhanes_cholesterol": NHANES_CHOLESTEROL_FEATURES + NHANES_DEMOG_FEATURES,
+    "physionet": PHYSIONET_FEATURES,
 }

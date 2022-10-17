@@ -1,5 +1,6 @@
 import os
 import requests
+import subprocess
 import urllib.parse
 
 import pandas as pd
@@ -53,3 +54,10 @@ def read_xpt(fp):
     df = pd.DataFrame(columns).T
     del ds
     return df
+
+
+def run_in_subproces(cmd):
+    print(f"[INFO] running {cmd}")
+    res = subprocess.run(cmd, shell=True)
+    print(f"[DEBUG] {cmd} returned {res}")
+    return
