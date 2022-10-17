@@ -4,7 +4,6 @@ from collections import defaultdict
 from functools import partial
 import glob
 import os
-import subprocess
 from typing import Sequence, Optional
 import zipfile
 
@@ -128,9 +127,7 @@ class KaggleDataSource(DataSource):
         cmd = "kaggle datasets download " \
               f"-d {self.kaggle_dataset_name} " \
               f"-p {self.cache_dir}"
-        print(f"running {cmd}")
-        res = subprocess.run(cmd, shell=True)
-        print(f"{cmd} returned {res}")
+        utils.run_in_subproces(cmd)
         return
 
     def _download_if_not_cached(self):
@@ -362,6 +359,42 @@ class CommunitiesAndCrimeDataSource(DataSource):
         return df
 
 
+class PhysioNetDataSource(DataSource):
+    def __init__(self, preprocess_fn=preprocess_physionet, **kwargs):
+        super().__init__(preprocess_fn=preprocess_fn, **kwargs)
+
+    def _download_if_not_cached(self):
+        # check if correct number of training files exist in cache dir
+        root = os.path.join(self.cache_dir, "physionet.org", "files",
+                            "challenge-2019", "1.0.0", "training")
+        n_train_a = len(glob.glob(os.path.join(root, "training_setA", "*.psv")))
+        n_train_b = len(glob.glob(os.path.join(root, "training_setB", "*.psv")))
+
+        if (not n_train_a == 20336) or (not n_train_b == 20000):
+            print("[INFO] downloading physionet training data. This could "
+                  "take several minutes.")
+            # download the training data
+            cmd = "wget -r -N -c -np https://physionet.org/files/challenge" \
+                  "-2019/1.0.0/training/"
+            utils.run_in_subproces(cmd)
+        return
+
+    def _load_data(self) -> pd.DataFrame:
+        root = os.path.join(self.cache_dir, "physionet.org", "files",
+                            "challenge-2019", "1.0.0", "training")
+        print("[INFO] reading physionet data files.")
+        train_a_files = glob.glob(os.path.join(root, "training_setA", "*.psv"))
+        df_a = pd.concat(pd.read_csv(x, delimiter="|") for x in train_a_files)
+        train_b_files = glob.glob(os.path.join(root, "training_setB", "*.psv"))
+        df_b = pd.concat(pd.read_csv(x, delimiter="|") for x in train_b_files)
+        print("[INFO] done reading physionet data files.")
+        df_a["set"] = "a"
+        df_b["set"] = "b"
+        df = pd.concat((df_a, df_b))
+        df.reset_index(drop=True, inplace=True)
+        return df
+
+
 # Mapping of dataset names to their DataSource classes.
 _DATA_SOURCE_CLS = {
     "acsincome": ACSDataSource,
@@ -373,6 +406,7 @@ _DATA_SOURCE_CLS = {
     "diabetes_readmission": DiabetesReadmissionDataSource,
     "german": GermanDataSource,
     "nhanes_cholesterol": NHANESDataSource,
+    "physionet": PhysioNetDataSource,
 }
 
 
