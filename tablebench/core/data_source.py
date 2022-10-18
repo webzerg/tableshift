@@ -18,14 +18,10 @@ class DataSource(ABC):
                  preprocess_fn: Callable[[pd.DataFrame], pd.DataFrame],
                  resources: Sequence[str] = None,
                  download: bool = True,
-                 feature_list: Optional[FeatureList] = None
                  ):
         self.cache_dir = cache_dir
         self.download = download
-        # The feature_list describes the schema of the data *after* the
-        # preprocess_fn is applied. It is used to check the output of the
-        # preprocess_fn, and features are dropped or type-cast as necessary.
-        self.feature_list = feature_list
+
         self.preprocess_fn = preprocess_fn
         self.resources = resources
         self._initialize_cache_dir()
@@ -395,24 +391,3 @@ class PhysioNetDataSource(DataSource):
         return df
 
 
-# Mapping of dataset names to their DataSource classes.
-_DATA_SOURCE_CLS = {
-    "acsincome": ACSDataSource,
-    "anes": ANESDataSource,
-    "brfss": BRFSSDataSource,
-    "adult": AdultDataSource,
-    "communities_and_crime": CommunitiesAndCrimeDataSource,
-    "compas": COMPASDataSource,
-    "diabetes_readmission": DiabetesReadmissionDataSource,
-    "german": GermanDataSource,
-    "nhanes_cholesterol": NHANESDataSource,
-    "physionet": PhysioNetDataSource,
-}
-
-
-def get_data_source(name: str, **kwargs) -> DataSource:
-    if name in _DATA_SOURCE_CLS:
-        cls = _DATA_SOURCE_CLS[name]
-        return cls(**kwargs)
-    else:
-        raise NotImplementedError(f"data source {name} not implemented.")

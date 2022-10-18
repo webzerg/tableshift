@@ -6,9 +6,8 @@ import pandas as pd
 
 from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
-from .data_source import get_data_source
-from .features import FeatureList, PreprocessorConfig
-from tablebench.datasets import _DEFAULT_FEATURES
+from .tasks import get_task_config
+from .features import PreprocessorConfig
 
 
 @dataclass
@@ -23,7 +22,6 @@ class TabularDataset(ABC):
                  splitter: Splitter,
                  preprocessor_config: PreprocessorConfig,
                  grouper: Optional[Grouper],
-                 feature_list: Optional[FeatureList] = None,
                  **kwargs):
         self.name = name
         self.config = config
@@ -33,13 +31,11 @@ class TabularDataset(ABC):
 
         # Dataset-specific info: features, data source, preprocessing.
 
-        self.feature_list = feature_list if feature_list else _DEFAULT_FEATURES[
-            self.name]
-        self.data_source = get_data_source(name=self.name,
-                                           cache_dir=self.config.cache_dir,
-                                           download=self.config.download,
-                                           feature_list=self.feature_list,
-                                           **kwargs)
+        self.task_config = get_task_config(self.name)
+        self.data_source = self.task_config.data_source_cls(
+            cache_dir=self.config.cache_dir,
+            download=self.config.download,
+            **kwargs)
 
         # Placeholders for data/labels/groups and split indices.
         self.data = None
@@ -51,11 +47,11 @@ class TabularDataset(ABC):
 
     @property
     def features(self):
-        return self.feature_list.names
+        return self.task_config.feature_list.names
 
     @property
     def predictors(self):
-        return self.feature_list.predictors
+        return self.task_config.feature_list.predictors
 
     def _initialize_data(self):
         """Load the data/labels/groups from a data source."""

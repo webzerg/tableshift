@@ -9,17 +9,3 @@ from .german import *
 from .nhanes import *
 from .physionet import *
 
-# Default features for each dataset. These should describe the schema of the
-# dataset AFTER the preprocess_fn is applied.
-_DEFAULT_FEATURES = {
-    "acsincome": ACS_INCOME_FEATURES,
-    "adult": ADULT_FEATURES,
-    "anes": ANES_FEATURES,
-    "brfss": BRFSS_FEATURES,
-    "communities_and_crime": CANDC_FEATURES,
-    "compas": COMPAS_FEATURES,
-    "diabetes_readmission": DIABETES_READMISSION_FEATURES,
-    "german": GERMAN_FEATURES,
-    "nhanes_cholesterol": NHANES_CHOLESTEROL_FEATURES + NHANES_DEMOG_FEATURES,
-    "physionet": PHYSIONET_FEATURES,
-}
