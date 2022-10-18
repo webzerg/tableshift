@@ -20,7 +20,8 @@ splitter = DomainSplitter(val_size=0.05,
                           random_state=43406,
                           domain_split_varname="set",
                           domain_split_ood_values=["a"])
-grouper = Grouper({"Age": [1, ], "Gender": [1, ]}, drop=False)
+grouper = Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
+                  drop=False)
 dset = TabularDataset("physionet",
                       config=dataset_config,
                       splitter=splitter,
