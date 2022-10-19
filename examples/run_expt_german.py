@@ -4,14 +4,12 @@ An example script to train a model on the German credit dataset.
 Usage:
     python examples/run_expt_german.py
 """
-from pprint import pprint
 
 from tablebench.core import RandomSplitter, DomainSplitter, \
     Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
 
 from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.metrics import accuracy_score
 
 dataset_config = TabularDatasetConfig()
 
