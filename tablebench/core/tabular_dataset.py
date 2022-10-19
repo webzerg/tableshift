@@ -69,7 +69,7 @@ class TabularDataset(ABC):
         del data
         return
 
-    def _X_y_G_split(self, data) -> \
+    def _X_y_G_split(self, data, default_targets_dtype=int) -> \
             Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
         """Fetch the (data, labels, groups) arrays from a DataFrame."""
         data_features = [x for x in data.columns
@@ -81,6 +81,9 @@ class TabularDataset(ABC):
         X = data.loc[:, data_features]
         y = data.loc[:, "Target"]
         G = data.loc[:, self.grouper.features]
+
+        if y.dtype == "O":
+            y = y.astype(default_targets_dtype)
         return X, y, G
 
     def _process_pre_split(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -110,7 +113,8 @@ class TabularDataset(ABC):
             # Case: domain split; now that the split has been made, drop the
             # domain split feature.
             data.drop(columns=self.splitter.domain_split_varname, inplace=True)
-        # TODO(jpgard): possibly apply the feature schema of self.features here.
+
+        data = self.task_config.feature_list.apply_schema(data)
         return data
 
     def _process_post_split(self, data) -> pd.DataFrame:

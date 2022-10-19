@@ -8,6 +8,13 @@ from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler
 
 
+def safe_cast(x: pd.Series, dtype):
+    if dtype == cat_dtype:
+        return x.apply(str).astype("category")
+    else:
+        return x.astype(dtype)
+
+
 @dataclass(frozen=True)
 class Feature:
     name: str
@@ -45,14 +52,27 @@ class FeatureList:
     def __iter__(self):
         yield from self.features
 
-    def apply_schema(self, df: pd.DataFrame):
+    def apply_schema(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply the schema defined in the FeatureList to the DataFrame.
 
         Subsets to only the columns corresponding to features in FeatureList,
         and then transforms each column by casting it to the type specified
         in each Feature.
         """
-        raise NotImplementedError
+        drop_cols = list(set(x for x in df.columns if x not in self.names))
+        if drop_cols:
+            print("[DEBUG] dropping data columns not in "
+                  f"FeatureList: {drop_cols}")
+            df.drop(columns=drop_cols, inplace=True)
+        for f in self.features:
+            if f.name not in df.columns:
+                raise ValueError(f"feature {f.name} not present in data with"
+                                 f"columns {df.columns}.")
+            if not df[f.name].dtype == f.kind:
+                print(f"[WARNING] casting feature {f.name} from type "
+                      f"{df[f.name].dtype} to dtype {f.kind}")
+                df[f.name] = safe_cast(df[f.name], f.kind)
+        return df
 
 
 @dataclass
