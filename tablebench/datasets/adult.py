@@ -20,20 +20,19 @@ ADULT_FEATURE_NAMES = ["Age", "Workclass", "fnlwgt", "Education",
                        "Hours per week", "Country", "Target"]
 
 ADULT_FEATURES = FeatureList(features=[
-    Feature("Age", int),
+    Feature("Age", float),
     Feature("Workclass", cat_dtype),
-    Feature("fnlwgt", int),
     Feature("Education-Num", cat_dtype),
     Feature("Marital Status", cat_dtype),
     Feature("Occupation", cat_dtype),
     Feature("Relationship", cat_dtype),
     Feature("Race", cat_dtype),
     Feature("Sex", cat_dtype),
-    Feature("Capital Gain", int),
-    Feature("Capital Loss", int),
-    Feature("Hours per week", int),
+    Feature("Capital Gain", float),
+    Feature("Capital Loss", float),
+    Feature("Hours per week", float),
     Feature("Country", cat_dtype),
-    Feature("Target", int),
+    Feature("Target", int, is_target=True),
 ])
 
 
