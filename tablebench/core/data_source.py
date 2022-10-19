@@ -225,13 +225,13 @@ class NHANESDataSource(DataSource):
 
 class ACSDataSource(DataSource):
     def __init__(self,
-                 preprocess_fn=preprocess_acsincome,
-                 task="acsincome",
+                 acs_task: str,
+                 preprocess_fn=preprocess_acs,
                  year: int = 2018,
                  states=ACS_STATE_LIST,
                  feature_mapping="coarse",
                  **kwargs):
-        self.acs_task = task.lower().replace("acs", "")
+        self.acs_task = acs_task.lower().replace("acs", "")
         self.feature_mapping = get_feature_mapping(feature_mapping)
         self.states = states
         self.year = year
@@ -261,14 +261,14 @@ class ACSDataSource(DataSource):
         target_transform = partial(task_config.target_transform,
                                    threshold=task_config.threshold)
         ACSProblem = folktables.BasicProblem(
-            features=task_config.features_to_use.names,
+            features=task_config.features_to_use.predictors,
             target=task_config.target,
             target_transform=target_transform,
             preprocess=task_config.preprocess,
             postprocess=task_config.postprocess,
         )
         X, y, _ = ACSProblem.df_to_numpy(acs_data)
-        df = acs_data_to_df(X, y, task_config.features_to_use.names,
+        df = acs_data_to_df(X, y, task_config.features_to_use,
                             feature_mapping=self.feature_mapping)
         return df
 
@@ -389,5 +389,3 @@ class PhysioNetDataSource(DataSource):
         df = pd.concat((df_a, df_b))
         df.reset_index(drop=True, inplace=True)
         return df
-
-

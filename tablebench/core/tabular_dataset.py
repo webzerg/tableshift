@@ -53,6 +53,10 @@ class TabularDataset(ABC):
     def predictors(self):
         return self.task_config.feature_list.predictors
 
+    @property
+    def target(self):
+        return self.task_config.feature_list.target
+
     def _initialize_data(self):
         """Load the data/labels/groups from a data source."""
         data = self.data_source.get_data()
@@ -73,13 +77,13 @@ class TabularDataset(ABC):
             Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
         """Fetch the (data, labels, groups) arrays from a DataFrame."""
         data_features = [x for x in data.columns
-                         if x not in self.grouper.features + ["Target"]]
+                         if x not in self.grouper.features + [self.target]]
         if not self.grouper.drop:
             # Retain the group variables as features.
             data_features.extend(self.grouper.features)
 
         X = data.loc[:, data_features]
-        y = data.loc[:, "Target"]
+        y = data.loc[:, self.target]
         G = data.loc[:, self.grouper.features]
 
         if y.dtype == "O":
@@ -91,7 +95,9 @@ class TabularDataset(ABC):
 
         Conducts any preprocessing needed **before** splitting
         (i.e. feature selection, filtering, grouping etc.)."""
-        cols = list(set(self.predictors + self.grouper.features + ["Target"]))
+        cols = list(set(self.predictors +
+                        self.grouper.features +
+                        [self.target]))
         if "Split" in data.columns:
             cols.append("Split")
         data = self.grouper.transform(data)
@@ -126,7 +132,7 @@ class TabularDataset(ABC):
         data = self.preprocessor_config.fit_transform(
             data,
             self.splits["train"],
-            passthrough_columns=self.grouper.features)
+            passthrough_columns=self.grouper.features + [self.target])
         return data
 
     def get_pandas(self, split) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:

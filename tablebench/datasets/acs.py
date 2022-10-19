@@ -32,55 +32,118 @@ _STATE_CODES = {'AL': '01', 'AK': '02', 'AZ': '04', 'AR': '05', 'CA': '06',
 # human-readable 2-letter state names ('WA')
 ST_CODE_TO_STATE = {v: k for k, v in _STATE_CODES.items()}
 
-ACS_IPR_FEATURES = ['AGEP', 'SCHL', 'MAR', 'DIS', 'ESP', 'MIG',
-                    'CIT', 'MIL', 'ANC', 'NATIVITY', 'RELP', 'DEAR',
-                    'DEYE', 'DREM', 'GCL', 'ESR', 'OCCP',
-                    'WKHP']
-ACS_TT_FEATURES = ['AGEP', 'SCHL', 'MAR', 'DIS', 'ESP', 'MIG',
-                   'RELP', 'PUMA', 'CIT', 'OCCP', 'JWTR',
-                   'POWPUMA', 'POVPIP']
-
-# Default folktables features for this prediction task; see
-# https://github.com/zykls/folktables/blob/12358d1645d09904b4b05e8459042e39a0d50382/folktables/acs.py#L167
-ACS_PUBCOV_FEATURES = ['AGEP', 'SCHL', 'MAR', 'SEX', 'DIS', 'ESP',
-                       'CIT', 'MIG', 'MIL', 'ANC', 'NATIVITY', 'DEAR',
-                       'DEYE', 'DREM', 'PINCP', 'ESR', 'ST',
-                       'FER', 'RAC1P', ]
-
-ACS_INCOME_FEATURES = FeatureList([
-    Feature('AGEP', int),  # Age
-    Feature('CIT', cat_dtype),  # Citizenship
-    Feature('COW', cat_dtype),  # Class of worker
-    # This feature is not present in source data.
-    # 'DIVISION',  # Division code based on 2010 Census definitions
-    Feature('ENG', cat_dtype),  # Ability to speak English
-    Feature('FER', cat_dtype),  # Gave birth to child within the past 12 months
-    Feature('HINS1', cat_dtype),  # Ins. through a current or former employer or union
-    Feature('HINS2', cat_dtype),  # Ins. purchased directly from an insurance company
-    Feature('HINS3', cat_dtype),
-    # Medicare, for people 65 and older, or people with certain disabilities
-    Feature('HINS4', cat_dtype),
-    # Medicaid, Medical Assistance, or any kind of government-assistance
-    # plan for those with low incomes or a disability
-    Feature('MAR', cat_dtype),  # Marital status
-    Feature('NWLA', cat_dtype),
-    # On layoff from work (Unedited-See "Employment Status Recode" (ESR))
-    Feature('NWLK', cat_dtype),
-    # Looking for work (Unedited-See "Employment Status Recode" (ESR))
-    Feature('OCCP', cat_dtype),  # Occupation recode
-    Feature('POBP', cat_dtype),  # Place of birth
-    Feature('RAC1P', int),  # Race
-    Feature('RELP', cat_dtype),  # Relationship
-    Feature('SCHL', cat_dtype),  # Educational attainment
-    Feature('SEX', int),  # Sex
-    Feature('ST', cat_dtype),  # State; should be handled as grouping var.
-    Feature('WKHP', int),  # Usual hours worked per week past 12 months
-    Feature('WKW', int),  # Weeks worked during past 12 months
-    Feature('WRK', cat_dtype),  # Worked last week
+# Set of features shared by all ACS tasks.
+ACS_SHARED_FEATURES = FeatureList(features=[
+    Feature('AGEP', int, "Age"),
+    Feature('SEX', int, """Sex 1 .Male 2 .Female"""),
+    Feature('ST', cat_dtype, "State Code based on 2010 Census definitions."),
+    Feature('MAR', cat_dtype, """Marital status 1 .Married 2 .Widowed 3 
+    .Divorced 4 .Separated 5 .Never married or under 15 years old"""),
+    Feature('CIT', cat_dtype, """Citizenship status 1 .Born in the U.S. 2 
+    .Born in Puerto Rico, Guam, the U.S. Virgin Islands, or the .Northern 
+    Marianas 3 .Born abroad of American parent(s) 4 .U.S. citizen by 
+    naturalization 5 .Not a citizen of the U.S."""),
+    Feature('RAC1P', int, """Recoded detailed race code 1 .White alone 2 
+    .Black or African American alone 3 .American Indian alone 4 .Alaska 
+    Native alone 5 .American Indian and Alaska Native tribes specified; or 
+    .American Indian or Alaska Native, not specified and no other .races 6 
+    .Asian alone 7 .Native Hawaiian and Other Pacific Islander alone 8 .Some 
+    Other Race alone 9 .Two or More Races"""),
+    Feature('SCHL', cat_dtype, """Educational attainment bb .N/A (less than 3 
+    years old) 01 .No schooling completed 02 .Nursery school, preschool 03 
+    .Kindergarten 04 .Grade 1 05 .Grade 2 06 .Grade 3 07 .Grade 4 08 .Grade 5 
+    09 .Grade 6 10 .Grade 7 11 .Grade 8 12 .Grade 9 13 .Grade 10 14 .Grade 11 
+    15 .12th grade - no diploma 16 .Regular high school diploma 17 .GED or 
+    alternative credential 18 .Some college, but less than 1 year 19 .1 or 
+    more years of college credit, no degree 20 .Associate's degree 21 
+    .Bachelor's degree 22 .Master's degree 23 .Professional degree beyond a 
+    bachelor's degree 24 .Doctorate degree"""),
 ])
 
+ACS_INCOME_FEATURES = FeatureList([
+    Feature('COW', cat_dtype, """Class of worker."""),
+    Feature('ENG', cat_dtype, """Ability to speak English b .N/A (less than 5 
+    years old/speaks only English) 1 .Very well 2 .Well 3 .Not well 4 .Not at 
+    all"""),
+    Feature('FER', cat_dtype, """Gave birth to child within the past 12 
+    months b .N/A (less than 15 years/greater than 50 years/ male) 1 .Yes 2 
+    .No"""),
+    Feature('HINS1', cat_dtype, """Insurance through a current or former 
+    employer or union 1 .Yes 2 .No"""),
+    Feature('HINS2', cat_dtype, """Insurance purchased directly from an 
+    insurance company 1 .Yes 2 .No"""),
+    Feature('HINS3', cat_dtype, """Medicare, for people 65 and older, 
+    or people with certain disabilities 1 .Yes 2 .No"""),
+    Feature('HINS4', cat_dtype, """Medicaid, Medical Assistance, or any kind 
+    of government-assistance plan for those with low incomes or a disability 
+    1 .Yes 2 .No"""),
+    Feature('NWLA', cat_dtype, """On layoff from work (UNEDITED - See 
+    "Employment Status Recode" (ESR)) b .N/A (less than 16 years old/at work) 
+    1 .Yes 2 .No 3 .Did not report"""),
+    Feature('NWLK', cat_dtype, """Looking for work (UNEDITED - See 
+    "Employment Status Recode" (ESR)) b .N/A (less than 16 years old/at 
+    work/temporarily .absent/informed of recall) 1 .Yes 2 .No 3 .Did not 
+    report"""),
+    Feature('OCCP', cat_dtype,
+            "Occupation recode for 2018 and later based on 2018 OCC codes"),
+    Feature('POBP', cat_dtype, "Place of birth (Recode)"),
+    Feature('RELP', cat_dtype),  # Relationship
+    Feature('WKHP', int, """Usual hours worked per week past 12 months bb 
+    .N/A (less than 16 years old/did not work during the past .12 months) 
+    1..98 .1 to 98 usual hours 99 .99 or more usual hours"""),
+    Feature('WKW', int, "Weeks worked during past 12 months."),
+    Feature('WRK', cat_dtype, """Worked last week b .N/A (not reported) 1 
+    .Worked 2 .Did not work"""),
+    Feature('PINCP', float, """Total person's income >= threshold.""",
+            is_target=True),
+], documentation="https://www2.census.gov/programs-surveys/acs/tech_docs/pums"
+                 "/data_dict/PUMS_Data_Dictionary_2019.pdf")
 
-def acs_numeric_to_categorical(df, feature_mapping):
+ACS_PUBCOV_FEATURES = FeatureList(features=[
+    Feature('DIS', cat_dtype, """Disability recode 1 .With a disability 2 
+    .Without a disability"""),
+    Feature('ESP', cat_dtype, """Employment status of parents b .N/A (not own 
+    child of householder, and not child in subfamily) .Living with two 
+    parents: 1 .Both parents in labor force 2 .Father only in labor force 3 
+    .Mother only in labor force 4 .Neither parent in labor force living with 
+    one parent: Living .with father: 5 .Father in the labor force 6 .Father 
+    not in labor force living with mother: 7 .Mother in the labor force 8 
+    .Mother not in labor force"""),
+    Feature('MIG', cat_dtype, """Mobility status (lived here 1 year ago) b 
+    .N/A (less than 1 year old) 1 .Yes, same house (nonmovers) 2 .No, outside 
+    US and Puerto Rico 3 .No, different house in US or Puerto Rico"""),
+    Feature('MIL', cat_dtype, """Military service b .N/A (less than 17 years 
+    old) 1 .Now on active duty 2 .On active duty in the past, but not now 3 
+    .Only on active duty for training in Reserves/National Guard 4 .Never 
+    served in the military"""),
+    Feature('ANC', cat_dtype, """Ancestry recode 1 .Single 2 .Multiple 3 
+    .Unclassified  .Not reported 8 .Suppressed for data year 2018 for select 
+    PUMAs"""),
+    Feature('NATIVITY', cat_dtype, """Nativity 1 .Native 2 .Foreign born"""),
+    Feature('DEAR', cat_dtype, "Hearing difficulty 1 .Yes 2 .No"),
+    Feature('DEYE', cat_dtype, "Vision difficulty 1 .Yes 2 .No"),
+    Feature('DREM', cat_dtype, """Cognitive difficulty b .N/A (Less than 5 
+    years old) 1 .Yes 2 .No"""),
+    Feature('PINCP', float, """Total person's income (signed, use ADJINC 
+    to adjust to constant dollars) bbbbbbb .N/A (less than 15 years old) 0 
+    .None -19998 .Loss of $19998 or more (Rounded and bottom- .coded 
+    components) -19997..-1 .Loss $1 to $19997 (Rounded components) 1..4209995 
+    .$1 to $4209995 (Rounded and top-coded .components)"""),
+    Feature('ESR', cat_dtype, """Employment status recode b .N/A (less than 
+    16 years old) 1 .Civilian employed, at work 2 .Civilian employed, with a 
+    job but not at work 3 .Unemployed 4 .Armed forces, at work 5 .Armed 
+    forces, with a job but not at work 6 .Not in labor force"""),
+    Feature('FER', cat_dtype, """Gave birth to child within the past 12 
+    months b .N/A (less than 15 years/greater than 50 years/ male) 1 .Yes 2 
+    .No"""),
+    Feature('PUBCOV', int, """Public health coverage recode =With public 
+    health coverage 0=Without public health coverage""", is_target=True)],
+    documentation="https://www2.census.gov/programs-surveys/acs/tech_docs"
+                  "/pums/data_dict/PUMS_Data_Dictionary_2019.pdf"
+)
+
+
+def map_categorical_features(df, feature_mapping):
     """Convert a subset of features from numeric to categorical format.
 
     Note that this only maps a known set of features used in this work;
@@ -113,33 +176,16 @@ def acs_numeric_to_categorical(df, feature_mapping):
 
 def acs_data_to_df(
         features: np.ndarray, label: np.ndarray,
-        feature_names: list,
+        feature_list: FeatureList,
         feature_mapping: dict) -> pd.DataFrame:
     """
     Build a DataFrame from the result of folktables.BasicProblem.df_to_numpy().
     """
     ary = np.concatenate((features, label.reshape(-1, 1),), axis=1)
-    df = pd.DataFrame(ary, columns=feature_names + ['Target'])
-    df = acs_numeric_to_categorical(df, feature_mapping=feature_mapping)
+    df = pd.DataFrame(ary,
+                      columns=feature_list.predictors + [feature_list.target])
+    df = map_categorical_features(df, feature_mapping=feature_mapping)
     return df
-
-
-def acs_travel_time_filter(data):
-    """
-    Modified version of folktables.acs.travel_time_filter to drop na-valued targets.
-    """
-    df = data
-    df = df[df['AGEP'] > 16]
-    df = df[df['PWGTP'] >= 1]
-    df = df[df['ESR'] == 1]
-    df = df[pd.notna(df['JWMNP'])]
-    return df
-
-
-def acs_ipr_filter(data):
-    """Drops observations with null targets."""
-    df = data
-    return df[pd.notna(df['POVPIP'])]
 
 
 def default_acs_group_transform(x):
@@ -158,9 +204,11 @@ def income_cls_target_transform(y, threshold):
     return y > threshold
 
 
-def pubcov_target_transform(y):
+def pubcov_target_transform(y, threshold):
     """Default Public Coverage target transform from folktables."""
+    del threshold
     return y == 1
+
 
 @dataclass
 class ACSTaskConfig:
@@ -173,6 +221,7 @@ class ACSTaskConfig:
     target_transform: Callable
     threshold: Union[int, float]
 
+
 ACS_TASK_CONFIGS = frozendict.frozendict({
     'income': ACSTaskConfig(**{
         'features_to_use': ACS_INCOME_FEATURES,
@@ -183,34 +232,15 @@ ACS_TASK_CONFIGS = frozendict.frozendict({
         'target_transform': income_cls_target_transform,
         'threshold': 56000,
     }),
-    # TODO(jpgard): convert the below to ACSTaskConfigs.
-    # 'pubcov': {
-    #     'features_to_use': ACS_PUBCOV_FEATURES,
-    #     'group_transform': default_acs_group_transform,
-    #     'postprocess': default_acs_postprocess,
-    #     'preprocess': folktables.acs.public_coverage_filter,
-    #     'target': 'PUBCOV',
-    #     'target_transform': pubcov_target_transform,
-    #     'threshold': None,
-    # },
-    # 'tt': {
-    #     'features_to_use': ACS_TT_FEATURES,
-    #     'group_transform': default_acs_group_transform,
-    #     'postprocess': default_acs_postprocess,
-    #     'preprocess': acs_travel_time_filter,
-    #     'target': 'JWMNP',
-    #     'target_transform': None,
-    #     'threshold': None,  # should raise AssertionError if called.
-    # },
-    # 'ipr': {
-    #     'features_to_use': ACS_IPR_FEATURES,
-    #     'group_transform': default_acs_group_transform,
-    #     'postprocess': default_acs_postprocess,
-    #     'preprocess': acs_ipr_filter,
-    #     'target': 'POVPIP',
-    #     'target_transform': None,
-    #     'threshold': None  # should raise AssertionError if called.
-    # },
+    'pubcov': ACSTaskConfig(**{
+        'features_to_use': ACS_PUBCOV_FEATURES,
+        'group_transform': default_acs_group_transform,
+        'postprocess': default_acs_postprocess,
+        'preprocess': folktables.acs.public_coverage_filter,
+        'target': 'PUBCOV',
+        'target_transform': pubcov_target_transform,
+        'threshold': None,
+    }),
 })
 
 
@@ -221,7 +251,7 @@ def get_acs_data_source(year, root_dir='datasets/acs'):
                                     root_dir=root_dir)
 
 
-def preprocess_acsincome(df: pd.DataFrame):
+def preprocess_acs(df: pd.DataFrame):
     if 'ST' in df.columns:
         # Map numeric state codes to human-readable values
         df['ST'] = df['ST'].map(ST_CODE_TO_STATE)

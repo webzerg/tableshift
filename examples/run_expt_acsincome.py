@@ -17,6 +17,7 @@ preprocessor_config = PreprocessorConfig()
 splitter = RandomSplitter(test_size=0.5, val_size=0.25, random_state=29746)
 grouper = Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False)
 acsincome = TabularDataset("acsincome",
+                           acs_task="acsincome",
                            config=dataset_config,
                            splitter=splitter,
                            grouper=grouper,
