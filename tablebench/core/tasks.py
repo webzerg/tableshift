@@ -29,7 +29,10 @@ class TaskConfig:
 # can be created from a single data source, by specifying different
 # preprocess_fn and features.
 _TASK_REGISTRY = {
-    "acsincome": TaskConfig(ACSDataSource, ACS_INCOME_FEATURES),
+    "acsincome": TaskConfig(ACSDataSource,
+                            ACS_INCOME_FEATURES + ACS_SHARED_FEATURES),
+    "acspubcov": TaskConfig(ACSDataSource,
+                            ACS_PUBCOV_FEATURES + ACS_SHARED_FEATURES),
     "adult": TaskConfig(AdultDataSource, ADULT_FEATURES),
     "anes": TaskConfig(ANESDataSource, ANES_FEATURES),
     "brfss": TaskConfig(BRFSSDataSource, BRFSS_FEATURES),
