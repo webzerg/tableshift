@@ -8,6 +8,7 @@ from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
 from .tasks import get_task_config
 from .features import PreprocessorConfig
+from .metrics import metrics_by_group
 
 
 @dataclass
@@ -119,8 +120,12 @@ class TabularDataset(ABC):
             # Case: domain split; now that the split has been made, drop the
             # domain split feature.
             data.drop(columns=self.splitter.domain_split_varname, inplace=True)
+            allow_missing_cols = [self.splitter.domain_split_varname]
+        else:
+            allow_missing_cols = None
 
-        data = self.task_config.feature_list.apply_schema(data)
+        data = self.task_config.feature_list.apply_schema(
+            data, allow_missing_cols)
         return data
 
     def _process_post_split(self, data) -> pd.DataFrame:
@@ -146,3 +151,7 @@ class TabularDataset(ABC):
 
     def get_dataloader(self):
         raise NotImplementedError
+
+    def evaluate_predictions(self, preds, split):
+        _, labels, groups = self.get_pandas(split)
+        return metrics_by_group(labels, preds, groups, suffix=split)

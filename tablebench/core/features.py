@@ -52,7 +52,8 @@ class FeatureList:
     def __iter__(self):
         yield from self.features
 
-    def apply_schema(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply_schema(self, df: pd.DataFrame,
+                     allow_missing_cols: List = None) -> pd.DataFrame:
         """Apply the schema defined in the FeatureList to the DataFrame.
 
         Subsets to only the columns corresponding to features in FeatureList,
@@ -65,11 +66,17 @@ class FeatureList:
                   f"FeatureList: {drop_cols}")
             df.drop(columns=drop_cols, inplace=True)
         for f in self.features:
-            if f.name not in df.columns:
+            if f.name not in df.columns and f.name not in allow_missing_cols:
+                # Case: expected this feature, and it is missing.
                 raise ValueError(f"feature {f.name} not present in data with"
                                  f"columns {df.columns}.")
+            elif f.name not in df.columns:
+                # Case: this feature is missing, but it is allowed to be missing
+                # (e.g. it is a domain-split feature, which was used to split
+                # the data and then is removed).
+                continue
             if not df[f.name].dtype == f.kind:
-                print(f"[WARNING] casting feature {f.name} from type "
+                print(f"[INFO] casting feature {f.name} from type "
                       f"{df[f.name].dtype} to dtype {f.kind}")
                 df[f.name] = safe_cast(df[f.name], f.kind)
         return df
