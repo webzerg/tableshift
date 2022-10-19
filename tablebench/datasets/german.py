@@ -9,25 +9,26 @@ GERMAN_RESOURCES = [
 
 GERMAN_FEATURES = FeatureList(features=[
     Feature("status", cat_dtype),
-    Feature("duration", int),
+    Feature("duration", float),
     Feature("credit_history", cat_dtype),
     Feature("purpose", cat_dtype),
-    Feature("credit_amt", int),
+    Feature("credit_amt", float),
     Feature("savings_acct_bonds", cat_dtype),
     Feature("present_unemployed_since", cat_dtype),
-    Feature("installment_rate", int),
+    Feature("installment_rate", float),
     Feature("other_debtors", cat_dtype),
-    Feature("pres_res_since", int),
+    Feature("pres_res_since", float),
     Feature("property", cat_dtype),
-    Feature("age", int),
+    Feature("age_>=_median", cat_dtype),
+    Feature("sex", cat_dtype),
     Feature("other_installment", cat_dtype),
     Feature("housing", cat_dtype),
-    Feature("num_exist_credits", int),
+    Feature("num_exist_credits", float),
     Feature("job", cat_dtype),
-    Feature("num_ppl", int),
+    Feature("num_ppl", float),
     Feature("has_phone", cat_dtype),
     Feature("foreign_worker", cat_dtype),
-    Feature("Target", int)])
+    Feature("Target", int, is_target=True)])
 
 
 def preprocess_german(df: pd.DataFrame):
@@ -48,10 +49,10 @@ def preprocess_german(df: pd.DataFrame):
         lambda x: 1 if x not in ["A92", "A95"] else 0)
     # Age is 1 if above median age, else 0.
     median_age = df["age"].median()
-    df["age"] = df["age"].apply(lambda x: 1 if x > median_age else 0)
+    df["age_>=_median"] = df["age"].apply(lambda x: 1 if x > median_age else 0)
 
     df["single"] = df["per_status_sex"].apply(
         lambda x: 1 if x in ["A93", "A95"] else 0)
 
-    df.drop(columns="per_status_sex", inplace=True)
+    df.drop(columns=["per_status_sex", "age"], inplace=True)
     return df
