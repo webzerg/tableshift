@@ -2,6 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Tuple, Callable
 
+import numpy as np
 import pandas as pd
 
 from .splitter import Splitter, DomainSplitter
@@ -152,6 +153,50 @@ class TabularDataset(ABC):
     def get_dataloader(self):
         raise NotImplementedError
 
+    def get_dataset_baseline_metrics(self, split):
+
+        X_tr, y_tr, g = self.get_pandas(split)
+        n_by_y = pd.value_counts(y_tr).to_dict()
+        y_maj = pd.value_counts(y_tr).idxmax()
+        # maps {class_label: p_class_label}
+        p_y = pd.value_counts(y_tr, normalize=True).to_dict()
+
+        p_y_by_sens = pd.crosstab(y_tr, [X_tr[c] for c in g],
+                                  normalize='columns').to_dict()
+        n_y_by_sens = pd.crosstab(y_tr, [X_tr[c] for c in g]).to_dict()
+        n_by_sens = pd.crosstab(g.iloc[:, 0], g.iloc[:, 1]).unstack().to_dict()
+        return {"y_maj": y_maj,
+                "n_by_y": n_by_y,
+                "p_y": p_y,
+                "p_y_by_sens": p_y_by_sens,
+                "n_y_by_sens": n_y_by_sens,
+                "n_by_sens": n_by_sens}
+
+    def subgroup_majority_classifier_performance(self, split):
+        """Compute overall and worst-group acc of a subgroup-conditional
+        majority-class classifier."""
+        baseline_metrics = self.get_dataset_baseline_metrics(split)
+        sensitive_subgroup_accuracies = []
+        sensitive_subgroup_n_correct = []
+        for sens, n_y_by_sens in baseline_metrics["n_y_by_sens"].items():
+            p_y_by_sens = baseline_metrics["p_y_by_sens"][sens]
+            y_max = 1 if n_y_by_sens[1] > n_y_by_sens[0] else 0
+            p_y_max = p_y_by_sens[y_max]
+            n_y_max = n_y_by_sens[y_max]
+            sensitive_subgroup_n_correct.append(n_y_max)
+            sensitive_subgroup_accuracies.append(p_y_max)
+        n = sum(baseline_metrics["n_by_y"].values())
+        overall_acc = np.sum(sensitive_subgroup_n_correct) / n
+        return overall_acc, min(sensitive_subgroup_accuracies)
+
     def evaluate_predictions(self, preds, split):
         _, labels, groups = self.get_pandas(split)
-        return metrics_by_group(labels, preds, groups, suffix=split)
+        metrics = metrics_by_group(labels, preds, groups, suffix=split)
+        # Add baseline metrics.
+        metrics["majority_baseline_" + split] = max(labels.mean(),
+                                                   1 - labels.mean())
+        sm_overall_acc, sm_wg_acc = self.subgroup_majority_classifier_performance(
+            split)
+        metrics["subgroup_majority_overall_acc_" + split] = sm_overall_acc
+        metrics["subgroup_majority_worstgroup_acc_" + split] = sm_wg_acc
+        return metrics
