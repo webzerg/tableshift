@@ -18,7 +18,7 @@ def safe_cast(x: pd.Series, dtype):
 @dataclass(frozen=True)
 class Feature:
     name: str
-    kind: Any  # a type to which the feature should be castable.
+    kind: Any  # a class type to which the feature should be castable.
     description: str = None
     is_target: bool = False
 
@@ -60,6 +60,17 @@ class FeatureList:
         and then transforms each column by casting it to the type specified
         in each Feature.
         """
+
+        def _column_is_of_type(x: pd.Series, dtype) -> bool:
+            """Helper function to check whether column has specified dtype."""
+            if hasattr(dtype, "name"):
+                # Case: dtype is of categorical dtype; has a "name"
+                # attribute identical to the pandas dtype name for
+                # categorical data.
+                return x.dtype.name == dtype.name
+            else:
+                return x.dtype == dtype.__name__
+
         drop_cols = list(set(x for x in df.columns if x not in self.names))
         if drop_cols:
             print("[DEBUG] dropping data columns not in "
@@ -75,9 +86,9 @@ class FeatureList:
                 # (e.g. it is a domain-split feature, which was used to split
                 # the data and then is removed).
                 continue
-            if not df[f.name].dtype == f.kind:
+            if not _column_is_of_type(df[f.name], f.kind):
                 print(f"[INFO] casting feature {f.name} from type "
-                      f"{df[f.name].dtype} to dtype {f.kind}")
+                      f"{df[f.name].dtype.name} to dtype {f.kind.__name__}")
                 df[f.name] = safe_cast(df[f.name], f.kind)
         return df
 
