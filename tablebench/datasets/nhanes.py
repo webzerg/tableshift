@@ -71,7 +71,7 @@ NHANES_DEMOG_FEATURES = FeatureList(features=[
     # Recode of reported race and Hispanic origin information,
     # with Non-Hispanic Asian Category
     Feature('RIDRETH3', cat_dtype),
-])
+], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
 NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
     # Target: Direct LDL-Cholesterol (mg/dL). We use a threshold of 160mg/DL,
@@ -85,7 +85,7 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
     # (LBDLDLM - LDL-Cholesterol, Martin-Hopkins (mg/dL))
     # is not available for all years and the two have very strong correlation
     # i.e. see this study: https://pubmed.ncbi.nlm.nih.gov/34881700/
-    Feature('Target', float),  # Raw feature for this is 'LBDLDL'.
+    Feature('LBDLDL', float, is_target=True),
 
     # Below we use the additional set of risk factors listed in the above report
     # (Table 6) **which can be asked in a questionnaire** (i.e. those which
@@ -155,29 +155,24 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
     # Recode of reported race and Hispanic origin information,
     # with Non-Hispanic Asian Category
     Feature('RIDRETH3', cat_dtype),
-])
+], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
 
 def preprocess_nhanes_cholesterol(df: pd.DataFrame, threshold=160.):
-    input_features = list(set(NHANES_CHOLESTEROL_FEATURES.names +
-                              NHANES_DEMOG_FEATURES.names))
-    input_features.remove("Target")
-    input_features.insert(0, "LBDLDL")
-    for f in input_features:
+    features = NHANES_CHOLESTEROL_FEATURES + NHANES_DEMOG_FEATURES
+    for f in features.names:
         assert f in df.columns, f"data is missing column {f}"
-    df = df.loc[:, input_features]
+    df = df.loc[:, features.names]
 
     # Drop observations with missing target
-    df = df.dropna(subset=["LBDLDL"])
+    df = df.dropna(subset=[features.target])
     # Binarize the target
-    df["Target"] = (df["LBDLDL"] >= threshold).astype(float)
-    df.drop(columns="LBDLDL", inplace=True)
+    df[features.target] = (df[features.target] >= threshold).astype(float)
 
     # All features are categorical; we can fill missing values with "missing".
-    output_feature_list = NHANES_CHOLESTEROL_FEATURES + NHANES_DEMOG_FEATURES
-    for feature in output_feature_list:
+    for feature in features:
         name = feature.name
-        if name != "Target" and feature.kind == cat_dtype:
+        if name != NHANES_CHOLESTEROL_FEATURES.target and feature.kind == cat_dtype:
             df[name] = df[name].fillna("MISSING").apply(str).astype("category")
 
     df.reset_index(drop=True, inplace=True)
