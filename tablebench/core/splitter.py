@@ -108,6 +108,7 @@ class FixedSplitter(Splitter):
     def __call__(self, data: pd.DataFrame, labels: pd.Series,
                  groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
         str, List[int]]:
+        assert "Split" in data.columns, "data is missing 'Split' column."
         test_idxs = np.nonzero((data["Split"] == "test").values)[0]
         train_val_idxs = np.nonzero((data["Split"] == "train").values)[0]
 

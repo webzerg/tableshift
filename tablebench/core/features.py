@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Any
+from typing import List, Any, Sequence
 
 import numpy as np
 import pandas as pd
@@ -53,13 +53,15 @@ class FeatureList:
         yield from self.features
 
     def apply_schema(self, df: pd.DataFrame,
-                     allow_missing_cols: List = None) -> pd.DataFrame:
+                     passthrough_columns: Sequence[str] = None) -> pd.DataFrame:
         """Apply the schema defined in the FeatureList to the DataFrame.
 
         Subsets to only the columns corresponding to features in FeatureList,
         and then transforms each column by casting it to the type specified
         in each Feature.
         """
+        if not passthrough_columns:
+            passthrough_columns = []
 
         def _column_is_of_type(x: pd.Series, dtype) -> bool:
             """Helper function to check whether column has specified dtype."""
@@ -71,26 +73,47 @@ class FeatureList:
             else:
                 return x.dtype == dtype.__name__
 
-        drop_cols = list(set(x for x in df.columns if x not in self.names))
+        drop_cols = list(set(x for x in df.columns
+                             if x not in self.names
+                             and x not in passthrough_columns))
         if drop_cols:
             print("[DEBUG] dropping data columns not in "
                   f"FeatureList: {drop_cols}")
             df.drop(columns=drop_cols, inplace=True)
         for f in self.features:
-            if f.name not in df.columns and f.name not in allow_missing_cols:
+            if f.name not in df.columns:
                 # Case: expected this feature, and it is missing.
                 raise ValueError(f"feature {f.name} not present in data with"
                                  f"columns {df.columns}.")
-            elif f.name not in df.columns:
-                # Case: this feature is missing, but it is allowed to be missing
-                # (e.g. it is a domain-split feature, which was used to split
-                # the data and then is removed).
-                continue
+
             if not _column_is_of_type(df[f.name], f.kind):
                 print(f"[INFO] casting feature {f.name} from type "
                       f"{df[f.name].dtype.name} to dtype {f.kind.__name__}")
                 df[f.name] = safe_cast(df[f.name], f.kind)
         return df
+
+
+def _transformed_columns_to_numeric(df, prefix: str,
+                                    to_type=float) -> pd.DataFrame:
+    """Postprocess the results of a ColumnTransformer.
+
+    ColumnTransformers convert their output to 'object' dtype, even when the
+    outputs are properly numeric.
+
+    Using pattern-matching from the verbose feature names of a
+    ColumnTransformer, cast any transformed columns to the specified dtype.
+
+    This provides maximum compatibility with downstream models by eliminating
+    categorical dtypes where they are no longer needed (and no longer properly
+    describe the data type of a column).
+
+    Valid prefixes include "scale_" for scaled columns, and "onehot_" for
+    one-hot-encoded columns.
+    """
+    for c in df.columns:
+        if c.startswith(prefix):
+            df[c] = df[c].astype(to_type)
+    return df
 
 
 @dataclass
@@ -127,7 +150,7 @@ class PreprocessorConfig:
             transforms,
             remainder='passthrough',
             sparse_threshold=0,
-            verbose_feature_names_out=False)
+            verbose_feature_names_out=True)
 
         self.transformer.fit(data.loc[train_idxs, :])
         return
@@ -139,6 +162,8 @@ class PreprocessorConfig:
             columns=self.transformer.get_feature_names_out())
         transformed.columns = [c.replace("remainder__", "")
                                for c in transformed.columns]
+        transformed = _transformed_columns_to_numeric(transformed, "onehot_")
+        transformed = _transformed_columns_to_numeric(transformed, "scale_")
         return transformed
 
     def fit_transform(self, data, train_idxs: List[int],

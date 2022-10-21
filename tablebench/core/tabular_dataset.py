@@ -62,10 +62,10 @@ class TabularDataset(ABC):
     def _initialize_data(self):
         """Load the data/labels/groups from a data source."""
         data = self.data_source.get_data()
-        data = self._process_pre_split(data)
-        self._generate_splits(data)
-        if "Split" in data.columns:
-            data.drop(columns=["Split"], inplace=True)
+        data = self.task_config.feature_list.apply_schema(
+            data, passthrough_columns=["Split"])
+        data = self.grouper.transform(data)
+        data = self._generate_splits(data)
         data = self._process_post_split(data)
 
         X, y, G = self._X_y_G_split(data)
@@ -79,11 +79,11 @@ class TabularDataset(ABC):
             Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
         """Fetch the (data, labels, groups) arrays from a DataFrame."""
         data_features = [x for x in data.columns
-                         if x not in self.grouper.features + [self.target]]
+                         if x not in self.grouper.features
+                         and x != self.target]
         if not self.grouper.drop:
             # Retain the group variables as features.
             data_features.extend(self.grouper.features)
-
         X = data.loc[:, data_features]
         y = data.loc[:, self.target]
         G = data.loc[:, self.grouper.features]
@@ -92,27 +92,14 @@ class TabularDataset(ABC):
             y = y.astype(default_targets_dtype)
         return X, y, G
 
-    def _process_pre_split(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Dataset-specific preprocessing function.
-
-        Conducts any preprocessing needed **before** splitting
-        (i.e. feature selection, filtering, grouping etc.)."""
-        cols = list(set(self.predictors +
-                        self.grouper.features +
-                        [self.target]))
-        if "Split" in data.columns:
-            cols.append("Split")
-        data = self.grouper.transform(data)
-        return data.loc[:, cols]
-
     def _generate_splits(self, data):
         """Call the splitter to generate splits for the dataset."""
         assert self.splits is None, "attempted to overwrite existing splits."
 
-        data, labels, groups = self._X_y_G_split(data)
-
-        self.splits = self.splitter(data, labels, groups)
-        return
+        X_y_g = self._X_y_G_split(data)
+        self.splits = self.splitter(*X_y_g)
+        data = self._post_split_feature_selection(data)
+        return data
 
     def _post_split_feature_selection(self,
                                       data: pd.DataFrame) -> pd.DataFrame:
@@ -121,12 +108,8 @@ class TabularDataset(ABC):
             # Case: domain split; now that the split has been made, drop the
             # domain split feature.
             data.drop(columns=self.splitter.domain_split_varname, inplace=True)
-            allow_missing_cols = [self.splitter.domain_split_varname]
-        else:
-            allow_missing_cols = None
-
-        data = self.task_config.feature_list.apply_schema(
-            data, allow_missing_cols)
+        if "Split" in data.columns:
+            data.drop(columns=["Split"], inplace=True)
         return data
 
     def _process_post_split(self, data) -> pd.DataFrame:
@@ -134,7 +117,6 @@ class TabularDataset(ABC):
 
         Conducts any processing required **after** splitting (e.g.
         normalization, drop features needed only for splitting)."""
-        data = self._post_split_feature_selection(data)
         data = self.preprocessor_config.fit_transform(
             data,
             self.splits["train"],
@@ -194,7 +176,7 @@ class TabularDataset(ABC):
         metrics = metrics_by_group(labels, preds, groups, suffix=split)
         # Add baseline metrics.
         metrics["majority_baseline_" + split] = max(labels.mean(),
-                                                   1 - labels.mean())
+                                                    1 - labels.mean())
         sm_overall_acc, sm_wg_acc = self.subgroup_majority_classifier_performance(
             split)
         metrics["subgroup_majority_overall_acc_" + split] = sm_overall_acc
