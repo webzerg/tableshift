@@ -13,6 +13,15 @@ import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
+BRFSS_STATE_LIST = [
+    ['1.0', '10.0', '11.0', '12.0', '13.0', '15.0', '16.0', '17.0', '18.0',
+     '19.0', '2.0', '20.0', '21.0', '22.0', '23.0', '24.0', '25.0', '26.0',
+     '27.0', '28.0', '29.0', '30.0', '31.0', '32.0', '33.0', '34.0', '35.0',
+     '36.0', '37.0', '38.0', '39.0', '4.0', '40.0', '41.0', '42.0', '44.0',
+     '45.0', '46.0', '47.0', '48.0', '49.0', '5.0', '50.0', '51.0', '53.0',
+     '54.0', '55.0', '56.0', '6.0', '66.0', '72.0', '8.0', '9.0']
+]
+
 # Brief feature descriptions below; for the full question/description
 # see the data dictionary linked above. Note that in the original data,
 # some of the feature names are preceded by underscores (these are
@@ -22,8 +31,7 @@ from tablebench.core.features import Feature, FeatureList, cat_dtype
 
 BRFSS_FEATURES = FeatureList([
     ################ Target ################
-    # Feature("DIABETE3", bool),  # (Ever told) you have diabetes
-    Feature("Target", int),
+    Feature("DIABETE3", int, is_target=True),  # (Ever told) you have diabetes
 
     # ################ Demographics/sensitive attributes. ################
     # Also see "INCOME2", "MARITAL", "EDUCA" features below.
@@ -123,7 +131,6 @@ def preprocess_brfss(df: pd.DataFrame):
     df["DIABETE3"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
     # Drop 1k missing/not sure, plus one missing observation
     df = df[~(df["DIABETE3"].isin([7, 9]))].dropna(subset=["DIABETE3"])
-    df.rename(columns={"DIABETE3": "Target"}, inplace=True)
 
     # Sensitive columns
     # Drop no preferred race/not answered/don't know/not sure
@@ -172,7 +179,8 @@ def preprocess_brfss(df: pd.DataFrame):
     # Cast columns to categorical; since some columns have mixed type,
     # we cast the entire column to string.
     for c in df.columns:
-        if c not in NUMERIC_COLS and c not in ("_PRACE_1", "SEX", "Target"):
+        if c not in NUMERIC_COLS and c not in (
+                "_PRACE_1", "SEX", BRFSS_FEATURES.target):
             df[c] = df[c].apply(str).astype("category")
 
     # Remove leading underscores from column names
