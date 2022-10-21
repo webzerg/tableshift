@@ -15,9 +15,15 @@ from tablebench.datasets.brfss import BRFSS_STATE_LIST
 
 preprocessor_config = PreprocessorConfig()
 
+
+class XGB(xgb.XGBClassifier):
+    def __init__(self, **kwargs):
+        super().__init__(self, **kwargs, enable_categorical=True)
+
+
 estimator_cls = (LogisticRegressionCV,
                  HistGradientBoostingClassifier,
-                 xgb.XGBClassifier)
+                 XGB)
 
 
 @dataclass
@@ -51,7 +57,7 @@ experiment_configs = {
         tabular_dataset_kwargs={"name": "brfss"},
         domain_split_varname="STATE",
         domain_split_ood_values=BRFSS_STATE_LIST,
-        grouper = Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig()),
 
     # "anes_st": DomainShiftExperimentConfig(
