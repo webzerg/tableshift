@@ -40,8 +40,8 @@ def preprocess_adult(df: pd.DataFrame):
     """Process a raw adult dataset."""
     df['Target'] = df['Target'].replace(
         {'<=50K': 0,
-         '>50K': 1,
          '<=50K.': 0,
+         '>50K': 1,
          '>50K.': 1})
     del df['Education']
     return df

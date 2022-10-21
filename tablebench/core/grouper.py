@@ -15,8 +15,10 @@ class Grouper:
     def features(self) -> List[str]:
         return list(self.features_and_values.keys())
 
-    def transform(self, data) -> pd.DataFrame:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         for c in self.features:
+            assert c in data.columns, \
+                f"data does not contain grouping feature {c}"
             data[c] = data[c].apply(
                 lambda x: int(x in self.features_and_values[c]))
         return data
