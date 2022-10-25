@@ -15,15 +15,9 @@ from tablebench.datasets.brfss import BRFSS_STATE_LIST
 
 preprocessor_config = PreprocessorConfig()
 
-
-class XGB(xgb.XGBClassifier):
-    def __init__(self, **kwargs):
-        super().__init__(self, **kwargs, enable_categorical=True)
-
-
 estimator_cls = (LogisticRegressionCV,
                  HistGradientBoostingClassifier,
-                 XGB)
+                 xgb.XGBClassifier)
 
 
 @dataclass
