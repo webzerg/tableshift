@@ -136,7 +136,7 @@ def preprocess_brfss(df: pd.DataFrame):
     # Drop no preferred race/not answered/don't know/not sure
     df = df[~(df["_PRACE1"].isin([7, 8, 77, 99]))]
     df["_PRACE1"] = (df["_PRACE1"] == 1).astype(int)
-    df["SEX"] = (df["SEX"] - 1)  # Map sex to male=0, female=1
+    df["SEX"] = (df["SEX"] - 1).astype(int)  # Map sex to male=0, female=1
 
     # PHYSHLTH, POORHLTH, MENTHLTH are measured in days, but need to
     # map 88 to 0 because it means zero (i.e. zero bad health days)
@@ -179,8 +179,7 @@ def preprocess_brfss(df: pd.DataFrame):
     # Cast columns to categorical; since some columns have mixed type,
     # we cast the entire column to string.
     for c in df.columns:
-        if c not in NUMERIC_COLS and c not in (
-                "_PRACE_1", "SEX", BRFSS_FEATURES.target):
+        if c not in NUMERIC_COLS and c != BRFSS_FEATURES.target:
             df[c] = df[c].apply(str).astype("category")
 
     # Remove leading underscores from column names
