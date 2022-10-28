@@ -51,7 +51,7 @@ experiment_configs = {
         tabular_dataset_kwargs={"name": "brfss"},
         domain_split_varname="STATE",
         domain_split_ood_values=BRFSS_STATE_LIST,
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+        grouper=Grouper({"PRACE1": ['1', ], "SEX": ['1', ]}, drop=False),
         dataset_config=TabularDatasetConfig()),
 
     # "anes_st": DomainShiftExperimentConfig(
@@ -66,21 +66,21 @@ experiment_configs = {
 def main(experiment):
     iterates = []
 
-    experiment_config = experiment_configs[experiment]
-    for tgt in experiment_config.domain_split_ood_values:
+    expt_config = experiment_configs[experiment]
+    for tgt in expt_config.domain_split_ood_values:
 
         splitter = DomainSplitter(
             val_size=0.01,
             eval_size=1 / 5.,
-            domain_split_varname=experiment_config.domain_split_varname,
+            domain_split_varname=expt_config.domain_split_varname,
             domain_split_ood_values=[tgt],
             random_state=19542)
 
         dset = TabularDataset(
-            **experiment_config.tabular_dataset_kwargs,
-            config=experiment_config.dataset_config,
+            **expt_config.tabular_dataset_kwargs,
+            config=expt_config.dataset_config,
             splitter=splitter,
-            grouper=experiment_config.grouper,
+            grouper=expt_config.grouper,
             preprocessor_config=preprocessor_config)
 
         X_tr, y_tr, G_tr = dset.get_pandas(split="train")
@@ -89,15 +89,15 @@ def main(experiment):
             estimator = est_cls()
 
             print(f"fitting estimator of type {type(estimator)} with "
-                  f"target {experiment_config.domain_split_varname} = {tgt}")
+                  f"target {expt_config.domain_split_varname} = {tgt}")
             estimator.fit(X_tr, y_tr)
             print("fitting estimator complete.")
 
             metrics = {"estimator": str(type(estimator)),
-                       "task": experiment_config.tabular_dataset_kwargs[
+                       "task": expt_config.tabular_dataset_kwargs[
                            "name"],
-                       "domain_split_varname": experiment_config.domain_split_varname,
-                       "domain_split_odd_values": tgt,
+                       "domain_split_varname": expt_config.domain_split_varname,
+                       "domain_split_ood_values": tgt,
                        }
             for split in ("id_test", "ood_test"):
                 X_te, _, _ = dset.get_pandas(split=split)
@@ -116,6 +116,7 @@ def main(experiment):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", choices=list(experiment_configs.keys()))
+    parser.add_argument("--experiment", choices=list(experiment_configs.keys()),
+                        default="brfss_st")
     args = parser.parse_args()
     main(**vars(args))
