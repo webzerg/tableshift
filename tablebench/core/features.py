@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Any, Sequence
+from typing import List, Any, Sequence, Optional, Mapping
 
 import numpy as np
 import pandas as pd
@@ -160,13 +160,31 @@ class PreprocessorConfig:
         transformed = pd.DataFrame(
             transformed,
             columns=self.transformer.get_feature_names_out())
+
+        return transformed
+
+    def _post_transform(self, transformed: pd.DataFrame,
+                        cast_dtypes: Optional[Mapping] = None) -> pd.DataFrame:
+        """Postprocess the result of a ColumnTransformer."""
         transformed.columns = [c.replace("remainder__", "")
                                for c in transformed.columns]
         transformed = _transformed_columns_to_numeric(transformed, "onehot_")
         transformed = _transformed_columns_to_numeric(transformed, "scale_")
+        # Cast the specified columns back to their original types
+        if cast_dtypes:
+            for colname, dtype in cast_dtypes.items():
+                transformed[colname] = transformed[colname].astype(dtype)
         return transformed
 
     def fit_transform(self, data, train_idxs: List[int],
                       passthrough_columns: List[str] = None):
+        dtypes_in = data.dtypes.to_dict()
+        passthrough_dtypes = ({c: dtypes_in[c] for c in
+                               passthrough_columns}
+                              if passthrough_columns
+                              else None)
         self.fit_transformer(data, train_idxs, passthrough_columns)
-        return self.transform(data)
+        transformed = self.transform(data)
+        transformed = self._post_transform(transformed,
+                                           cast_dtypes=passthrough_dtypes)
+        return transformed
