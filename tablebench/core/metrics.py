@@ -42,7 +42,7 @@ def all_subgroups_contain_all_label_values(y_true, sens) -> bool:
     else:
         # Case: single sensitive attribute
         crosstab = pd.crosstab(y_true, sens)
-    return np.any(crosstab == 0)
+    return np.all(crosstab != 0)
 
 
 def _intersectional_metrics_from_grouped_metrics(grouped_metrics, metrics,
