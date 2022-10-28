@@ -41,9 +41,9 @@ BRFSS_FEATURES = FeatureList([
     Feature("MEDCOST", cat_dtype),
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
-    Feature("PRACE1", cat_dtype),
+    Feature("PRACE1", int),
     # Indicate sex of respondent.
-    Feature("SEX", cat_dtype),
+    Feature("SEX", int),
 
     # Below are a set of indicators for known risk factors for diabetes.
 
