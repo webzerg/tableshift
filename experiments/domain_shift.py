@@ -54,6 +54,15 @@ experiment_configs = {
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig()),
 
+    "physionet_set": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "physionet"},
+        domain_split_varname="set",
+        domain_split_ood_values=["a", "b"],
+        grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
+                        drop=False),
+        dataset_config=TabularDatasetConfig(),
+    )
+
     # "anes_st": DomainShiftExperimentConfig(
     #     tabular_dataset_kwargs={"name": "anes"},
     #     domain_split_varname="STATE",
