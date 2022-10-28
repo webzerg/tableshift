@@ -8,6 +8,12 @@ import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
+ANES_STATES = ['99', 'AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL',
+               'GA', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD',
+               'ME', 'MI', 'MN', 'MO', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ',
+               'NM', 'NV', 'NY', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN',
+               'TX', 'UT', 'VA', 'VT', 'WA', 'WI', 'WV', 'WY']
+
 # This is a very preliminary feature list. We should probably
 # try to find a good reference/principled heuristics for selecting these.
 # I generally tried to select a few from each category, with an emphasis on
@@ -21,6 +27,11 @@ from tablebench.core.features import Feature, FeatureList, cat_dtype
 # details.
 
 ANES_FEATURES = FeatureList(features=[
+    Feature("VCF0004", int, "Year of study"),
+    Feature("VCF0901b", cat_dtype, """State of interview - state postal 
+    abbreviation, 99. NA; wrong district identified (2000) INAP. question not 
+    used"""),
+
     # PARTISANSHIP AND ATTITUDES TOWARDS PARTIES
     Feature('VCF0218', float, "The Democratic Party – feeling thermometer"),
     Feature('VCF0224', float, "The Republican Party – feeling thermometer"),
@@ -45,7 +56,7 @@ ANES_FEATURES = FeatureList(features=[
             """Do you think the problems of unemployment would be handled 
             better by the Democrats, by the Republicans, or about the same by 
             both?"""),
-    Feature('VCF9201', float,
+    Feature('VCF9201', cat_dtype,
             """(I’d like to know what you think about each of our political 
             parties. After I read the name of a political party, please rate 
             it on a scale from 0 to 10, where 0 means you strongly dislike 
@@ -54,7 +65,7 @@ ANES_FEATURES = FeatureList(features=[
             enough about, just say so.) [The first party is: / Using the same 
             scale where would you place:] the Democratic party {INTERVIEWER: 
             DO NOT PROBE DON’T KNOW}"""),
-    Feature('VCF9202', float,
+    Feature('VCF9202', cat_dtype,
             """(I’d like to know what you think about each of our political 
             parties. After I read the name of a political party, please rate 
             it on a scale from 0 to 10, where 0 means you strongly dislike 
@@ -82,6 +93,7 @@ ANES_FEATURES = FeatureList(features=[
             """Do you think it is better when one party controls both the 
             presidency and Congress; better when control is split between the 
             Democrats and Republicans, or doesn’t it matter?"""),
+
     # PERCEIVED POSITIONS OF PARTIES
     Feature('VCF0521', cat_dtype,
             """Which party do you think is more likely to favor a stronger [
@@ -92,9 +104,11 @@ ANES_FEATURES = FeatureList(features=[
             """Which political party do you think is more in favor of cutting 
             military spending - the Democrats, the Republicans, or wouldn’t 
             there be much difference between them?"""),
+
     # CANDIDATE AND INCUMBENT EVALUATIONS
     Feature('VCF0428', float, "President thermometer."),
     Feature('VCF0429', float, "Vice-president thermometer."),
+
     # CANDIDATE/INCUMBENT PERFORMANCE EVALUATIONS
     Feature('VCF0875', cat_dtype, "MENTION 1: WHAT IS THE MOST IMPORTANT "
                                   "NATIONAL PROBLEM"),
@@ -103,20 +117,20 @@ ANES_FEATURES = FeatureList(features=[
             things in the country are generally going very well, fairly well, 
             not too well or not well at all?"""),
     # ISSUES
-    Feature('VCF0809', float, "GUARANTEED JOBS AND INCOME SCALE."),
-    Feature('VCF0839', float, "GOVERNMENT SERVICES-SPENDING SCALE"),
+    Feature('VCF0809', cat_dtype, "GUARANTEED JOBS AND INCOME SCALE."),
+    Feature('VCF0839', cat_dtype, "GOVERNMENT SERVICES-SPENDING SCALE"),
     Feature('VCF0822', cat_dtype,
             """As to the economic policy of the government – I mean steps 
             taken to fight inflation or unemployment – would you say the 
             government is doing a good job, only fair, or a poor job?"""),
     Feature('VCF0870', cat_dtype, "BETTER OR WORSE ECONOMY IN PAST YEAR"),
-    Feature('VCF0843', float, "DEFENSE SPENDING SCALE"),
+    Feature('VCF0843', cat_dtype, "DEFENSE SPENDING SCALE"),
     Feature('VCF9045', cat_dtype,
             "POSITION OF THE U.S. WEAKER/STRONGER IN THE PAST YEAR"),
     Feature('VCF0838', cat_dtype, "BY LAW, WHEN SHOULD ABORTION BE ALLOWED"),
-    Feature('VCF9239', float, "HOW IMPORTANT IS GUN CONTROL ISSUE TO R"),
+    Feature('VCF9239', cat_dtype, "HOW IMPORTANT IS GUN CONTROL ISSUE TO R"),
     # IDEOLOGY AND VALUES
-    Feature('VCF0803', float, "LIBERAL-CONSERVATIVE SCALE"),
+    Feature('VCF0803', cat_dtype, "LIBERAL-CONSERVATIVE SCALE"),
     Feature('VCF0846', cat_dtype, "IS RELIGION IMPORTANT TO RESPONDENT"),
     # SYSTEM SUPPORT
     Feature('VCF0601', cat_dtype, "APPROVE PARTICIPATION IN PROTESTS"),
@@ -129,8 +143,6 @@ ANES_FEATURES = FeatureList(features=[
                                   "OUTCOME VOTE"),
     Feature('VCF0617', cat_dtype, "SHOULD SOMEONE VOTE IF THEIR PARTY CAN’T "
                                   "WIN"),
-    Feature('VCF0650', float, "FEDERAL GOVERNMENT PERFORMANCE RATING"),
-    Feature('VCF0651', float, "STATE GOVERNMENT PERFORMANCE RATING"),
     Feature('VCF0310', cat_dtype, "INTEREST IN THE ELECTIONS"),
     Feature('VCF0743', cat_dtype, "DOES R BELONG TO POLITICAL ORGANIZATION OR "
                                   "CLUB"),
@@ -142,13 +154,14 @@ ANES_FEATURES = FeatureList(features=[
                                   "BUTTON/STICKER DURING THE CAMPAIGN"),
     Feature('VCF0721', cat_dtype, "RESPONDENT DONATE MONEY TO PARTY OR "
                                   "CANDIDATE DURING THE CAMPAIGN"),
+
     # REGISTRATION, TURNOUT, AND VOTE CHOICE
     Feature('VCF0701', cat_dtype, "REGISTERED TO VOTE PRE-ELECTION"),
     Feature('VCF0702', cat_dtype, "DID RESPONDENT VOTE IN THE NATIONAL "
                                   "ELECTIONS",
             is_target=True),
     # MEDIA
-    Feature('VCF0675', float, "HOW MUCH OF THE TIME DOES RESPONDENT TRUST THE "
+    Feature('VCF0675', cat_dtype, "HOW MUCH OF THE TIME DOES RESPONDENT TRUST THE "
                               "MEDIA TO REPORT FAIRLY"),
     Feature('VCF0724', cat_dtype, "WATCH TV PROGRAMS ABOUT THE ELECTION "
                                   "CAMPAIGNS"),
@@ -158,6 +171,7 @@ ANES_FEATURES = FeatureList(features=[
                                   "MAGAZINES"),
     Feature('VCF0745', cat_dtype, "SAW ELECTION CAMPAIGN INFORMATION ON THE "
                                   "INTERNET"),
+
     # PERSONAL AND DEMOGRAPHIC
     Feature('VCF0101', float, "RESPONDENT - AGE"),
     Feature('VCF0104', cat_dtype, """RESPONDENT - GENDER 1. Male 2. Female 3. 
@@ -181,7 +195,14 @@ ANES_FEATURES = FeatureList(features=[
     non-academic training 5. Some college, no degree; junior/community 
     college level degree (AA degree) 6. BA level degrees 7. Advanced degrees 
     incl. LLB"""),
-])
+    Feature('VCF0112', cat_dtype, """Region - U.S. Census 1. Northeast (CT, 
+    ME, MA, NH, NJ, NY, PA, RI, VT) 2. North Central (IL, IN, IA, KS, MI, MN, 
+    MO, NE, ND, OH, SD, WI) 3. South (AL, AR, DE, D.C., FL, GA, KY, LA, MD, 
+    MS, NC, OK, SC,TN, TX, VA, WV) 4. West (AK, AZ, CA, CO, HI, ID, MT, NV, 
+    NM, OR, UT, WA, WY)"""),
+],
+    documentation="https://electionstudies.org/data-center/anes-time-series"
+                  "-cumulative-data-file/")
 
 
 def preprocess_anes(df: pd.DataFrame) -> pd.DataFrame:
@@ -191,5 +212,11 @@ def preprocess_anes(df: pd.DataFrame) -> pd.DataFrame:
         if f.kind == cat_dtype:
             df[f.name] = df[f.name].fillna("MISSING").apply(str) \
                 .astype("category")
-    df.rename(columns={ANES_FEATURES.target: "Target"}, inplace=True)
+    print(((df.loc[:, [x.name for x in ANES_FEATURES if x.kind == float]] == ' ')\
+           .sum() / len(df)).sort_values())
+    # TODO(jpgard): decide what to do about the continuous fields with large
+    # numbers of missing values (' '). I think we should discretize them,
+    # and create a separate bin for "missing".
+    import ipdb;
+    ipdb.set_trace()
     return df
