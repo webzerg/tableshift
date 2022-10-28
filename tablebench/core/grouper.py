@@ -15,10 +15,49 @@ class Grouper:
     def features(self) -> List[str]:
         return list(self.features_and_values.keys())
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def _check_inputs(self, data: pd.DataFrame):
+        """Check inputs to the transform function."""
         for c in self.features:
             assert c in data.columns, \
                 f"data does not contain grouping feature {c}"
-            data[c] = data[c].apply(
-                lambda x: int(x in self.features_and_values[c]))
+            data_vals = data[c].unique().tolist()
+            group_vals = self.features_and_values[c]
+            intersection = set(data_vals).intersection(set(group_vals))
+            assert len(intersection), \
+                f"None of the specified grouping values {group_vals} " \
+                f"are in column {c} values {data_vals}. Do the grouping " \
+                f"values have the same type as the column type {data[c].dtype}?"
+            return
+
+    def _check_transformed(self, data: pd.DataFrame):
+        """Check the outputs of the transform function."""
+        for c in self.features:
+            vals = data[c].unique()
+            if len(vals) < 2:
+                raise ValueError(f"[ERROR] column {c} contains only one "
+                                 f"unique value after transformation {vals}")
+
+        # Print a summary of the counts after grouping.
+        print("[DEBUG] overall counts after grouping:")
+        if len(self.features) == 1:
+            print(data[self.features[0]].value_counts())
+        else:
+            row_feat = self.features[0]
+            col_feats = self.features[1:]
+            xt = pd.crosstab(data[row_feat].squeeze(),
+                             data[col_feats].squeeze(),
+                             dropna=False)
+            print(xt)
+
+    def _group_column(self, x: pd.Series, vals: Sequence):
+        """Apply a grouping to a column."""
+        # Ensure types are the same by casting vals to the same type as x.
+        tmp = pd.Series(vals).astype(x.dtype)
+        return x.isin(tmp)
+
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+        self._check_inputs(data)
+        for c in self.features:
+            data[c] = self._group_column(data[c], self.features_and_values[c])
+        self._check_transformed(data)
         return data
