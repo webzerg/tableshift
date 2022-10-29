@@ -8,15 +8,15 @@ import numbers
 import numpy as np
 import warnings
 
-from . import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder
 
-from ..base import BaseEstimator, TransformerMixin
-from ..utils.validation import check_array
-from ..utils.validation import check_is_fitted
-from ..utils.validation import check_random_state
-from ..utils.validation import _check_feature_names_in
-from ..utils.validation import check_scalar
-from ..utils import _safe_indexing
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils.validation import check_array
+from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_random_state
+from sklearn.utils.validation import _check_feature_names_in
+from sklearn.utils.validation import check_scalar
+from sklearn.utils import _safe_indexing
 
 
 class KBinsDiscretizer(TransformerMixin, BaseEstimator):
