@@ -56,6 +56,21 @@ experiment_configs = {
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
+    "mooc_course": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "mooc"},
+        domain_split_varname="course_id",
+        domain_split_ood_values=['HarvardX/CB22x/2013_Spring',
+                                 'HarvardX/CS50x/2012',
+                                 'HarvardX/ER22x/2013_Spring',
+                                 'HarvardX/PH207x/2012_Fall',
+                                 'HarvardX/PH278x/2013_Spring'],
+        grouper=Grouper({"gender": ["m", ],
+                         "LoE_DI": ["Bachelor's", "Master's", "Doctorate"]},
+                        drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(),
+    )
+
     "physionet_set": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "physionet"},
         domain_split_varname="set",
