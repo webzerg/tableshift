@@ -69,7 +69,7 @@ experiment_configs = {
                         drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(),
-    )
+    ),
 
     "physionet_set": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "physionet"},
