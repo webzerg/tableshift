@@ -13,8 +13,6 @@ from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
 from tablebench.datasets.acs import ACS_STATE_LIST
 from tablebench.datasets.brfss import BRFSS_STATE_LIST
 
-preprocessor_config = PreprocessorConfig()
-
 estimator_cls = (LogisticRegressionCV,
                  HistGradientBoostingClassifier,
                  xgb.XGBClassifier)
@@ -27,6 +25,7 @@ class DomainShiftExperimentConfig:
     domain_split_ood_values: Sequence[Any]
     grouper: Grouper
     dataset_config: TabularDatasetConfig
+    preprocessor_config: PreprocessorConfig
 
 
 # Set of fixed domain shift experiments.
@@ -37,7 +36,8 @@ experiment_configs = {
         domain_split_varname="ST",
         domain_split_ood_values=ACS_STATE_LIST,
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig()),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
 
     "acspubcov_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acspubcov",
@@ -45,14 +45,16 @@ experiment_configs = {
         domain_split_varname="ST",
         domain_split_ood_values=ACS_STATE_LIST,
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig()),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
 
     "brfss_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "brfss"},
         domain_split_varname="STATE",
         domain_split_ood_values=BRFSS_STATE_LIST,
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig()),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
 
     "physionet_set": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "physionet"},
@@ -61,6 +63,7 @@ experiment_configs = {
         grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
                         drop=False),
         dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins")
     )
 
     # "anes_st": DomainShiftExperimentConfig(
@@ -90,7 +93,7 @@ def main(experiment):
             config=expt_config.dataset_config,
             splitter=splitter,
             grouper=expt_config.grouper,
-            preprocessor_config=preprocessor_config)
+            preprocessor_config=expt_config.preprocessor_config)
 
         X_tr, y_tr, G_tr = dset.get_pandas(split="train")
 
