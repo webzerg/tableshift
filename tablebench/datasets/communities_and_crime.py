@@ -43,9 +43,14 @@ CANDC_INPUT_FEATURES = [
     'PolicBudgPerPop', 'ViolentCrimesPerPop'
 ]
 
+CANDC_STATE_LIST = ['1', '10', '11', '12', '13', '16', '18', '19', '2', '20',
+                    '21', '22', '23', '24', '25', '27', '28', '29', '32', '33',
+                    '34', '35', '36', '37', '38', '39', '4', '40', '41', '42',
+                    '44', '45', '46', '47', '48', '49', '5', '50', '51', '53',
+                    '54', '55', '56', '6', '8', '9']
+
 CANDC_FEATURES = FeatureList([
     Feature('state', cat_dtype),
-    Feature('communityname', cat_dtype),
     Feature('population', float),
     Feature('householdsize', float),
     Feature('agePct12t21', float),
@@ -143,10 +148,6 @@ CANDC_FEATURES = FeatureList([
 
 def preprocess_candc(df: pd.DataFrame,
                      target_threshold: float = 0.08) -> pd.DataFrame:
-    # remove non predicitive features
-    # for c in ['state', 'county', 'community', 'communityname', 'fold']:
-    #     if c != self.domain_split_colname:
-    #         data.drop(columns=c, axis=1, inplace=True)
 
     df = df.replace('?', np.nan).dropna(axis=1)
     df["Race"] = df['racePctWhite'].apply(
@@ -170,4 +171,4 @@ def preprocess_candc(df: pd.DataFrame,
     # following Khani et al. and Kearns et al. 2018.
     df["Target"] = (df["Target"] >= target_threshold).astype(int)
     df["state"] = df["state"].apply(str).astype("category")
-    return df.loc[:, CANDC_FEATURES.names]
+    return df
