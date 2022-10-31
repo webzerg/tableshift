@@ -12,6 +12,7 @@ from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
 from tablebench.datasets.acs import ACS_STATE_LIST
 from tablebench.datasets.brfss import BRFSS_STATE_LIST
+from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
 
 estimator_cls = (LogisticRegressionCV,
                  HistGradientBoostingClassifier,
@@ -55,6 +56,16 @@ experiment_configs = {
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
+
+    "candc_st": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "communities-and-crime"},
+        domain_split_varname="state",
+        domain_split_ood_values=CANDC_STATE_LIST,
+        grouper=Grouper({"Race": [1, ], "income_level_above_median": [1, ]},
+                        drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(),
+    ),
 
     "mooc_course": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "mooc"},
