@@ -86,6 +86,30 @@ class ANESDataSource(OfflineDataSource):
         return df
 
 
+class MOOCDataSource(OfflineDataSource):
+    def __init__(
+            self,
+            preprocess_fn=preprocess_mooc,
+            resources=(os.path.join("dataverse_files",
+                                    "HXPC13_DI_v3_11-13-2019.csv"),),
+            **kwargs):
+        super().__init__(resources=resources,
+                         preprocess_fn=preprocess_fn,
+                         **kwargs)
+
+    def _load_data(self) -> pd.DataFrame:
+        fp = os.path.join(self.cache_dir, self.resources[0])
+        if not os.path.exists(fp):
+            raise RuntimeError(
+                f"""Data files does not exist at {fp}. This dataset must be 
+                manually downloaded. Visit https://doi.org/10.7910/DVN/26147,
+                click 'Access Dataset' > 'Original Format ZIP', download the ZIP
+                file to the cache directory at {self.cache_dir}, and 
+                unzip it.""")
+        df = pd.read_csv(fp)
+        return df
+
+
 class KaggleDataSource(DataSource):
     def __init__(
             self,

@@ -20,13 +20,18 @@ class Grouper:
         for c in self.features:
             assert c in data.columns, \
                 f"data does not contain grouping feature {c}"
-            data_vals = data[c].unique().tolist()
-            group_vals = self.features_and_values[c]
-            intersection = set(data_vals).intersection(set(group_vals))
+            data_vals = set(data[c].unique().tolist())
+            group_vals = set(self.features_and_values[c])
+            intersection = data_vals.intersection(group_vals)
             assert len(intersection), \
                 f"None of the specified grouping values {group_vals} " \
                 f"are in column {c} values {data_vals}. Do the grouping " \
                 f"values have the same type as the column type {data[c].dtype}?"
+
+            missing_ood_vals = set(group_vals) - set(data_vals)
+            if len(missing_ood_vals):
+                print(f"[WARNING] values {list(missing_ood_vals)} specified "
+                      f"in Grouper split but not  present in the data.")
             return
 
     def _check_transformed(self, data: pd.DataFrame):

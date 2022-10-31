@@ -61,7 +61,7 @@ class TabularDataset(ABC):
 
     def _initialize_data(self):
         """Load the data/labels/groups from a data source."""
-        data = self.data_source.get_data()
+        data = self.data_source.get_data().reset_index(drop=True)
         data = self.task_config.feature_list.apply_schema(
             data, passthrough_columns=["Split"])
         data = self.grouper.transform(data)
