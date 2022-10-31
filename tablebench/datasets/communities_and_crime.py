@@ -135,8 +135,8 @@ CANDC_FEATURES = FeatureList([
     Feature('PopDens', float),
     Feature('PctUsePubTrans', float),
     Feature('LemasPctOfficDrugUn', float),
-    Feature('Target', int),
-    Feature('Race', cat_dtype),
+    Feature('Target', int, is_target=True),
+    Feature('Race', int),
     Feature('income_level_above_median', int)
 ])
 
