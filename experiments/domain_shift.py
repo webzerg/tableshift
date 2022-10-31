@@ -138,12 +138,18 @@ def main(experiment):
                        "domain_split_ood_values": tgt,
                        }
             for split in ("id_test", "ood_test"):
-                X_te, _, _ = dset.get_pandas(split=split)
+                try:
+                    X_te, _, _ = dset.get_pandas(split=split)
 
-                y_hat_te = estimator.predict(X_te)
-                split_metrics = dset.evaluate_predictions(y_hat_te,
-                                                          split=split)
-                metrics.update(split_metrics)
+                    y_hat_te = estimator.predict(X_te)
+                    split_metrics = dset.evaluate_predictions(y_hat_te,
+                                                              split=split)
+                    metrics.update(split_metrics)
+                except Exception as e:
+                    print(f"exception evaluating split {split} with "
+                          f"{expt_config.domain_split_varname}=={tgt}: "
+                          f"{e}; skipping")
+                    continue
             iterates.append(metrics)
 
     results = pd.DataFrame(iterates)
