@@ -58,7 +58,7 @@ experiment_configs = {
         preprocessor_config=PreprocessorConfig()),
 
     "candc_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "communities-and-crime"},
+        tabular_dataset_kwargs={"name": "communities_and_crime"},
         domain_split_varname="state",
         domain_split_ood_values=CANDC_STATE_LIST,
         grouper=Grouper({"Race": [1, ], "income_level_above_median": [1, ]},
