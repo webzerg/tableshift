@@ -6,13 +6,22 @@ DIABETES_READMISSION_RESOURCES = [
 ]
 
 DIABETES_READMISSION_FEATURES = FeatureList(features=[
-    Feature('race', cat_dtype),
-    Feature('gender', cat_dtype),
-    Feature('age', cat_dtype),
-    Feature('weight', cat_dtype),
-    Feature('admission_type_id', float),
-    Feature('discharge_disposition_id', float),
-    Feature('admission_source_id', float),
+    Feature('race', cat_dtype, """Nominal. Values: Caucasian, Asian, African 
+    American, Hispanic, and other"""),
+    Feature('gender', cat_dtype, """Nominal. Values: male, female, and 
+    unknown/invalid."""),
+    Feature('age', cat_dtype, """Nominal. Grouped in 10-year intervals: [0, 
+    10), [10, 20), . . ., [90, 100)"""),
+    Feature('weight', float, "Weight in pounds."),
+    Feature('admission_type_id', float, """Integer identifier corresponding 
+    to 9 distinct values, for example, emergency, urgent, elective, newborn, 
+    and not available"""),
+    Feature('discharge_disposition_id', float, """Integer identifier 
+    corresponding to 29 distinct values, for example, discharged to home, 
+    expired, and not available"""),
+    Feature('admission_source_id', int, """Integer identifier corresponding to 
+    21 distinct values, for example, physician referral, emergency room, 
+    and transfer from a hospital"""),
     Feature('time_in_hospital', float),
     Feature('payer_code', cat_dtype),
     Feature('medical_specialty', cat_dtype),
