@@ -13,7 +13,7 @@ from sklearn.metrics import accuracy_score
 
 dataset_config = TabularDatasetConfig()
 
-preprocessor_config = PreprocessorConfig()
+preprocessor_config = PreprocessorConfig(numeric_features="kbins")
 
 splitter = DomainSplitter(val_size=0.05,
                           eval_size=0.2,
