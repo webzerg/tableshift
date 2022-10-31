@@ -116,13 +116,19 @@ def append_suffix_to_keys(d: dict, suffix: str) -> dict:
     return {f"{k}{suffix}": v for k, v in d.items()}
 
 
-def metrics_by_group(y_true, yhat_soft,
+def metrics_by_group(y_true: pd.Series, yhat_soft: pd.Series,
                      sensitive_features: pd.DataFrame, suffix: str = '',
                      threshold=0.5):
+    # Check inputs
     assert isinstance(sensitive_features, pd.DataFrame)
+    assert len(y_true) == len(yhat_soft)
+
+    if len(y_true) <= 1: raise ValueError("Cannot compute metrics when n<=1.")
+
+    if y_true.nunique() == 0:
+        raise ValueError("only one unique label in y_true")
 
     yhat_hard = (yhat_soft >= threshold)
-
     if (suffix != '') and (not suffix.startswith('_')):
         # Ensure suffix has proper leading sep token
         suffix = '_' + suffix
