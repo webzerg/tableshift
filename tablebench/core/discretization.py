@@ -187,7 +187,7 @@ class KBinsDiscretizer(TransformerMixin, BaseEstimator):
         self : object
             Returns the instance itself.
         """
-        X = self._validate_data(X, dtype="numeric")
+        X = self._validate_data(X, dtype="numeric", force_all_finite=False)
 
         supported_dtype = (np.float64, np.float32)
         if self.dtype in supported_dtype:
@@ -249,8 +249,21 @@ class KBinsDiscretizer(TransformerMixin, BaseEstimator):
         n_bins = self._validate_n_bins(n_features)
 
         bin_edges = np.zeros(n_features, dtype=object)
+        contains_nan = []
         for jj in range(n_features):
             column = X[:, jj]
+            contains_nan.append(
+                np.isnan(column).any())  # check whether there are NaN
+
+            if np.all(np.isnan(column)):
+                warnings.warn(
+                    "Feature %d is entirely missing and will be replaced with -1." % jj
+                )
+                n_bins[jj] = 1
+                bin_edges[jj] = np.array([-np.inf, np.inf])
+                continue
+
+            column = column[~np.isnan(column)]  # remove NaNs for the fit
             col_min, col_max = column.min(), column.max()
 
             if col_min == col_max:
@@ -300,7 +313,10 @@ class KBinsDiscretizer(TransformerMixin, BaseEstimator):
 
         if "onehot" in self.encode:
             self._encoder = OneHotEncoder(
-                categories=[np.arange(i) for i in self.n_bins_],
+                categories=[np.arange(-1, self.n_bins_)
+                            if contains_nan[jj] else
+                            np.arange(0, self.n_bins_)
+                            for jj in range(n_features)],
                 sparse=self.encode == "onehot",
                 dtype=output_dtype,
             )
@@ -368,11 +384,15 @@ class KBinsDiscretizer(TransformerMixin, BaseEstimator):
 
         # check input and attribute dtypes
         dtype = (np.float64, np.float32) if self.dtype is None else self.dtype
-        Xt = self._validate_data(X, copy=True, dtype=dtype, reset=False)
+        Xt = self._validate_data(X, copy=True, dtype=dtype, reset=False,
+                                 force_all_finite=False)
 
         bin_edges = self.bin_edges_
         for jj in range(Xt.shape[1]):
-            Xt[:, jj] = np.searchsorted(bin_edges[jj][1:-1], Xt[:, jj], side="right")
+            column = Xt[:, jj]
+            Xt[:, jj] = np.where(np.isnan(column), -1,
+                                 np.searchsorted(bin_edges[jj][1:-1],
+                                                 column, side="right"))
 
         if self.encode == "ordinal":
             return Xt
@@ -422,7 +442,10 @@ class KBinsDiscretizer(TransformerMixin, BaseEstimator):
         for jj in range(n_features):
             bin_edges = self.bin_edges_[jj]
             bin_centers = (bin_edges[1:] + bin_edges[:-1]) * 0.5
-            Xinv[:, jj] = bin_centers[np.int_(Xinv[:, jj])]
+            column = Xinv[:, jj]
+            column = bin_centers[np.int_(column)]
+            column[Xinv[:, jj] == -1] = np.NaN
+            Xinv[:, jj] = bin_centers[np.int_(column)]
 
         return Xinv
 
@@ -452,3 +475,6 @@ class KBinsDiscretizer(TransformerMixin, BaseEstimator):
 
         # ordinal encoding
         return input_features
+
+    def _more_tags(self):
+        return {'allow_nan': True}
