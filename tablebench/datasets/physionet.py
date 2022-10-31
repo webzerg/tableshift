@@ -39,24 +39,24 @@ PHYSIONET_FEATURES = FeatureList(features=[
     Feature("Fibrinogen", float, "Fibrinogen concentration (mg/dL)"),
     Feature("Platelets", float, "Platelet count (count/mL)"),
     Feature("Age", float, "Age (years)"),
-    Feature("Gender", int, "Female (0) or male (1)"),
-    Feature("Unit1", int, "Administrative identifier for ICU unit (MICU); "
+    Feature("Gender", float, "Female (0) or male (1)"),
+    Feature("Unit1", float, "Administrative identifier for ICU unit (MICU); "
                           "false (0) or true (1)"),
-    Feature("Unit2", int, "Administrative identifier for ICU unit (SICU); "
+    Feature("Unit2", float, "Administrative identifier for ICU unit (SICU); "
                           "false (0) or true (1)"),
     Feature("HospAdmTime", float, "Time between hospital and ICU admission ("
                                   "hours since ICU admission)"),
-    Feature("ICULOS", int, "ICU length of stay (hours since ICU admission)"),
-    Feature("SepsisLabel", int, "For septic patients, SepsisLabel is 1 if t ≥ "
+    Feature("ICULOS", float, "ICU length of stay (hours since ICU admission)"),
+    Feature("SepsisLabel", float, "For septic patients, SepsisLabel is 1 if t ≥ "
                                 "t_sepsis − 6 and 0 if t < t_sepsis − 6. For "
                                 "non-septic patients, SepsisLabel is 0.",
             is_target=True),
     Feature("set", cat_dtype,
-            "The training set from which an example is drawn.")
+            "The training set from which an example is drawn "
+            "unique (values: 'a', 'b').")
 ], documentation="https://physionet.org/content/challenge-2019/1.0.0"
                  "/physionet_challenge_2019_ccm_manuscript.pdf")
 
 
 def preprocess_physionet(df: pd.DataFrame) -> pd.DataFrame:
-    df.rename(columns={PHYSIONET_FEATURES.target: "Target"}, inplace=True)
     return df
