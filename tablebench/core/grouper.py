@@ -49,11 +49,11 @@ class Grouper:
                              dropna=False)
             print(xt)
 
-    def _group_column(self, x: pd.Series, vals: Sequence):
-        """Apply a grouping to a column."""
+    def _group_column(self, x: pd.Series, vals: Sequence) -> pd.Series:
+        """Apply a grouping to a column, retuning a binary numeric Series."""
         # Ensure types are the same by casting vals to the same type as x.
         tmp = pd.Series(vals).astype(x.dtype)
-        return x.isin(tmp)
+        return x.isin(tmp).astype(int)
 
     def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         self._check_inputs(data)
