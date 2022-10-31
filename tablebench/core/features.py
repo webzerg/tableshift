@@ -6,6 +6,7 @@ import pandas as pd
 from pandas.api.types import CategoricalDtype as cat_dtype
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler
+from tablebench.core.discretization import KBinsDiscretizer
 
 
 def safe_cast(x: pd.Series, dtype):
@@ -122,6 +123,43 @@ class PreprocessorConfig:
     numeric_features: str = "normalize"
     transformer: ColumnTransformer = None
 
+    def _get_categorical_transforms(self, data: pd.DataFrame,
+                                    categorical_columns: List[str],
+                                    passthrough_columns: List[str]):
+        if self.categorical_features == "one_hot":
+            transforms = [
+                (f'onehot_{c}',
+                 OneHotEncoder(dtype='int', categories=[data[c].unique()]),
+                 [c])
+                for c in categorical_columns
+                if c not in passthrough_columns]
+        else:
+            raise ValueError(f"{self.categorical_features} is not "
+                             "a valid categorical preprocessor type.")
+        return transforms
+
+    def _get_numeric_transforms(self, numeric_columns: List[str],
+                                passthrough_columns: List[str] = None):
+        cols = [c for c in numeric_columns if c not in passthrough_columns]
+        if self.numeric_features == "normalize":
+            transforms = [(f'scale_{c}', StandardScaler(), [c]) for c in cols]
+        elif self.numeric_features == "kbins":
+            transforms = [("kbin", KBinsDiscretizer(encode="ordinal"), cols)]
+        else:
+            raise ValueError(f"{self.numeric_features} is not "
+                             f"a valid numeric preprocessor type.")
+        return transforms
+
+    def _post_transform_summary(self, data: pd.DataFrame):
+        print("[DEBUG] printing post-transform feature summary")
+        if self.numeric_features == "kbins":
+            for c in data.columns:
+                if "kbin" in c: print(f"{c}: {data[c].unique().tolist()}")
+        elif self.numeric_features == "normalize":
+            for c in data.columns:
+                if "scale" in c: print(f"{c}: mean {data[c].mean()}, "
+                                       f"std {data[c].std()}")
+
     def fit_transformer(self, data, train_idxs: List[int],
                         passthrough_columns: List[str] = None):
         """Fits the transformer associated with this PreprocessorConfig."""
@@ -129,21 +167,15 @@ class PreprocessorConfig:
         numeric_columns = make_column_selector(
             pattern="^(?![Tt]arget)",
             dtype_include=np.number)(data)
-        numeric_transforms = [
-            (f'scale_{c}', StandardScaler(), [c])
-            for c in numeric_columns
-            if c not in passthrough_columns]
+        numeric_transforms = self._get_numeric_transforms(numeric_columns,
+                                                          passthrough_columns)
 
         categorical_columns = make_column_selector(
             pattern="^(?![Tt]arget)",
             dtype_include=[np.object, np.bool, cat_dtype])(data)
 
-        categorical_transforms = [
-            (f'onehot_{c}',
-             OneHotEncoder(dtype='int', categories=[data[c].unique()]),
-             [c])
-            for c in categorical_columns
-            if c not in passthrough_columns]
+        categorical_transforms = self._get_categorical_transforms(
+            data, categorical_columns, passthrough_columns)
 
         transforms = numeric_transforms + categorical_transforms
         self.transformer = ColumnTransformer(
@@ -166,7 +198,9 @@ class PreprocessorConfig:
         transformed = _transformed_columns_to_numeric(transformed, "scale_")
         return transformed
 
-    def fit_transform(self, data, train_idxs: List[int],
-                      passthrough_columns: List[str] = None):
+    def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
+                      passthrough_columns: List[str] = None) -> pd.DataFrame:
         self.fit_transformer(data, train_idxs, passthrough_columns)
-        return self.transform(data)
+        data = self.transform(data)
+        self._post_transform_summary(data)
+        return data
