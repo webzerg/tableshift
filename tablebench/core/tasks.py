@@ -42,6 +42,7 @@ _TASK_REGISTRY = {
     "diabetes_readmission": TaskConfig(DiabetesReadmissionDataSource,
                                        DIABETES_READMISSION_FEATURES),
     "german": TaskConfig(GermanDataSource, GERMAN_FEATURES),
+    "mooc": TaskConfig(MOOCDataSource, MOOC_FEATURES),
     "nhanes_cholesterol": TaskConfig(NHANESDataSource,
                                      NHANES_CHOLESTEROL_FEATURES + \
                                      NHANES_DEMOG_FEATURES),
