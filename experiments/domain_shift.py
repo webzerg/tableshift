@@ -114,12 +114,18 @@ def main(experiment):
             domain_split_ood_values=[tgt],
             random_state=19542)
 
-        dset = TabularDataset(
-            **expt_config.tabular_dataset_kwargs,
-            config=expt_config.dataset_config,
-            splitter=splitter,
-            grouper=expt_config.grouper,
-            preprocessor_config=expt_config.preprocessor_config)
+        try:
+            dset = TabularDataset(
+                **expt_config.tabular_dataset_kwargs,
+                config=expt_config.dataset_config,
+                splitter=splitter,
+                grouper=expt_config.grouper,
+                preprocessor_config=expt_config.preprocessor_config)
+        except ValueError as ve:
+            # Case: split is too small.
+            print(f"[WARNING] error initializing dataset for expt {experiment} "
+                  f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
+            continue
 
         X_tr, y_tr, G_tr = dset.get_pandas(split="train")
 
