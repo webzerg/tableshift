@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 from typing import List, Any, Sequence, Optional, Mapping
 
 import numpy as np
@@ -200,6 +201,9 @@ class PreprocessorConfig:
         """Postprocess the result of a ColumnTransformer."""
         transformed.columns = [c.replace("remainder__", "")
                                for c in transformed.columns]
+        transformed.columns = [re.sub("[\\[\\].<>]", "", c) for c in
+                               transformed.columns]
+
         transformed = _transformed_columns_to_numeric(transformed, "onehot_")
         transformed = _transformed_columns_to_numeric(transformed, "scale_")
         # Cast the specified columns back to their original types
