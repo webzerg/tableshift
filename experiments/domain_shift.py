@@ -67,6 +67,27 @@ experiment_configs = {
         preprocessor_config=PreprocessorConfig(),
     ),
 
+    "diabetes_admtype": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "diabetes_readmission"},
+        domain_split_varname='admission_type_id',
+        domain_split_ood_values=[1, 2, 3, 4, 5, 6, 7, 8],
+        grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
+                        drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(),
+    ),
+
+    "diabetes_admsrc": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "diabetes_readmission"},
+        domain_split_varname='admission_source_id',
+        domain_split_ood_values=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 17,
+                                 20, 22, 25],
+        grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
+                        drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(),
+    ),
+
     "mooc_course": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "mooc"},
         domain_split_varname="course_id",
