@@ -363,7 +363,8 @@ class DiabetesReadmissionDataSource(DataSource):
             zf.extractall(self.cache_dir)
         # read the dataframe
         df = pd.read_csv(os.path.join(self.cache_dir, "dataset_diabetes",
-                                      "diabetic_data.csv"))
+                                      "diabetic_data.csv"),
+                         na_values="?")
         return df
 
 
