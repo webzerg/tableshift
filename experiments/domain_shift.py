@@ -11,6 +11,7 @@ import xgboost as xgb
 from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
 from tablebench.datasets.acs import ACS_STATE_LIST
+from tablebench.datasets.anes import ANES_STATES
 from tablebench.datasets.brfss import BRFSS_STATE_LIST
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
 
@@ -111,14 +112,15 @@ experiment_configs = {
                         drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")
-    )
+    ),
 
-    # "anes_st": DomainShiftExperimentConfig(
-    #     tabular_dataset_kwargs={"name": "anes"},
-    #     domain_split_varname="STATE",
-    #     domain_split_ood_values=BRFSS_STATE_LIST,
-    #     grouper=Grouper({"RIDRETH3": ["3", ], "RIAGENDR": ["1", ]}, drop=False),
-    #     dataset_config=TabularDatasetConfig()),
+    "anes_st": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
+        domain_split_varname="VCF0901b",
+        domain_split_ood_values=BRFSS_STATE_LIST,
+        grouper=Grouper({"VCF0104": [1, ], "VCF0105a": [1, ]}, drop=False),
+        dataset_config=TabularDatasetConfig(),
+    preprocessor_config=PreprocessorConfig()),
 }
 
 
