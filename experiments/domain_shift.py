@@ -15,6 +15,7 @@ from tablebench.datasets.anes import ANES_STATES
 from tablebench.datasets.brfss import BRFSS_STATE_LIST
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
 
+# Estimators to fit
 estimator_cls = (LogisticRegressionCV,
                  HistGradientBoostingClassifier,
                  xgb.XGBClassifier)
