@@ -164,7 +164,7 @@ ANES_FEATURES = FeatureList(features=[
 
     # REGISTRATION, TURNOUT, AND VOTE CHOICE
     Feature('VCF0701', cat_dtype, "REGISTERED TO VOTE PRE-ELECTION"),
-    Feature('VCF0702', cat_dtype, "DID RESPONDENT VOTE IN THE NATIONAL "
+    Feature('VCF0702', int, "DID RESPONDENT VOTE IN THE NATIONAL "
                                   "ELECTIONS 1. No, did not vote 2. Yes, "
                                   "voted 0. DK; NA; no Post IW; refused to "
                                   "say if voted; Washington D.C. ("
