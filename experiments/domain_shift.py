@@ -117,10 +117,11 @@ experiment_configs = {
     "anes_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
         domain_split_varname="VCF0901b",
-        domain_split_ood_values=BRFSS_STATE_LIST,
-        grouper=Grouper({"VCF0104": [1, ], "VCF0105a": [1, ]}, drop=False),
+        domain_split_ood_values=ANES_STATES,
+        grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
+                        drop=False),
         dataset_config=TabularDatasetConfig(),
-    preprocessor_config=PreprocessorConfig()),
+        preprocessor_config=PreprocessorConfig()),
 }
 
 
