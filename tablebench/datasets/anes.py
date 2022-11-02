@@ -164,7 +164,10 @@ ANES_FEATURES = FeatureList(features=[
     # REGISTRATION, TURNOUT, AND VOTE CHOICE
     Feature('VCF0701', cat_dtype, "REGISTERED TO VOTE PRE-ELECTION"),
     Feature('VCF0702', cat_dtype, "DID RESPONDENT VOTE IN THE NATIONAL "
-                                  "ELECTIONS",
+                                  "ELECTIONS 1. No, did not vote 2. Yes, "
+                                  "voted 0. DK; NA; no Post IW; refused to "
+                                  "say if voted; Washington D.C. ("
+                                  "presidential years only)",
             is_target=True),
     # MEDIA
     Feature('VCF0675', cat_dtype,
@@ -215,9 +218,10 @@ ANES_FEATURES = FeatureList(features=[
 def preprocess_anes(df: pd.DataFrame) -> pd.DataFrame:
     df = df.loc[:, ANES_FEATURES.names]
     df = df.dropna(subset=[ANES_FEATURES.target])
+    df[ANES_FEATURES.target] = (
+                df[ANES_FEATURES.target].astype(float) == 2.0).astype(int)
     for f in ANES_FEATURES.features:
         if f.kind == cat_dtype:
             df[f.name] = df[f.name].fillna("MISSING").apply(str) \
                 .astype("category")
-
     return df
