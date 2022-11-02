@@ -121,7 +121,7 @@ experiment_configs = {
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
         dataset_config=TabularDatasetConfig(),
-        preprocessor_config=PreprocessorConfig()),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
 }
 
 
