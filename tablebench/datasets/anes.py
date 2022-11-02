@@ -8,8 +8,9 @@ import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
-# Note that "state" feature is named as VCF0901b; see below.
-ANES_STATES = ['99', 'AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL',
+# Note that "state" feature is named as VCF0901b; see below. Note that '99' is
+# also a valid value, but it contains all missing targets .
+ANES_STATES = ['AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL',
                'GA', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD',
                'ME', 'MI', 'MN', 'MO', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ',
                'NM', 'NV', 'NY', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN',
@@ -219,7 +220,7 @@ def preprocess_anes(df: pd.DataFrame) -> pd.DataFrame:
     df = df.loc[:, ANES_FEATURES.names]
     df = df.dropna(subset=[ANES_FEATURES.target])
     df[ANES_FEATURES.target] = (
-                df[ANES_FEATURES.target].astype(float) == 2.0).astype(int)
+            df[ANES_FEATURES.target].astype(float) == 2.0).astype(int)
     for f in ANES_FEATURES.features:
         if f.kind == cat_dtype:
             df[f.name] = df[f.name].fillna("MISSING").apply(str) \
