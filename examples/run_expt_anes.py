@@ -12,11 +12,11 @@ from sklearn.metrics import accuracy_score
 
 dataset_config = TabularDatasetConfig()
 
-preprocessor_config = PreprocessorConfig()
+preprocessor_config = PreprocessorConfig(numeric_features="kbins")
 
 splitter = RandomSplitter(test_size=0.5, val_size=0.25, random_state=29746)
 # male vs. all others; white non-hispanic vs. others
-grouper = Grouper({"VCF0104": [1, ], "VCF0105a": [1, ]}, drop=False)
+grouper = Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]}, drop=False)
 dset = TabularDataset("anes",
                       config=dataset_config,
                       splitter=splitter,

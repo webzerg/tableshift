@@ -72,17 +72,24 @@ class OfflineDataSource(DataSource):
 class ANESDataSource(OfflineDataSource):
     def __init__(
             self,
+            years: Optional[Sequence] = None,
             preprocess_fn=preprocess_anes,
             resources=("anes_timeseries_cdf_csv_20220916/"
                        "anes_timeseries_cdf_csv_20220916.csv",),
             **kwargs):
+        if years is not None:
+            assert isinstance(years, list) or isinstance(years, tuple), \
+            f"years must be a list or tuple, not type {type(years)}."
+        self.years = years
         super().__init__(resources=resources,
                          preprocess_fn=preprocess_fn,
                          **kwargs)
 
     def _load_data(self) -> pd.DataFrame:
         fp = os.path.join(self.cache_dir, self.resources[0])
-        df = pd.read_csv(fp, low_memory=False)
+        df = pd.read_csv(fp, low_memory=False, na_values=(' '))
+        if self.years:
+            df = df[df["VCF0004"].isin(self.years)]
         return df
 
 
