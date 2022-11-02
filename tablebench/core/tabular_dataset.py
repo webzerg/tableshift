@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Tuple, Callable
+from typing import Optional, Tuple, Callable, Union
 
 import numpy as np
 import pandas as pd
@@ -59,6 +59,14 @@ class TabularDataset(ABC):
     def target(self):
         return self.task_config.feature_list.target
 
+    def _check_data(self, X: pd.DataFrame, y: pd.Series,
+                    g: Union[pd.DataFrame, pd.Series]):
+        """Helper function to check data after all preprocessing/splitting."""
+        if not pd.api.types.is_numeric_dtype(y):
+            print(f"[WARNING] y is of type {y.dtype}; non-numeric types "
+                  f"are not accepted by all estimators (e.g. xgb.XGBClassifier")
+        return
+
     def _initialize_data(self):
         """Load the data/labels/groups from a data source."""
         data = self.data_source.get_data().reset_index(drop=True)
@@ -69,6 +77,7 @@ class TabularDataset(ABC):
         data = self._process_post_split(data)
 
         X, y, G = self._X_y_G_split(data)
+        self._check_data(X, y, g)
         self.data = X
         self.labels = y
         self.groups = G
