@@ -4,11 +4,30 @@ from collections import defaultdict
 from functools import partial
 import glob
 import os
-from typing import Sequence, Optional
+import re
+from typing import Sequence, Optional, Callable
 import zipfile
 
-from . import utils
-from tablebench.datasets import *
+import folktables
+import pandas as pd
+
+from tablebench.core import utils
+from tablebench.datasets.acs import ACS_STATE_LIST, preprocess_acs, \
+    get_feature_mapping, get_acs_data_source, ACS_TASK_CONFIGS, acs_data_to_df
+from tablebench.datasets.adult import ADULT_RESOURCES, ADULT_FEATURE_NAMES, \
+    preprocess_adult
+from tablebench.datasets.anes import preprocess_anes
+from tablebench.datasets.brfss import preprocess_brfss, BRFSS_INPUT_FEATURES
+from tablebench.datasets.communities_and_crime import CANDC_RESOURCES, \
+    preprocess_candc, CANDC_INPUT_FEATURES
+from tablebench.datasets.compas import COMPAS_RESOURCES, preprocess_compas
+from tablebench.datasets.diabetes_readmission import \
+    DIABETES_READMISSION_RESOURCES, preprocess_diabetes_readmission
+from tablebench.datasets.german import GERMAN_RESOURCES, preprocess_german
+from tablebench.datasets.mooc import preprocess_mooc
+from tablebench.datasets.nhanes import preprocess_nhanes_cholesterol, \
+    get_nhanes_data_sources
+from tablebench.datasets.physionet import preprocess_physionet
 
 
 class DataSource(ABC):
@@ -79,7 +98,7 @@ class ANESDataSource(OfflineDataSource):
             **kwargs):
         if years is not None:
             assert isinstance(years, list) or isinstance(years, tuple), \
-            f"years must be a list or tuple, not type {type(years)}."
+                f"years must be a list or tuple, not type {type(years)}."
         self.years = years
         super().__init__(resources=resources,
                          preprocess_fn=preprocess_fn,
