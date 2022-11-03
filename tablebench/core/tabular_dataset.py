@@ -77,7 +77,7 @@ class TabularDataset(ABC):
         data = self._process_post_split(data)
 
         X, y, G = self._X_y_G_split(data)
-        self._check_data(X, y, g)
+        self._check_data(X, y, G)
         self.data = X
         self.labels = y
         self.groups = G
@@ -135,7 +135,7 @@ class TabularDataset(ABC):
     def get_pandas(self, split) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
         """Fetch the (data, labels, groups) for this TabularDataset."""
         assert split in self.splits.keys(), \
-            f"split {split} not in {list(self.splits.keys)}"
+            f"split {split} not in {list(self.splits.keys())}"
         idxs = self.splits[split]
         return (self.data.iloc[idxs],
                 self.labels.iloc[idxs],
