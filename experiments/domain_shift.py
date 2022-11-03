@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Sequence, Any
+from typing import Sequence, Any, Optional
 
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -10,8 +10,9 @@ import xgboost as xgb
 
 from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
+from tablebench.core.utils import sliding_window
 from tablebench.datasets.acs import ACS_STATE_LIST
-from tablebench.datasets.anes import ANES_STATES
+from tablebench.datasets.anes import ANES_STATES, ANES_YEARS
 from tablebench.datasets.brfss import BRFSS_STATE_LIST
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
 
@@ -29,6 +30,7 @@ class DomainShiftExperimentConfig:
     grouper: Grouper
     dataset_config: TabularDatasetConfig
     preprocessor_config: PreprocessorConfig
+    domain_split_id_values: Optional[Sequence[Any]] = None
 
 
 # Set of fixed domain shift experiments.
@@ -123,6 +125,16 @@ experiment_configs = {
                         drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
+
+    "anes_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "anes"},
+        domain_split_varname="VCF0004",
+        domain_split_ood_values=ANES_YEARS[4:],
+        domain_split_id_values=list(sliding_window(ANES_YEARS, 4)),
+        grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
+                        drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
 }
 
 
@@ -130,13 +142,19 @@ def main(experiment):
     iterates = []
 
     expt_config = experiment_configs[experiment]
-    for tgt in expt_config.domain_split_ood_values:
+    for i, tgt in enumerate(expt_config.domain_split_ood_values):
+
+        if expt_config.domain_split_id_values is not None:
+            src = expt_config.domain_split_id_values[i]
+        else:
+            src = None
 
         splitter = DomainSplitter(
             val_size=0.01,
             eval_size=1 / 5.,
             domain_split_varname=expt_config.domain_split_varname,
             domain_split_ood_values=[tgt],
+            domain_split_id_values=src,
             random_state=19542)
 
         try:
@@ -158,7 +176,8 @@ def main(experiment):
             estimator = est_cls()
 
             print(f"fitting estimator of type {type(estimator)} with "
-                  f"target {expt_config.domain_split_varname} = {tgt}")
+                  f"target {expt_config.domain_split_varname} = {tgt}, "
+                  f"src {expt_config.domain_split_varname} = {src}")
             estimator.fit(X_tr, y_tr)
             print("fitting estimator complete.")
 
