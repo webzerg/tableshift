@@ -134,8 +134,8 @@ def _check_input_indices(data: pd.DataFrame):
     """
     idxs = np.array(sorted(data.index.tolist()))
     expected = np.arange(len(data))
-    assert np.all(idxs == expected), "DataFrame is indexed non-sequentially;"\
-    "try passing the dataframe after "
+    assert np.all(idxs == expected), "DataFrame is indexed non-sequentially;" \
+                                     "try passing the dataframe after "
     return
 
 
@@ -177,19 +177,61 @@ class DomainSplitter(Splitter):
     """
     eval_size: float  # The "eval" set is the in-domain test set.
     domain_split_varname: str
-    domain_split_ood_values: Sequence[str]
-    drop_domain_split_col: bool = True  # Whether to drop column after splitting.
+    domain_split_ood_values: Sequence[Any]
+    domain_split_id_values: Optional[Sequence[Any]] = None
+    drop_domain_split_col: bool = True  # If True, drop column after splitting.
 
     def __call__(self, data: pd.DataFrame, labels: pd.Series,
                  groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
         str, List[int]]:
-        # Boolean series, where true indicates the column value is out
-        # of the source domain.
-        is_ood = data[self.domain_split_varname].isin(
-            self.domain_split_ood_values)
 
-        ood_idxs = np.nonzero(is_ood.values)[0]
-        id_idxs = np.nonzero(~is_ood.values)[0]
+        def _idx_where_in(x: pd.Series, vals: Sequence[Any],
+                          negate=False) -> np.ndarray:
+            """Return a vector of the numeric indices i where X[i] in vals.
+
+            If negate, return the vector of indices i where X[i] not in vals."""
+            assert isinstance(vals, list) or isinstance(vals, tuple)
+            idxs_bool = x.isin(vals)
+            idxs_in = np.nonzero(idxs_bool.values)[0]
+            if negate:
+                return ~idxs_in
+            else:
+                return idxs_in
+
+        domain_vals = data[self.domain_split_varname]
+        ood_vals = self.domain_split_ood_values
+
+        # Fetch the out-of-domain indices.
+        ood_idxs = _idx_where_in(domain_vals, ood_vals)
+
+        # Fetch the in-domain indices; these are either the explicitly-specified
+        # in-domain values, or any values not in the OOD values.
+
+        if self.domain_split_id_values is not None:
+            # Check that there is no overlap between train/test domains.
+            assert not len(
+                set(self.domain_split_id_values).intersection(
+                    set(ood_vals)))
+
+            id_idxs = _idx_where_in(domain_vals, self.domain_split_id_values)
+            if not len(id_idxs):
+                raise ValueError(
+                    f"No ID observations with {self.domain_split_varname} "
+                    f"values {self.domain_split_id_values}; are the values of "
+                    f"same type as the column type of {domain_vals.dtype}?")
+        else:
+            id_idxs = _idx_where_in(domain_vals, ood_vals,
+                                    negate=True)
+            if not len(id_idxs):
+                raise ValueError(
+                    f"No ID observations with {self.domain_split_varname} "
+                    f"values not in {ood_vals}.")
+
+        if not len(ood_idxs):
+            raise ValueError(
+                f"No OOD observations with {self.domain_split_varname} values "
+                f"{ood_vals}; are the values of same type"
+                f"as the column type of {domain_vals.dtype}?")
 
         stratify = _stratify(labels, groups)
 
