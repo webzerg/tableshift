@@ -1,3 +1,5 @@
+import collections
+from itertools import islice
 import os
 import requests
 import subprocess
@@ -61,3 +63,15 @@ def run_in_subproces(cmd):
     res = subprocess.run(cmd, shell=True)
     print(f"[DEBUG] {cmd} returned {res}")
     return
+
+
+def sliding_window(iterable, n):
+    """ From https://docs.python.org/3/library/itertools.html"""
+    # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
+    it = iter(iterable)
+    window = collections.deque(islice(it, n), maxlen=n)
+    if len(window) == n:
+        yield tuple(window)
+    for x in it:
+        window.append(x)
+        yield tuple(window)
