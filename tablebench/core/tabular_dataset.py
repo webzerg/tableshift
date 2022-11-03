@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Tuple, Callable, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
