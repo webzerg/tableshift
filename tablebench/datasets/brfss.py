@@ -37,7 +37,7 @@ BRFSS_FEATURES = FeatureList([
 
     # Derived feature for year; keep as categorical dtype so normalization
     # is not applied.
-    Feature("IYEAR", cat_dtype, "Year of BRFSS dataset."),
+    Feature("IYEAR", int, "Year of BRFSS dataset."),
     # ################ Demographics/sensitive attributes. ################
     # Also see "INCOME2", "MARITAL", "EDUCA" features below.
     Feature("STATE", cat_dtype),
