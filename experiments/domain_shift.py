@@ -48,8 +48,8 @@ experiment_configs = {
     "acsincome_year": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsincome",
                                 "acs_task": "acsincome",
-                                years: ACS_YEARS},
-        domain_split_varname="YEAR",
+                                "years": ACS_YEARS},
+        domain_split_varname="ACS_YEAR",
         domain_split_ood_values=[ACS_YEARS[i + 1] for i in
                                  range(len(ACS_YEARS) - 1)],
         domain_split_id_values=[ACS_YEARS[i] for i in
@@ -69,8 +69,9 @@ experiment_configs = {
 
     "acspubcov_year": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acspubcov",
-                                "acs_task": "acspubcov"},
-        domain_split_varname="ST",
+                                "acs_task": "acspubcov",
+                                "years": ACS_YEARS},
+        domain_split_varname="ACS_YEAR",
         domain_split_ood_values=[ACS_YEARS[i + 1] for i in
                                  range(len(ACS_YEARS) - 1)],
         domain_split_id_values=[ACS_YEARS[i] for i in
