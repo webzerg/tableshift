@@ -53,7 +53,7 @@ experiment_configs = {
         domain_split_varname="ACS_YEAR",
         domain_split_ood_values=[ACS_YEARS[i + 1] for i in
                                  range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[ACS_YEARS[i] for i in
+        domain_split_id_values=[list(ACS_YEARS[i]) for i in
                                 range(len(ACS_YEARS) - 1)],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig(),
@@ -75,7 +75,7 @@ experiment_configs = {
         domain_split_varname="ACS_YEAR",
         domain_split_ood_values=[ACS_YEARS[i + 1] for i in
                                  range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[ACS_YEARS[i] for i in
+        domain_split_id_values=[list(ACS_YEARS[i]) for i in
                                 range(len(ACS_YEARS) - 1)],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig(),
@@ -94,7 +94,7 @@ experiment_configs = {
         domain_split_varname="IYEAR",
         domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
                                  range(len(BRFSS_YEARS) - 1)],
-        domain_split_id_values=[BRFSS_YEARS[i] for i in
+        domain_split_id_values=[list(BRFSS_YEARS[i]) for i in
                                 range(len(BRFSS_YEARS) - 1)],
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig(),
@@ -149,7 +149,7 @@ experiment_configs = {
     "nhanes_year": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "nhanes_cholesterol"},
         domain_split_varname="nhanes_year",
-        domain_split_ood_values=[list(NHANES_YEARS[i + 1]) for i in
+        domain_split_ood_values=[NHANES_YEARS[i + 1] for i in
                                  range(len(NHANES_YEARS) - 1)],
         domain_split_id_values=[list(NHANES_YEARS[i]) for i in
                                 range(len(NHANES_YEARS) - 1)],
