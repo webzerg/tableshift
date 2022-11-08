@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 
 dataset_config = TabularDatasetConfig()
 
-preprocessor_config = PreprocessorConfig()
+preprocessor_config = PreprocessorConfig(passthrough_columns=["IYEAR"])
 
 splitter = RandomSplitter(test_size=0.5, val_size=0.25, random_state=29746)
 grouper = Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False)
@@ -23,7 +23,8 @@ dset = TabularDataset("brfss",
                       preprocessor_config=preprocessor_config)
 
 X_tr, y_tr, G_tr = dset.get_pandas(split="train")
-
+print(X_tr["IYEAR"].value_counts())
+import ipdb;ipdb.set_trace()
 estimator = HistGradientBoostingClassifier()
 
 print(f"fitting estimator of type {type(estimator)}")
