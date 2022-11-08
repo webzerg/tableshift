@@ -149,9 +149,9 @@ experiment_configs = {
     "nhanes_year": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "nhanes_cholesterol"},
         domain_split_varname="nhanes_year",
-        domain_split_ood_values=[NHANES_YEARS[i + 1] for i in
+        domain_split_ood_values=[list(NHANES_YEARS[i + 1]) for i in
                                  range(len(NHANES_YEARS) - 1)],
-        domain_split_id_values=[NHANES_YEARS[i] for i in
+        domain_split_id_values=[list(NHANES_YEARS[i]) for i in
                                 range(len(NHANES_YEARS) - 1)],
         grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
                         drop=False),
