@@ -83,13 +83,13 @@ class FeatureList:
                   f"FeatureList: {drop_cols}")
             df.drop(columns=drop_cols, inplace=True)
         for f in self.features:
+            print(f"[DEBUG] checking feature {f.name}")
             if f.name not in df.columns:
                 # Case: expected this feature, and it is missing.
                 raise ValueError(f"feature {f.name} not present in data with"
                                  f"columns {df.columns}.")
-
             if not _column_is_of_type(df[f.name], f.kind):
-                print(f"[INFO] casting feature {f.name} from type "
+                print(f"[DEBUG] casting feature {f.name} from dtype "
                       f"{df[f.name].dtype.name} to dtype {f.kind.__name__}")
                 df[f.name] = safe_cast(df[f.name], f.kind)
         return df
