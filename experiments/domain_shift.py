@@ -156,9 +156,7 @@ experiment_configs = {
         grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
                         drop=False),
         dataset_config=TabularDatasetConfig(),
-        preprocessor_config=PreprocessorConfig(
-            passthrough_columns=["nhanes_year"],
-            numeric_features="kbins"),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins"),
 
     ),
 
