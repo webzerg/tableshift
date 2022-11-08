@@ -123,6 +123,7 @@ class PreprocessorConfig:
     categorical_features: str = "one_hot"  # also applies to boolean features.
     numeric_features: str = "normalize"
     transformer: ColumnTransformer = None
+    passthrough_columns: List[str] = None  # Feature names to passthrough.
 
     def _get_categorical_transforms(self, data: pd.DataFrame,
                                     categorical_columns: List[str],
@@ -215,6 +216,8 @@ class PreprocessorConfig:
     def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         dtypes_in = data.dtypes.to_dict()
+        if self.passthrough_columns:
+            passthrough_columns += self.passthrough_columns
         passthrough_dtypes = ({c: dtypes_in[c] for c in
                                passthrough_columns}
                               if passthrough_columns
