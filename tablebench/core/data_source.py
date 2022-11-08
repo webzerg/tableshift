@@ -206,7 +206,12 @@ class BRFSSDataSource(KaggleDataSource):
                               self.kaggle_dataset_name,
                               f"{year}.csv")
             print(f"[DEBUG] reading data for year {year} from {fp}")
-            df = pd.read_csv(fp)
+
+            # Note: use of BRFSS_INPUT_FEATURES is important both for
+            # performance and (more importantly) because of near-duplicate
+            # names in BRFSS data (i.e. calculated and not-calculated versions,
+            # differing only by a precending underscore).
+            df = pd.read_csv(fp, usecols=BRFSS_INPUT_FEATURES)
             df_list.append(df)
         return pd.concat(df_list, axis=0)
 
