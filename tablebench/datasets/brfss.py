@@ -35,8 +35,9 @@ BRFSS_FEATURES = FeatureList([
     ################ Target ################
     Feature("DIABETE3", int, is_target=True),  # (Ever told) you have diabetes
 
-    # Derived feature for year
-    Feature("IYEAR", int, "Year of BRFSS dataset."),
+    # Derived feature for year; keep as categorical dtype so normalization
+    # is not applied.
+    Feature("IYEAR", cat_dtype, "Year of BRFSS dataset."),
     # ################ Demographics/sensitive attributes. ################
     # Also see "INCOME2", "MARITAL", "EDUCA" features below.
     Feature("STATE", cat_dtype),
@@ -121,13 +122,13 @@ BRFSS_FEATURES = FeatureList([
 
 # Raw names of the input features. Useful to subset before preprocessing,
 # since some features contain near-duplicate versions (i.e. calculated
-# and not-calculated versions, differing only be precending underscore).
+# and not-calculated versions, differing only by a precending underscore).
 BRFSS_INPUT_FEATURES = [
     "DIABETE3", "_STATE", "MEDCOST", "_HCVU651", "_PRACE1", "SEX",
     "PHYSHLTH", "_RFHYPE5", "_CHOLCHK", "TOLDHI2", "_BMI5", "_BMI5CAT",
     "SMOKE100", "SMOKDAY2", "CVDSTRK3", "_MICHD", "_FRTLT1", "_VEGLT1",
     "_DRNKWEK", "_RFBING5", "_TOTINDA", "PA1MIN_", "INCOME2", "MARITAL",
-    "CHECKUP1", "EDUCA", "_HCVU651", "MENTHLTH"]
+    "CHECKUP1", "EDUCA", "_HCVU651", "MENTHLTH", "IYEAR"]
 
 
 def preprocess_brfss(df: pd.DataFrame):
