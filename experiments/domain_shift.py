@@ -12,7 +12,7 @@ from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
 from tablebench.datasets.acs import ACS_STATE_LIST
 from tablebench.datasets.anes import ANES_STATES
-from tablebench.datasets.brfss import BRFSS_STATE_LIST
+from tablebench.datasets.brfss import BRFSS_STATE_LIST, BRFSS_YEARS
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
 
 # Estimators to fit
@@ -56,6 +56,18 @@ experiment_configs = {
         domain_split_varname="STATE",
         domain_split_ood_values=BRFSS_STATE_LIST,
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
+
+    "brfss_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss", "years": BRFSS_YEARS},
+        domain_split_varname="IYEAR",
+        domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
+                                 range(len(BRFSS_YEARS) - 1)],
+        domain_split_id_values=[BRFSS_YEARS[i] for i in
+                                range(len(BRFSS_YEARS) - 1)],
+        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
