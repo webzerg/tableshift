@@ -153,7 +153,8 @@ experiment_configs = {
                                  range(len(NHANES_YEARS) - 1)],
         domain_split_id_values=[NHANES_YEARS[i] for i in
                                 range(len(NHANES_YEARS) - 1)],
-        grouper=Grouper({"RIDRETH3": ["3", ], "RIAGENDR": ["1", ]}, drop=False),
+        grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
+                        drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(),
 
