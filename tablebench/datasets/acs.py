@@ -8,6 +8,8 @@ from typing import Callable, Union
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 from .acs_feature_mappings import get_feature_mapping
 
+ACS_YEARS = [2014, 2015, 2016, 2017, 2018]
+
 ACS_STATE_LIST = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI',
     'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI',
@@ -58,6 +60,7 @@ ACS_SHARED_FEATURES = FeatureList(features=[
     more years of college credit, no degree 20 .Associate's degree 21 
     .Bachelor's degree 22 .Master's degree 23 .Professional degree beyond a 
     bachelor's degree 24 .Doctorate degree"""),
+    Feature('ACS_YEAR', int, 'Derived feature for ACS year.'),
 ])
 
 ACS_INCOME_FEATURES = FeatureList([

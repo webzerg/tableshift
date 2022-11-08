@@ -13,6 +13,8 @@ import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
+BRFSS_YEARS = (2011, 2012, 2013, 2014, 2015,)
+
 BRFSS_STATE_LIST = [
     '1.0', '10.0', '11.0', '12.0', '13.0', '15.0', '16.0', '17.0', '18.0',
     '19.0', '2.0', '20.0', '21.0', '22.0', '23.0', '24.0', '25.0', '26.0',
@@ -33,6 +35,8 @@ BRFSS_FEATURES = FeatureList([
     ################ Target ################
     Feature("DIABETE3", int, is_target=True),  # (Ever told) you have diabetes
 
+    # Derived feature for year
+    Feature("IYEAR", int, "Year of BRFSS dataset."),
     # ################ Demographics/sensitive attributes. ################
     # Also see "INCOME2", "MARITAL", "EDUCA" features below.
     Feature("STATE", cat_dtype),
@@ -153,7 +157,12 @@ def preprocess_brfss(df: pd.DataFrame):
     df["SMOKDAY2"] = df["SMOKDAY2"].fillna("NOTASKED_MISSING").astype(str)
     df["TOLDHI2"] = df["TOLDHI2"].fillna("NOTASKED_MISSING").astype(str)
 
-    NUMERIC_COLS = ("_BMI5", "_DRNKWEK", "PHYSHLTH", "MENTHLTH", "PA1MIN_")
+    # IYEAR is poorly coded, as e.g. "b'2015'"; here we parse it back to int.
+    df["IYEAR"] = df["IYEAR"].apply(
+        lambda x: re.search("\d+", x).group()).astype(int)
+
+    NUMERIC_COLS = ("_BMI5", "_DRNKWEK", "PHYSHLTH", "MENTHLTH", "PA1MIN_",
+                    "IYEAR")
 
     # For these categorical columns, drop respondents who were not sure,
     # refused, or had missing responses. This is also useful because
@@ -173,8 +182,6 @@ def preprocess_brfss(df: pd.DataFrame):
             df = df[~(df[c].isin([7, 9, 77, 88, 99]))]
         # Drop actual missing values, for all column dtypes
         df.dropna(subset=[c], inplace=True)
-        # print("filtered {} remaining rows ({:.4f}%) using column {}".format(
-        #     start_sz - len(df), 100 * (start_sz - len(df))/start_sz, c))
 
     # Cast columns to categorical; since some columns have mixed type,
     # we cast the entire column to string.
