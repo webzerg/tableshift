@@ -12,7 +12,8 @@ from sklearn.metrics import accuracy_score
 
 dataset_config = TabularDatasetConfig()
 
-preprocessor_config = PreprocessorConfig()
+preprocessor_config = PreprocessorConfig(passthrough_columns=["nhanes_year"],
+                                         numeric_features="kbins")
 
 splitter = RandomSplitter(test_size=0.5, val_size=0.25, random_state=29746)
 # Race (non. hispanic white vs. all others; male vs. all others)
