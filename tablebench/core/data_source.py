@@ -191,7 +191,7 @@ class BRFSSDataSource(KaggleDataSource):
             self,
             kaggle_dataset_name="cdc/behavioral-risk-factor-surveillance-system",
             preprocess_fn=preprocess_brfss,
-            years=(2015,),
+            years: Sequence[int] = (2015,),
             **kwargs):
         self.years = years  # Which years to use BRFSS survey data from.
         super(BRFSSDataSource, self).__init__(
@@ -205,7 +205,8 @@ class BRFSSDataSource(KaggleDataSource):
             fp = os.path.join(self.cache_dir,
                               self.kaggle_dataset_name,
                               f"{year}.csv")
-            df = pd.read_csv(fp, usecols=BRFSS_INPUT_FEATURES)
+            print(f"[DEBUG] reading data for year {year} from {fp}")
+            df = pd.read_csv(fp)
             df_list.append(df)
         return pd.concat(df_list, axis=0)
 
@@ -277,33 +278,31 @@ class ACSDataSource(DataSource):
     def __init__(self,
                  acs_task: str,
                  preprocess_fn=preprocess_acs,
-                 year: int = 2018,
+                 years: Sequence[int] = (2018,),
                  states=ACS_STATE_LIST,
                  feature_mapping="coarse",
                  **kwargs):
         self.acs_task = acs_task.lower().replace("acs", "")
         self.feature_mapping = get_feature_mapping(feature_mapping)
         self.states = states
-        self.year = year
-        self.acs_data = None  # holds the cached data from folktables source.
+        self.years = years
         super().__init__(preprocess_fn=preprocess_fn, **kwargs)
 
     def _get_acs_data(self):
-        if self.acs_data is None:
-            print("fetching ACS data...")
-            data_source = get_acs_data_source(self.year, self.cache_dir)
-            self.acs_data = data_source.get_data(states=self.states,
-                                                 download=True)
-            print("fetching ACS data complete.")
-        else:
-            print("fetching cached ACS data.")
-        return self.acs_data
+        year_dfs = []
+
+        for year in self.years:
+            print(f"fetching ACS data for year {year}...")
+            data_source = get_acs_data_source(year, self.cache_dir)
+            year_data = data_source.get_data(states=self.states,
+                                             download=True)
+            year_data["ACS_YEAR"] = year
+            year_dfs.append(year_data)
+        print("fetching ACS data complete.")
+        return pd.concat(year_dfs, axis=0)
 
     def _download_if_not_cached(self):
-        if self.acs_data is None:
-            return self._get_acs_data()
-        else:
-            return self.acs_data
+        return self._get_acs_data()
 
     def _load_data(self) -> pd.DataFrame:
         acs_data = self._get_acs_data()

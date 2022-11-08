@@ -13,7 +13,8 @@ from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
 from tablebench.core.utils import sliding_window
 from tablebench.datasets.acs import ACS_STATE_LIST, ACS_YEARS
 from tablebench.datasets.anes import ANES_STATES, ANES_YEARS
-from tablebench.datasets.brfss import BRFSS_STATE_LIST
+
+from tablebench.datasets.brfss import BRFSS_STATE_LIST, BRFSS_YEARS
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
 from tablebench.datasets.nhanes import NHANES_YEARS
 
@@ -88,11 +89,13 @@ experiment_configs = {
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
-    "brfss_yr": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss"},
-        domain_split_varname="YEAR",
-        domain_split_ood_values=[2012, 2013, 2014, 2015],
-        domain_split_id_values=[2011, 2012, 2013, 2014],
+    "brfss_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss", "years": BRFSS_YEARS},
+        domain_split_varname="IYEAR",
+        domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
+                                 range(len(BRFSS_YEARS) - 1)],
+        domain_split_id_values=[BRFSS_YEARS[i] for i in
+                                range(len(BRFSS_YEARS) - 1)],
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
