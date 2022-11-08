@@ -16,7 +16,7 @@ preprocessor_config = PreprocessorConfig()
 
 splitter = RandomSplitter(test_size=0.5, val_size=0.25, random_state=29746)
 # Race (non. hispanic white vs. all others; male vs. all others)
-grouper = Grouper({"RIDRETH3": ["3", ], "RIAGENDR": ["1", ]}, drop=False)
+grouper = Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]}, drop=False)
 dset = TabularDataset("nhanes_cholesterol",
                       config=dataset_config,
                       splitter=splitter,
