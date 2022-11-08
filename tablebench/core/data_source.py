@@ -193,6 +193,14 @@ class BRFSSDataSource(KaggleDataSource):
             preprocess_fn=preprocess_brfss,
             years: Sequence[int] = (2015,),
             **kwargs):
+        """BRFSS data source, using official CDC dataset hosted on Kaggle.
+
+        Note that results, by CDC default, contain two years' worth of data,
+        published every other year. So, the '2015' export contains data from
+        2015 and 2016 survey respondents (but this is called the '2015' data,
+        per CDC), where the actual response year is recorded in the IYEAR
+        variable.
+        """
         self.years = years  # Which years to use BRFSS survey data from.
         super(BRFSSDataSource, self).__init__(
             kaggle_dataset_name=kaggle_dataset_name,
