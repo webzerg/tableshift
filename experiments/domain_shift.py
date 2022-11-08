@@ -11,10 +11,11 @@ import xgboost as xgb
 from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
 from tablebench.core.utils import sliding_window
-from tablebench.datasets.acs import ACS_STATE_LIST
+from tablebench.datasets.acs import ACS_STATE_LIST, ACS_YEARS
 from tablebench.datasets.anes import ANES_STATES, ANES_YEARS
 from tablebench.datasets.brfss import BRFSS_STATE_LIST
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
+from tablebench.datasets.nhanes import NHANES_YEARS
 
 # Estimators to fit
 estimator_cls = (LogisticRegressionCV,
@@ -44,6 +45,19 @@ experiment_configs = {
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
+    "acsincome_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acsincome",
+                                "acs_task": "acsincome",
+                                years: ACS_YEARS},
+        domain_split_varname="YEAR",
+        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
+                                 range(len(ACS_YEARS) - 1)],
+        domain_split_id_values=[ACS_YEARS[i] for i in
+                                range(len(ACS_YEARS) - 1)],
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
+
     "acspubcov_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acspubcov",
                                 "acs_task": "acspubcov"},
@@ -53,10 +67,31 @@ experiment_configs = {
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
+    "acspubcov_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acspubcov",
+                                "acs_task": "acspubcov"},
+        domain_split_varname="ST",
+        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
+                                 range(len(ACS_YEARS) - 1)],
+        domain_split_id_values=[ACS_YEARS[i] for i in
+                                range(len(ACS_YEARS) - 1)],
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
+
     "brfss_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "brfss"},
         domain_split_varname="STATE",
         domain_split_ood_values=BRFSS_STATE_LIST,
+        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
+
+    "brfss_yr": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss"},
+        domain_split_varname="YEAR",
+        domain_split_ood_values=[2012, 2013, 2014, 2015],
+        domain_split_id_values=[2011, 2012, 2013, 2014],
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
@@ -105,6 +140,19 @@ experiment_configs = {
                         drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(),
+    ),
+
+    "nhanes_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "nhanes_cholesterol"},
+        domain_split_varname="nhanes_year",
+        domain_split_ood_values=[NHANES_YEARS[i + 1] for i in
+                                 range(len(NHANES_YEARS) - 1)],
+        domain_split_id_values=[NHANES_YEARS[i] for i in
+                                range(len(NHANES_YEARS) - 1)],
+        grouper=Grouper({"RIDRETH3": ["3", ], "RIAGENDR": ["1", ]}, drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(),
+
     ),
 
     "physionet_set": DomainShiftExperimentConfig(
