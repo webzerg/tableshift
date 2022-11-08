@@ -10,6 +10,8 @@ import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
+NHANES_YEARS = [1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017]
+
 # Dictionary mapping years to data sources. Because NHANES uses the same
 # name for each file, we need to manually track the year associated with
 # each dataset.
@@ -71,9 +73,13 @@ NHANES_DEMOG_FEATURES = FeatureList(features=[
     # Recode of reported race and Hispanic origin information,
     # with Non-Hispanic Asian Category
     Feature('RIDRETH3', cat_dtype),
+
+
 ], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
 NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
+    # Derived feature for survey year
+    Feature("nhanes_year", int, "Derived feature for year."),
     # Target: Direct LDL-Cholesterol (mg/dL). We use a threshold of 160mg/DL,
     # based on the definition of Primary hypercholestemia in
     # Blood Cholesterol: Executive Summary: A Report of the American College
