@@ -186,40 +186,33 @@ class KaggleDataSource(DataSource):
             zf.extractall(unzip_dest)
 
 
-class BRFSSDataSource(KaggleDataSource):
-    def __init__(
-            self,
-            kaggle_dataset_name="cdc/behavioral-risk-factor-surveillance-system",
-            preprocess_fn=preprocess_brfss,
-            years: Sequence[int] = (2015,),
-            **kwargs):
-        """BRFSS data source, using official CDC dataset hosted on Kaggle.
-
-        Note that results, by CDC default, contain two years' worth of data,
-        published every other year. So, the '2015' export contains data from
-        2015 and 2016 survey respondents (but this is called the '2015' data,
-        per CDC), where the actual response year is recorded in the IYEAR
-        variable.
-        """
-        self.years = years  # Which years to use BRFSS survey data from.
-        super(BRFSSDataSource, self).__init__(
-            kaggle_dataset_name=kaggle_dataset_name,
-            preprocess_fn=preprocess_fn,
-            **kwargs)
+class BRFSSDataSource(DataSource):
+    def __init__(self, preprocess_fn=preprocess_brfss,
+                 years=tuple(range(2020, 2022)), **kwargs):
+        self.years = years
+        resources = tuple([
+            f"https://www.cdc.gov/brfss/annual_data/{y}/files/LLCP{y}XPT.zip"
+            for y in self.years])
+        super().__init__(preprocess_fn=preprocess_fn, resources=resources,
+                         **kwargs)
 
     def _load_data(self) -> pd.DataFrame:
         df_list = []
-        for year in self.years:
-            fp = os.path.join(self.cache_dir,
-                              self.kaggle_dataset_name,
-                              f"{year}.csv")
-            print(f"[DEBUG] reading data for year {year} from {fp}")
-
-            # Note: use of BRFSS_INPUT_FEATURES is important both for
-            # performance and (more importantly) because of near-duplicate
-            # names in BRFSS data (i.e. calculated and not-calculated versions,
-            # differing only by a precending underscore).
-            df = pd.read_csv(fp, usecols=BRFSS_INPUT_FEATURES)
+        for url in self.resources:
+            zip_fname = utils.basename_from_url(url)
+            xpt_fname = zip_fname.replace("XPT.zip", ".XPT")
+            xpt_fp = os.path.join(self.cache_dir, xpt_fname)
+            # Unzip the file if needed
+            if not os.path.exists(xpt_fname):
+                zip_fp = os.path.join(self.cache_dir, zip_fname)
+                print(f"[DEBUG] unzipping {zip_fp}")
+                with zipfile.ZipFile(zip_fp, 'r') as zf:
+                    zf.extractall(self.cache_dir)
+                # BRFSS data files have an awful space at the end; remove it.
+                os.rename(xpt_fp + " ", xpt_fp)
+            # Read the XPT data
+            print(f"[DEBUG] reading {xpt_fp}")
+            df = utils.read_xpt(xpt_fp)
             df_list.append(df)
         return pd.concat(df_list, axis=0)
 
