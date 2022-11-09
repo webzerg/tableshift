@@ -188,7 +188,7 @@ class KaggleDataSource(DataSource):
 
 class BRFSSDataSource(DataSource):
     def __init__(self, preprocess_fn=preprocess_brfss,
-                 years=tuple(range(2020, 2022)), **kwargs):
+                 years=tuple(range(2014, 2022)), **kwargs):
         self.years = years
         resources = tuple([
             f"https://www.cdc.gov/brfss/annual_data/{y}/files/LLCP{y}XPT.zip"
@@ -197,7 +197,7 @@ class BRFSSDataSource(DataSource):
                          **kwargs)
 
     def _load_data(self) -> pd.DataFrame:
-        df_list = []
+        dfs = {}
         for url in self.resources:
             zip_fname = utils.basename_from_url(url)
             xpt_fname = zip_fname.replace("XPT.zip", ".XPT")
@@ -213,8 +213,13 @@ class BRFSSDataSource(DataSource):
             # Read the XPT data
             print(f"[DEBUG] reading {xpt_fp}")
             df = utils.read_xpt(xpt_fp)
-            df_list.append(df)
-        return pd.concat(df_list, axis=0)
+            dfs[url] = df
+        for k,v in dfs.items():
+            missing_inputs = set(BRFSS_INPUT_FEATURES) - set(v.columns)
+            if missing_inputs:
+                print(f"df from {url} is missing features {missing_inputs}")
+        import ipdb;ipdb.set_trace()
+        return pd.concat(dfs.values(), axis=0)
 
 
 class NHANESDataSource(DataSource):
