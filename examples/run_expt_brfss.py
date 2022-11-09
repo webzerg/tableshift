@@ -13,7 +13,7 @@ from sklearn.metrics import accuracy_score
 
 
 def main(cache_dir):
-    dataset_config = TabularDatasetConfig()
+    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
 
     preprocessor_config = PreprocessorConfig(passthrough_columns=["IYEAR"])
 
@@ -23,8 +23,7 @@ def main(cache_dir):
                           config=dataset_config,
                           splitter=splitter,
                           grouper=grouper,
-                          preprocessor_config=preprocessor_config,
-                          cache_dir=cache_dir)
+                          preprocessor_config=preprocessor_config)
 
     X_tr, y_tr, G_tr = dset.get_pandas(split="train")
     print(X_tr["IYEAR"].value_counts())
