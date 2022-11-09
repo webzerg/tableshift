@@ -45,6 +45,7 @@ def download_file(url: str, dirpath: str, if_not_exist=True,
 
 
 def read_xpt(fp):
+    assert os.path.exists(fp), "file does not exist %s" % fp
     with open(fp, "rb") as f:
         obj = xport.v56.load(f)
     # index into SAS structure, assuming there is only one dataframe
