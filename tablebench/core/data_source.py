@@ -212,6 +212,7 @@ class BRFSSDataSource(DataSource):
                 os.rename(xpt_fp + " ", xpt_fp)
             # Read the XPT data
             print(f"[DEBUG] reading {xpt_fp}")
+            # TODO(jpgard): subset it to BRFSS_INPUT_FEATURES to avoid large dfs
             df = utils.read_xpt(xpt_fp)
             dfs[url] = df
         for k,v in dfs.items():
