@@ -41,6 +41,8 @@ _TASK_REGISTRY = {
     "adult": TaskConfig(AdultDataSource, ADULT_FEATURES),
     "anes": TaskConfig(ANESDataSource, ANES_FEATURES),
     "brfss_diabetes": TaskConfig(BRFSSDataSource, BRFSS_DIABETES_FEATURES),
+    "brfss_blood_pressure": TaskConfig(BRFSSDataSource,
+                                       BRFSS_BLOOD_PRESSURE_FEATURES),
     "communities_and_crime": TaskConfig(CommunitiesAndCrimeDataSource,
                                         CANDC_FEATURES),
     "compas": TaskConfig(COMPASDataSource, COMPAS_FEATURES),
