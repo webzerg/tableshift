@@ -23,18 +23,8 @@ BRFSS_STATE_LIST = [
     '45.0', '46.0', '47.0', '48.0', '49.0', '5.0', '50.0', '51.0', '53.0',
     '54.0', '55.0', '56.0', '6.0', '66.0', '72.0', '8.0', '9.0'
 ]
-
-# Brief feature descriptions below; for the full question/description
-# see the data dictionary linked above. Note that in the original data,
-# some of the feature names are preceded by underscores (these are
-# "calculated variables"; see data dictionary). These leading
-# underscores, where present, are removed in the preprocess_brfss() function
-# due to limitations on naming in the sklearn transformers module.
-
-BRFSS_FEATURES = FeatureList([
-    ################ Target ################
-    Feature("DIABETES", int, is_target=True),  # (Ever told) you have diabetes
-
+# Features shared across BRFSS prediction tasks.
+BRFSS_SHARED_FEATURES = FeatureList(features=[
     # Derived feature for year; keep as categorical dtype so normalization
     # is not applied.
     Feature("IYEAR", int, "Year of BRFSS dataset."),
@@ -49,9 +39,20 @@ BRFSS_FEATURES = FeatureList([
     Feature("PRACE1", int),
     # Indicate sex of respondent.
     Feature("SEX", int),
+])
+
+# Brief feature descriptions below; for the full question/description
+# see the data dictionary linked above. Note that in the original data,
+# some of the feature names are preceded by underscores (these are
+# "calculated variables"; see data dictionary). These leading
+# underscores, where present, are removed in the preprocess_brfss() function
+# due to limitations on naming in the sklearn transformers module.
+
+BRFSS_DIABETES_FEATURES = FeatureList([
+    ################ Target ################
+    Feature("DIABETES", int, is_target=True),  # (Ever told) you have diabetes
 
     # Below are a set of indicators for known risk factors for diabetes.
-
     ################ General health ################
     # for how many days during the past 30 days was your
     # physical health not good?
@@ -116,18 +117,21 @@ BRFSS_FEATURES = FeatureList([
     # for how many days during the past 30
     # days was your mental health not good?
     Feature("MENTHLTH", float),
-])
+]) + BRFSS_SHARED_FEATURES
 
-# Raw names of the input features to which mapping is NOT applied. Useful to
-# subset before preprocessing, since some features contain near-duplicate
-# versions (i.e. calculated and not-calculated versions, differing only by a
-# precending underscore).
-BRFSS_INPUT_FEATURES = [
-    "_STATE", "MEDCOST", "_HCVU651", "_PRACE1", "SEX", "PHYSHLTH",
-    "TOLDHI2", "_BMI5", "_BMI5CAT", "SMOKE100", "SMOKDAY2", "CVDSTRK3",
-    "_MICHD", "_RFBING5", "_TOTINDA", "MARITAL", "CHECKUP1", "EDUCA",
-    "_HCVU651", "MENTHLTH", "IYEAR"]
-
+BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
+    Feature("HI_BP", int, """Have you ever been told by a doctor, nurse or 
+    other health professional that you have high blood pressure?""",
+            is_target=True),
+    ################ Age ################
+    ################ Family history and genetics ################
+    ################ Lifestyle habits ################
+    ################ Medicines ################
+    ################ Other medical conditions ################
+    ################ Race/ethnicity ################
+    ################ Sex ################
+    ################ Social and economic factors ################
+]) + BRFSS_SHARED_FEATURES
 
 # Some features have different names over years, due to changes in prompts or
 # interviewer instructions. Here we map these different names to a single shared
@@ -190,6 +194,20 @@ BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
     )
 }
 
+# Raw names of the input features used in BRFSS. Useful to
+# subset before preprocessing, since some features contain near-duplicate
+# versions (i.e. calculated and not-calculated versions, differing only by a
+# precending underscore).
+_BRFSS_INPUT_FEATURES = list(set([
+                                     "_STATE", "MEDCOST", "_HCVU651", "_PRACE1",
+                                     "SEX", "PHYSHLTH",
+                                     "TOLDHI2", "_BMI5", "_BMI5CAT", "SMOKE100",
+                                     "SMOKDAY2", "CVDSTRK3",
+                                     "_MICHD", "_RFBING5", "_TOTINDA",
+                                     "MARITAL", "CHECKUP1", "EDUCA",
+                                     "_HCVU651", "MENTHLTH", "IYEAR"] + list(
+    BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())))
+
 
 def align_brfss_features(df):
     """Map BRFSS column names to a consistent format over years.
@@ -218,9 +236,7 @@ def align_brfss_features(df):
 
 
 def preprocess_brfss(df: pd.DataFrame):
-    keep_features = BRFSS_INPUT_FEATURES + list(
-        BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())
-    df = df[keep_features]
+    df = df[_BRFSS_INPUT_FEATURES]
 
     # Label
     df["DIABETES"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
@@ -276,12 +292,15 @@ def preprocess_brfss(df: pd.DataFrame):
             df.dropna(subset=[c], inplace=True)
         except Exception as e:
             print(e)
-            import ipdb;ipdb.set_trace()
+            import ipdb;
+            ipdb.set_trace()
 
+    # TODO(jpgard): we should be able to remove this loop since feature casting
+    #  is handled elsewhere according to the FeatureList.
     # Cast columns to categorical; since some columns have mixed type,
     # we cast the entire column to string.
     for c in df.columns:
-        if c not in NUMERIC_COLS and c != BRFSS_FEATURES.target:
+        if c not in NUMERIC_COLS and c != BRFSS_DIABETES_FEATURES.target:
             df[c] = df[c].apply(str).astype("category")
 
     # Remove leading underscores from column names
