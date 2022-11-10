@@ -257,7 +257,7 @@ _BRFSS_INPUT_FEATURES = list(
     set(['_AGEG5YR', 'CHECKUP1', 'CHCSCNCR', 'CHCOCNCR', 'CVDSTRK3', 'EDUCA',
          'IYEAR', 'MARITAL', 'MEDCOST', 'MENTHLTH', 'PHYSHLTH', 'SEX',
          'SMOKDAY2', 'SMOKE100', 'TOLDHI2', '_BMI5', '_BMI5CAT', '_MICHD',
-         '_PRACE1', '_RFBING5', '_STATE', '_TOTINDA'] +
+         '_PRACE1', '_RFBING5', '_STATE', '_TOTINDA', 'HI_BP', 'EMPLOY1'] +
         list(BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())))
 
 
