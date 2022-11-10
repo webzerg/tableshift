@@ -118,6 +118,69 @@ BRFSS_FEATURES = FeatureList([
     Feature("MENTHLTH", float),
 ])
 
+# Raw names of the input features. Useful to subset before preprocessing,
+# since some features contain near-duplicate versions (i.e. calculated
+# and not-calculated versions, differing only by a precending underscore).
+BRFSS_INPUT_FEATURES = [
+    "DIABETE3", "_STATE", "MEDCOST", "_HCVU651", "_PRACE1", "SEX",
+    "PHYSHLTH", "_RFHYPE5", "_CHOLCHK", "TOLDHI2", "_BMI5", "_BMI5CAT",
+    "SMOKE100", "SMOKDAY2", "CVDSTRK3", "_MICHD", "_FRTLT1", "_VEGLT1",
+    "_DRNKWEK", "_RFBING5", "_TOTINDA", "PA1MIN_", "INCOME2", "MARITAL",
+    "CHECKUP1", "EDUCA", "_HCVU651", "MENTHLTH", "IYEAR"]
+
+BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
+    # Question: Consume Fruit 1 or more times per day
+    "FRUIT_ONCE_PER_DAY": (
+        "_FRTLT1",  # 2013, 2015
+        "_FRTLT1A",  # 2017, 2019, 2021
+    ),
+    # Question: Consume Vegetables 1 or more times per day
+    "VEG_ONCE_PER_DAY": (
+        "_VEGLT1",  # 2013, 2015
+        "_VEGLT1A",  # 2017, 2019, 2021
+    ),
+    # Question: Cholesterol check within past five years (calculated)
+    "CHOL_CHK_PAST_5_YEARS": (
+        "_CHOLCHK",  # 2013, 2015
+        "_CHOLCH1",  # 2017
+        "_CHOLCH2",  # 2019
+        "_CHOLCH3",  # 2021
+    ),
+    # Question: (Ever told) you have diabetes (If ´Yes´ and respondent is
+    # female, ask ´Was this only when you were pregnant?´. If Respondent
+    # says pre-diabetes or borderline diabetes, use response code 4.)
+    "DIABETES": (
+        "DIABETE3",  # 2013, 2015, 2017
+        "DIABETE4",  # 2019, 2021
+    ),
+    # Question:  Calculated total number of alcoholic beverages consumed
+    # per week
+    "DRNK_PER_WEEK": (
+        "_DRNKWEK",  # 2015, 2017
+        "_DRNKWK1",  # 2019, 2021
+    ),
+    # Question: Indicate sex of respondent.
+    "SEX": (
+        "SEX",  # 2015, 2017
+        "SEXVAR",  # 2019
+    ),
+    # Question: Was there a time in the past 12 months when you needed to
+    # see a doctor but could not because {2015-2019: of cost/ 2021: you
+    # could not afford it}?
+    "MEDCOST": (
+        "MEDCOST",  # 2015, 2017, 2019
+        "MEDCOST1",  # 2021
+    ),
+    # Question: Is your annual household income from all sources: (If
+    # respondent refuses at any income level, code ´Refused.´) Note:
+    # higher levels/new codes added in 2021.
+    "INCOME": (
+        "INCOME2",  # 2015, 2017, 2019
+        "INCOME3",  # 2021
+    )
+}
+
+
 def align_brfss_features(df):
     """Map BRFSS column names to a consistent format over years.
 
@@ -133,69 +196,23 @@ def align_brfss_features(df):
     variable names for the same question, over survey years, to a single shared
     name.
     """
-    mapping = {
-        # Question: Consume Fruit 1 or more times per day
-        "FRUIT_ONCE_PER_DAY": (
-            "_FRTLT1",  # 2013, 2015
-            "_FRTLT1A",  # 2017, 2019, 2021
-        ),
-        # Question: Consume Vegetables 1 or more times per day
-        "VEG_ONCE_PER_DAY": (
-            "_VEGLT1",  # 2013, 2015
-            "_VEGLT1A",  # 2017, 2019, 2021
-        ),
-        # Question: Cholesterol check within past five years (calculated)
-        "CHOL_CHK_PAST_5_YEARS": (
-            "_CHOLCHK",  # 2013, 2015
-            "_CHOLCH1",  # 2017
-            "_CHOLCH2",  # 2019
-            "_CHOLCH3",  # 2021
-        ),
-        # Question: (Ever told) you have diabetes (If ´Yes´ and respondent is
-        # female, ask ´Was this only when you were pregnant?´. If Respondent
-        # says pre-diabetes or borderline diabetes, use response code 4.)
-        "DIABETES": (
-            "DIABETE3",  # 2013, 2015, 2017
-            "DIABETE4",  # 2019, 2021
-        ),
-        # Question:  Calculated total number of alcoholic beverages consumed
-        # per week
-        "DRNK_PER_WEEK": (
-            "_DRNKWEK",  # 2015, 2017
-            "_DRNKWK1",  # 2019, 2021
-        ),
-        # Question: Indicate sex of respondent.
-        "SEX": (
-            "SEX",  # 2015, 2017
-            "SEXVAR",  # 2019
-        ),
-        # Question: Was there a time in the past 12 months when you needed to
-        # see a doctor but could not because {2015-2019: of cost/ 2021: you
-        # could not afford it}?
-        "MEDCOST": (
-            "MEDCOST",  # 2015, 2017, 2019
-            "MEDCOST1",  # 2021
-        ),
-        # Question: Is your annual household income from all sources: (If 
-        # respondent refuses at any income level, code ´Refused.´) Note: 
-        # higher levels/new codes added in 2021. 
-        "INCOME": (
-            "INCOME2",  # 2015, 2017, 2019
-            "INCOME3",  # 2021
-        )
-    }
-    for outname, input_names in mapping.items():
-        
+
+    for outname, input_names in BRFSS_CROSS_YEAR_FEATURE_MAPPING.items():
         assert len(set(df.columns).intersection(set(input_names))), \
             f"none of {input_names} detected in dataframe with " \
             f"columns {sorted(df.columns)}"
-        
+
         df.rename(columns={old: outname for old in input_names}, inplace=True)
         assert outname in df.columns
     return df
 
 
 def preprocess_brfss(df: pd.DataFrame):
+
+    keep_features = BRFSS_INPUT_FEATURES + list(
+        BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())
+    df = df[keep_features]
+
     # Label
     df["DIABETES"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
     # Drop 1k missing/not sure, plus one missing observation
@@ -236,7 +253,8 @@ def preprocess_brfss(df: pd.DataFrame):
     DROP_MISSING_REFUSED_COLS = (
         "MEDCOST", "PHYSHLTH", "_RFHYPE5", "CHOL_CHK_PAST_5_YEARS", "SMOKE100",
         "SMOKDAY2", "TOLDHI2", "CVDSTRK3", "_TOTINDA", "FRUIT_ONCE_PER_DAY",
-        "VEG_ONCE_PER_DAY", "_RFBING5", "PA1MIN_", "INCOME", "MARITAL", "CHECKUP1",
+        "VEG_ONCE_PER_DAY", "_RFBING5", "PA1MIN_", "INCOME", "MARITAL",
+        "CHECKUP1",
         "EDUCA", "_MICHD", "_BMI5", "_BMI5CAT")
 
     for c in DROP_MISSING_REFUSED_COLS:
