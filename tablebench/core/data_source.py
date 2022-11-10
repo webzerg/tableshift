@@ -214,7 +214,7 @@ class BRFSSDataSource(DataSource):
             xpt_fname = zip_fname.replace("XPT.zip", ".XPT")
             xpt_fp = os.path.join(self.cache_dir, xpt_fname)
             # Unzip the file if needed
-            if not os.path.exists(xpt_fname):
+            if not os.path.exists(xpt_fp):
                 zip_fp = os.path.join(self.cache_dir, zip_fname)
                 print(f"[DEBUG] unzipping {zip_fp}")
                 with zipfile.ZipFile(zip_fp, 'r') as zf:
