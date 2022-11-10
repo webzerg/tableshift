@@ -123,11 +123,15 @@ BRFSS_FEATURES = FeatureList([
 # versions (i.e. calculated and not-calculated versions, differing only by a
 # precending underscore).
 BRFSS_INPUT_FEATURES = [
-    "_STATE", "MEDCOST", "_HCVU651", "_PRACE1", "SEX", "PHYSHLTH", "_RFHYPE5",
+    "_STATE", "MEDCOST", "_HCVU651", "_PRACE1", "SEX", "PHYSHLTH",
     "TOLDHI2", "_BMI5", "_BMI5CAT", "SMOKE100", "SMOKDAY2", "CVDSTRK3",
-    "_MICHD", "_RFBING5", "_TOTINDA", "PA1MIN_", "MARITAL", "CHECKUP1", "EDUCA",
+    "_MICHD", "_RFBING5", "_TOTINDA", "MARITAL", "CHECKUP1", "EDUCA",
     "_HCVU651", "MENTHLTH", "IYEAR"]
 
+
+# Some features have different names over years, due to changes in prompts or
+# interviewer instructions. Here we map these different names to a single shared
+# name that is consistent across years.
 BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
     # Question: Consume Fruit 1 or more times per day
     "FRUIT_ONCE_PER_DAY": (
@@ -177,6 +181,12 @@ BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
     "INCOME": (
         "INCOME2",  # 2015, 2017, 2019
         "INCOME3",  # 2021
+    ),
+    # Question: Adults who have been told they have high blood pressure by a
+    # doctor, nurse, or other health professional
+    "HIGH_BLOOD_PRESS": (
+        "_RFHYPE5",  # 2015, 2017, 2019
+        "_RFHYPE6",  # 2021
     )
 }
 
@@ -242,22 +252,21 @@ def preprocess_brfss(df: pd.DataFrame):
     df["IYEAR"] = df["IYEAR"].apply(
         lambda x: re.search("\d+", x).group()).astype(int)
 
-    NUMERIC_COLS = ("_BMI5", "DRNK_PER_WEEK", "PHYSHLTH", "MENTHLTH", "PA1MIN_",
-                    "IYEAR")
+    NUMERIC_COLS = ("_BMI5", "DRNK_PER_WEEK", "PHYSHLTH", "MENTHLTH", "IYEAR")
 
     # For these categorical columns, drop respondents who were not sure,
     # refused, or had missing responses. This is also useful because
     # sometimes those responses (dk/refuse/missing) are lumped into
     # a single category (e.g. "_TOTINDA").
     DROP_MISSING_REFUSED_COLS = (
-        "MEDCOST", "PHYSHLTH", "_RFHYPE5", "CHOL_CHK_PAST_5_YEARS", "SMOKE100",
-        "SMOKDAY2", "TOLDHI2", "CVDSTRK3", "_TOTINDA", "FRUIT_ONCE_PER_DAY",
-        "VEG_ONCE_PER_DAY", "_RFBING5", "PA1MIN_", "INCOME", "MARITAL",
-        "CHECKUP1",
-        "EDUCA", "_MICHD", "_BMI5", "_BMI5CAT")
+        "MEDCOST", "PHYSHLTH", "HIGH_BLOOD_PRESS", "CHOL_CHK_PAST_5_YEARS",
+        "SMOKE100", "SMOKDAY2", "TOLDHI2", "CVDSTRK3", "_TOTINDA",
+        "FRUIT_ONCE_PER_DAY", "VEG_ONCE_PER_DAY", "_RFBING5", "INCOME",
+        "MARITAL", "CHECKUP1", "EDUCA", "_MICHD", "_BMI5", "_BMI5CAT")
 
     for c in DROP_MISSING_REFUSED_COLS:
         if c not in NUMERIC_COLS:
+            assert c in df.columns, f"column {c} not in df columns {df.columns}"
             # Apply coded values for missing/refused/idk, for categorical cols.
             # Note that 88 is sometimes used for for these, but 8 is NOT
             # and constitutes a valid value in the above columns.
@@ -277,5 +286,5 @@ def preprocess_brfss(df: pd.DataFrame):
 
     # Select features and reset the index after subsampling;
     # resetting ensures that splitting happens correctly.
-    df = df.loc[:, BRFSS_FEATURES.names].reset_index(drop=True)
+    df = df.reset_index(drop=True)
     return df
