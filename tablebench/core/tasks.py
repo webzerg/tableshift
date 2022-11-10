@@ -40,7 +40,7 @@ _TASK_REGISTRY = {
         ACS_UNEMPLOYMENT_FEATURES + ACS_SHARED_FEATURES),
     "adult": TaskConfig(AdultDataSource, ADULT_FEATURES),
     "anes": TaskConfig(ANESDataSource, ANES_FEATURES),
-    "brfss": TaskConfig(BRFSSDataSource, BRFSS_DIABETES_FEATURES),
+    "brfss_diabetes": TaskConfig(BRFSSDataSource, BRFSS_DIABETES_FEATURES),
     "communities_and_crime": TaskConfig(CommunitiesAndCrimeDataSource,
                                         CANDC_FEATURES),
     "compas": TaskConfig(COMPASDataSource, COMPAS_FEATURES),

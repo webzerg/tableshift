@@ -19,7 +19,7 @@ def main(cache_dir):
 
     splitter = RandomSplitter(test_size=0.5, val_size=0.25, random_state=29746)
     grouper = Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False)
-    dset = TabularDataset("brfss",
+    dset = TabularDataset("brfss_diabetes",
                           config=dataset_config,
                           splitter=splitter,
                           grouper=grouper,
