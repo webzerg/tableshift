@@ -265,14 +265,18 @@ def preprocess_brfss(df: pd.DataFrame):
         "MARITAL", "CHECKUP1", "EDUCA", "_MICHD", "_BMI5", "_BMI5CAT")
 
     for c in DROP_MISSING_REFUSED_COLS:
-        if c not in NUMERIC_COLS:
-            assert c in df.columns, f"column {c} not in df columns {df.columns}"
-            # Apply coded values for missing/refused/idk, for categorical cols.
-            # Note that 88 is sometimes used for for these, but 8 is NOT
-            # and constitutes a valid value in the above columns.
-            df = df[~(df[c].isin([7, 9, 77, 88, 99]))]
-        # Drop actual missing values, for all column dtypes
-        df.dropna(subset=[c], inplace=True)
+        try:
+            if c not in NUMERIC_COLS:
+                assert c in df.columns, f"column {c} not in df columns {df.columns}"
+                # Apply coded values for missing/refused/idk, for categorical cols.
+                # Note that 88 is sometimes used for for these, but 8 is NOT
+                # and constitutes a valid value in the above columns.
+                df = df[~(df[c].isin([7, 9, 77, 88, 99]))]
+            # Drop actual missing values, for all column dtypes
+            df.dropna(subset=[c], inplace=True)
+        except Exception as e:
+            print(e)
+            import ipdb;ipdb.set_trace()
 
     # Cast columns to categorical; since some columns have mixed type,
     # we cast the entire column to string.
