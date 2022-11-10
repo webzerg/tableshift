@@ -33,7 +33,7 @@ BRFSS_STATE_LIST = [
 
 BRFSS_FEATURES = FeatureList([
     ################ Target ################
-    Feature("DIABETE3", int, is_target=True),  # (Ever told) you have diabetes
+    Feature("DIABETES", int, is_target=True),  # (Ever told) you have diabetes
 
     # Derived feature for year; keep as categorical dtype so normalization
     # is not applied.
@@ -62,7 +62,7 @@ BRFSS_FEATURES = FeatureList([
     Feature("RFHYPE5", cat_dtype),
     ################ High cholesterol ################
     # Cholesterol check within past five years
-    Feature("CHOLCHK", cat_dtype),
+    Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype),
     # Have you EVER been told by a doctor, nurse or other health
     # professional that your blood cholesterol is high?
     Feature("TOLDHI2", cat_dtype),
@@ -86,10 +86,10 @@ BRFSS_FEATURES = FeatureList([
     # Consume Fruit 1 or more times per day
     Feature("FRTLT1", cat_dtype),
     # Consume Vegetables 1 or more times per day
-    Feature("VEGLT1", cat_dtype),
+    Feature("VEG_ONCE_PER_DAY", cat_dtype),
     ################ Alcohol Consumption ################
     # Calculated total number of alcoholic beverages consumed per week
-    Feature("DRNKWEK", float),
+    Feature("DRNK_PER_WEEK", float),
     # Binge drinkers (males having five or more drinks on one occasion,
     # females having four or more drinks on one occasion)
     Feature("RFBING5", cat_dtype),
@@ -97,11 +97,9 @@ BRFSS_FEATURES = FeatureList([
     # Adults who reported doing physical activity or exercise
     # during the past 30 days other than their regular job
     Feature("TOTINDA", cat_dtype),
-    # Minutes of total Physical Activity per week
-    Feature("PA1MIN_", float),
     ################ Household income ################
     # annual household income from all sources
-    Feature("INCOME2", cat_dtype),
+    Feature("INCOME", cat_dtype),
     ################ Marital status ################
     Feature("MARITAL", cat_dtype),
     ################ Time since last checkup
@@ -120,22 +118,88 @@ BRFSS_FEATURES = FeatureList([
     Feature("MENTHLTH", float),
 ])
 
-# Raw names of the input features. Useful to subset before preprocessing,
-# since some features contain near-duplicate versions (i.e. calculated
-# and not-calculated versions, differing only by a precending underscore).
-BRFSS_INPUT_FEATURES = [
-    "DIABETE3", "_STATE", "MEDCOST", "_HCVU651", "_PRACE1", "SEX",
-    "PHYSHLTH", "_RFHYPE5", "_CHOLCHK", "TOLDHI2", "_BMI5", "_BMI5CAT",
-    "SMOKE100", "SMOKDAY2", "CVDSTRK3", "_MICHD", "_FRTLT1", "_VEGLT1",
-    "_DRNKWEK", "_RFBING5", "_TOTINDA", "PA1MIN_", "INCOME2", "MARITAL",
-    "CHECKUP1", "EDUCA", "_HCVU651", "MENTHLTH", "IYEAR"]
+def align_brfss_features(df):
+    """Map BRFSS column names to a consistent format over years.
+
+    Some questions are asked over years, but while the options are identical,
+    the value labels change (specifically, the interviewing instructions change,
+    e.g. "Refused—Go to Section 06.01 CHOLCHK3" for BPHIGH6 in 2021 survey
+    https://www.cdc.gov/brfss/annual_data/2021/pdf/codebook21_llcp-v2-508.pdf
+    vs. "Refused—Go to Section 05.01 CHOLCHK1" in 2017 survey
+    https://www.cdc.gov/brfss/annual_data/2017/pdf/codebook17_llcp-v2-508.pdf
+    despite identical questions, and values.
+
+    This function addresses these different names by mapping a set of possible
+    variable names for the same question, over survey years, to a single shared
+    name.
+    """
+    mapping = {
+        # Question: Consume Fruit 1 or more times per day
+        "FRUIT_ONCE_PER_DAY": (
+            "_FRTLT1",  # 2013, 2015
+            " _FRTLT1A",  # 2017, 2019, 2021
+        ),
+        # Question: Consume Vegetables 1 or more times per day
+        "VEG_ONCE_PER_DAY": (
+            "_VEGLT1",  # 2013, 2015
+            " _VEGLT1A",  # 2017, 2019, 2021
+        ),
+        # Question: Cholesterol check within past five years (calculated)
+        "CHOL_CHK_PAST_5_YEARS": (
+            "_CHOLCHK",  # 2013, 2015
+            "_CHOLCH1",  # 2017
+            "_CHOLCH2",  # 2019
+            " _CHOLCH3",  # 2021
+        ),
+        # Question: (Ever told) you have diabetes (If ´Yes´ and respondent is
+        # female, ask ´Was this only when you were pregnant?´. If Respondent
+        # says pre-diabetes or borderline diabetes, use response code 4.)
+        "DIABETES": (
+            "DIABETE3",  # 2013, 2015, 2017
+            "DIABETE4",  # 2019, 2021
+        ),
+        # Question:  Calculated total number of alcoholic beverages consumed
+        # per week
+        "DRNK_PER_WEEK": (
+            "_DRNKWEK",  # 2015, 2017
+            " _DRNKWK1",  # 2019, 2021
+        ),
+        # Question: Indicate sex of respondent.
+        "SEX": (
+            "SEX",  # 2015, 2017
+            "SEXVAR",  # 2019
+        ),
+        # Question: Was there a time in the past 12 months when you needed to
+        # see a doctor but could not because {2015-2019: of cost/ 2021: you
+        # could not afford it}?
+        "MEDCOST": (
+            "MEDCOST",  # 2015, 2017, 2019
+            "MEDCOST1",  # 2021
+        ),
+        # Question: Is your annual household income from all sources: (If 
+        # respondent refuses at any income level, code ´Refused.´) Note: 
+        # higher levels/new codes added in 2021. 
+        "INCOME": (
+            "INCOME2",  # 2015, 2017, 2019
+            "INCOME3",  # 2021
+        )
+    }
+    for outname, input_names in mapping.items():
+        
+        assert len(set(df.columns).intersection(set(input_names))), \
+            f"none of {input_names} detected in dataframe with " \
+            f"columns {sorted(df.columns)}"
+        
+        df.rename(columns={old: outname for old in input_names}, inplace=True)
+        assert outname in df.columns
+    return df
 
 
 def preprocess_brfss(df: pd.DataFrame):
     # Label
-    df["DIABETE3"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
+    df["DIABETES"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
     # Drop 1k missing/not sure, plus one missing observation
-    df = df[~(df["DIABETE3"].isin([7, 9]))].dropna(subset=["DIABETE3"])
+    df = df[~(df["DIABETES"].isin([7, 9]))].dropna(subset=["DIABETES"])
 
     # Sensitive columns
     # Drop no preferred race/not answered/don't know/not sure
@@ -150,7 +214,7 @@ def preprocess_brfss(df: pd.DataFrame):
 
     # Drop rows where drinks per week is unknown/refused/missing;
     # this uses a different missingness code from other variables.
-    df = df[~(df["_DRNKWEK"] == 99900)]
+    df = df[~(df["DRNK_PER_WEEK"] == 99900)]
 
     # Some questions are not asked for various reasons
     # (see notes under "BLANK" for that question in data dictionary);
@@ -162,7 +226,7 @@ def preprocess_brfss(df: pd.DataFrame):
     df["IYEAR"] = df["IYEAR"].apply(
         lambda x: re.search("\d+", x).group()).astype(int)
 
-    NUMERIC_COLS = ("_BMI5", "_DRNKWEK", "PHYSHLTH", "MENTHLTH", "PA1MIN_",
+    NUMERIC_COLS = ("_BMI5", "DRNK_PER_WEEK", "PHYSHLTH", "MENTHLTH", "PA1MIN_",
                     "IYEAR")
 
     # For these categorical columns, drop respondents who were not sure,
@@ -170,9 +234,9 @@ def preprocess_brfss(df: pd.DataFrame):
     # sometimes those responses (dk/refuse/missing) are lumped into
     # a single category (e.g. "_TOTINDA").
     DROP_MISSING_REFUSED_COLS = (
-        "MEDCOST", "PHYSHLTH", "_RFHYPE5", "_CHOLCHK", "SMOKE100",
-        "SMOKDAY2", "TOLDHI2", "CVDSTRK3", "_TOTINDA", "_FRTLT1",
-        "_VEGLT1", "_RFBING5", "PA1MIN_", "INCOME2", "MARITAL", "CHECKUP1",
+        "MEDCOST", "PHYSHLTH", "_RFHYPE5", "CHOL_CHK_PAST_5_YEARS", "SMOKE100",
+        "SMOKDAY2", "TOLDHI2", "CVDSTRK3", "_TOTINDA", "FRUIT_ONCE_PER_DAY",
+        "VEG_ONCE_PER_DAY", "_RFBING5", "PA1MIN_", "INCOME", "MARITAL", "CHECKUP1",
         "EDUCA", "_MICHD", "_BMI5", "_BMI5CAT")
 
     for c in DROP_MISSING_REFUSED_COLS:
