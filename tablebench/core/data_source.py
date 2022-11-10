@@ -17,7 +17,7 @@ from tablebench.datasets.acs import ACS_STATE_LIST, preprocess_acs, \
 from tablebench.datasets.adult import ADULT_RESOURCES, ADULT_FEATURE_NAMES, \
     preprocess_adult
 from tablebench.datasets.anes import preprocess_anes
-from tablebench.datasets.brfss import preprocess_brfss, BRFSS_INPUT_FEATURES
+from tablebench.datasets.brfss import preprocess_brfss_diabetes, align_brfss_features
 from tablebench.datasets.communities_and_crime import CANDC_RESOURCES, \
     preprocess_candc, CANDC_INPUT_FEATURES
 from tablebench.datasets.compas import COMPAS_RESOURCES, preprocess_compas
@@ -187,8 +187,19 @@ class KaggleDataSource(DataSource):
 
 
 class BRFSSDataSource(DataSource):
-    def __init__(self, preprocess_fn=preprocess_brfss,
-                 years=tuple(range(2014, 2022)), **kwargs):
+    """BRFSS data source.
+
+    Note that the BRFSS is composed of three components: 'fixed core' questions,
+    asked every year, 'rotating core', asked every other year, and 'emerging
+    core'. Since some of our features come from the rotating core, we only
+    use every-other-year data sources; some features would be empty for the
+    intervening years.
+
+    See also https://www.cdc.gov/brfss/about/brfss_faq.htm , "What are the
+    components of the BRFSS questionnaire?"
+    """
+    def __init__(self, preprocess_fn=preprocess_brfss_diabetes,
+                 years=tuple(range(2015, 2022, 2)), **kwargs):
         self.years = years
         resources = tuple([
             f"https://www.cdc.gov/brfss/annual_data/{y}/files/LLCP{y}XPT.zip"
@@ -203,7 +214,7 @@ class BRFSSDataSource(DataSource):
             xpt_fname = zip_fname.replace("XPT.zip", ".XPT")
             xpt_fp = os.path.join(self.cache_dir, xpt_fname)
             # Unzip the file if needed
-            if not os.path.exists(xpt_fname):
+            if not os.path.exists(xpt_fp):
                 zip_fp = os.path.join(self.cache_dir, zip_fname)
                 print(f"[DEBUG] unzipping {zip_fp}")
                 with zipfile.ZipFile(zip_fp, 'r') as zf:
@@ -212,15 +223,10 @@ class BRFSSDataSource(DataSource):
                 os.rename(xpt_fp + " ", xpt_fp)
             # Read the XPT data
             print(f"[DEBUG] reading {xpt_fp}")
-            # TODO(jpgard): subset it to BRFSS_INPUT_FEATURES to avoid large dfs
             df = utils.read_xpt(xpt_fp)
+            df = align_brfss_features(df)
             dfs[url] = df
-        for k, v in dfs.items():
-            missing_inputs = set(BRFSS_INPUT_FEATURES) - set(v.columns)
-            if missing_inputs:
-                print(f"df from {url} is missing features {missing_inputs}")
-        import ipdb;
-        ipdb.set_trace()
+
         return pd.concat(dfs.values(), axis=0)
 
 

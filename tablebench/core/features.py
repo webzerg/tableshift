@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import re
-from typing import List, Any, Sequence, Optional, Mapping
+from typing import List, Any, Sequence, Optional, Mapping, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,11 +10,27 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler
 from tablebench.core.discretization import KBinsDiscretizer
 
 
+def _contains_missing_values(df: pd.DataFrame) -> bool:
+    return np.any(pd.isnull(df).values)
+
+
 def safe_cast(x: pd.Series, dtype):
+    print(f"[DEBUG] casting feature {x.name} from dtype "
+          f"{x.dtype.name} to dtype {dtype.__name__}")
     if dtype == cat_dtype:
         return x.apply(str).astype("category")
     else:
-        return x.astype(dtype)
+        try:
+            return x.astype(dtype)
+        except pd.errors.IntCastingNaNError as e:
+            if 'int' in dtype.__name__.lower():
+                # Case: integer with nan values; cast to float instead. Integers
+                # are not nullable in Pandas (but "Int64" type is).
+                print(f"[WARNING] cannot cast feature {x.name} to "
+                      f"dtype {dtype.__name__} due to missing values; "
+                      f"attempting cast to float instead. Recommend changing"
+                      f"the feature spec for this feature to type float.")
+                return x.astype(float)
 
 
 @dataclass(frozen=True)
@@ -23,6 +39,11 @@ class Feature:
     kind: Any  # a class type to which the feature should be castable.
     description: str = None
     is_target: bool = False
+    # Values, besides np.nan, to count as null/missing. These should be
+    # values in the original feature encoding (that is, the values that would
+    # occur for this column in the output of the preprocess_fn, not after
+    # casting to `kind`), because values after casting may be unpredictable.
+    na_values: Tuple = field(default_factory=tuple)
 
 
 @dataclass
@@ -88,10 +109,23 @@ class FeatureList:
                 # Case: expected this feature, and it is missing.
                 raise ValueError(f"feature {f.name} not present in data with"
                                  f"columns {df.columns}.")
+
+            # Fill na values (before casting)
+            if f.na_values:
+                print(f"[DEBUG] replacing missing values of {f.na_values} "
+                      f"for feature {f.name}")
+
+                df[f.name].replace(f.na_values, np.nan)
+
+            # Cast to desired type
             if not _column_is_of_type(df[f.name], f.kind):
-                print(f"[DEBUG] casting feature {f.name} from dtype "
-                      f"{df[f.name].dtype.name} to dtype {f.kind.__name__}")
                 df[f.name] = safe_cast(df[f.name], f.kind)
+
+        # Drop any rows containing missing values.
+        if _contains_missing_values(df):
+            print("[DEBUG] missing values in data; counts by column:")
+            print(pd.isnull(df).sum())
+
         return df
 
 
@@ -124,6 +158,9 @@ class PreprocessorConfig:
     numeric_features: str = "normalize"
     transformer: ColumnTransformer = None
     passthrough_columns: List[str] = None  # Feature names to passthrough.
+    # If "rows", drop rows containing na values, if "columns", drop columns
+    # containing na values; if None do not do anything for missing values.
+    dropna: str = "rows"
 
     def _get_categorical_transforms(self, data: pd.DataFrame,
                                     categorical_columns: List[str],
@@ -212,6 +249,27 @@ class PreprocessorConfig:
             for colname, dtype in cast_dtypes.items():
                 transformed[colname] = transformed[colname].astype(dtype)
         return transformed
+
+    def _dropna(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Apply the specified hanling of NA values.
+
+        If "rows", drop any rows containing NA values. If "columns", drop
+        any columns containing NA values. If None, do not alter data.
+
+        This function should be called *before* splitting data.
+        """
+        if self.dropna is None:
+            return data
+
+        start_len = len(data)
+        if self.dropna == "rows":
+            data.dropna(inplace=True)
+        elif self.dropna == "columns":
+            data.dropna(axis=1, inplace=True)
+        print(f"[DEBUG] dropped {start_len - len(data)} rows "
+              f"containing missing values "
+              f"({(start_len - len(data)) / start_len}% of data).")
+        return data.reset_index(drop=True)
 
     def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
                       passthrough_columns: List[str] = None) -> pd.DataFrame:

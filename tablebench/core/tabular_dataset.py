@@ -72,6 +72,7 @@ class TabularDataset(ABC):
         data = self.data_source.get_data().reset_index(drop=True)
         data = self.task_config.feature_list.apply_schema(
             data, passthrough_columns=["Split"])
+        data = self.preprocessor_config._dropna(data)
         data = self.grouper.transform(data)
         data = self._generate_splits(data)
         data = self._process_post_split(data)
