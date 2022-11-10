@@ -137,19 +137,19 @@ def align_brfss_features(df):
         # Question: Consume Fruit 1 or more times per day
         "FRUIT_ONCE_PER_DAY": (
             "_FRTLT1",  # 2013, 2015
-            " _FRTLT1A",  # 2017, 2019, 2021
+            "_FRTLT1A",  # 2017, 2019, 2021
         ),
         # Question: Consume Vegetables 1 or more times per day
         "VEG_ONCE_PER_DAY": (
             "_VEGLT1",  # 2013, 2015
-            " _VEGLT1A",  # 2017, 2019, 2021
+            "_VEGLT1A",  # 2017, 2019, 2021
         ),
         # Question: Cholesterol check within past five years (calculated)
         "CHOL_CHK_PAST_5_YEARS": (
             "_CHOLCHK",  # 2013, 2015
             "_CHOLCH1",  # 2017
             "_CHOLCH2",  # 2019
-            " _CHOLCH3",  # 2021
+            "_CHOLCH3",  # 2021
         ),
         # Question: (Ever told) you have diabetes (If ´Yes´ and respondent is
         # female, ask ´Was this only when you were pregnant?´. If Respondent
@@ -162,7 +162,7 @@ def align_brfss_features(df):
         # per week
         "DRNK_PER_WEEK": (
             "_DRNKWEK",  # 2015, 2017
-            " _DRNKWK1",  # 2019, 2021
+            "_DRNKWK1",  # 2019, 2021
         ),
         # Question: Indicate sex of respondent.
         "SEX": (
