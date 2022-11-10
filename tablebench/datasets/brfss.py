@@ -163,6 +163,9 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     Feature("CHCOCNCR", cat_dtype,
             "(Ever told) you had any other types of cancer?",
             na_values=(7, 9)),
+    # 6 in 10 people suffering from diabetes also have high BP
+    # source: https://www.cdc.gov/bloodpressure/risk_factors.htm
+    Feature("DIABETES", float, na_values=(7, 9)),
 
     ################ Race/ethnicity ################
     # Covered in BRFSS_SHARED_FEATURES.
@@ -330,10 +333,17 @@ def preprocess_brfss_diabetes(df: pd.DataFrame):
 def preprocess_brfss_blood_pressure(df: pd.DataFrame) -> pd.DataFrame:
     df = preprocess_brfss(df, BRFSS_BLOOD_PRESSURE_FEATURES.target)
 
-    # TODO(jpgard): this shouldnt be needed if na_values are dropped.
-    # Drop samples where age is not reported; this has different coding for
-    # the missing values than other numeric columns.
-    df = df[~(df["_AGEG5YR"] != 14)]
+    # Retain samples only 50+ years of age (to focus on highest-risk groups
+    # for high BP; see:
+    # * Vasan RS, Beiser A, Seshadri S, Larson MG, Kannel WB, D’ Agostino RB,
+    # et al. Residual lifetime risk for developing hypertension in middle-aged
+    # women and men: the Framingham Heart Studyexternal icon. JAMA. 2002;287(
+    # 8):1003–1010. ("the risk for developing hypertension increases markedly
+    # during and after the sixth decade of life") and also:
+    # * Dannenberg AL,  Garrison RJ, Kannel WB. Incidence of hypertension in the
+    # Framingham Study. Am J Public Health.1988;78:676-679.
+
+    df = df[df["_AGEG5YR"] >= 7]
 
     # Reset the index after preprocessing to ensure splitting happens
     # correctly (splitting assumes sequential indexing).
