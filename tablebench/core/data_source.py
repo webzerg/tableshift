@@ -314,7 +314,9 @@ class ACSDataSource(DataSource):
         return pd.concat(year_dfs, axis=0)
 
     def _download_if_not_cached(self):
-        return self._get_acs_data()
+        """No-op for ACS data; folktables already downloads or uses cache as
+        needed at _load_data(). """
+        return
 
     def _load_data(self) -> pd.DataFrame:
         acs_data = self._get_acs_data()
