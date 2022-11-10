@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import re
-from typing import List, Any, Sequence, Optional, Mapping
+from typing import List, Any, Sequence, Optional, Mapping, Tuple
 
 import numpy as np
 import pandas as pd
@@ -31,7 +31,7 @@ class Feature:
     # values in the original feature encoding (that is, the values that would
     # occur for this column in the output of the preprocess_fn, not after
     # casting to `kind`), because values after casting may be unpredictable.
-    na_values: List[Any] = field(default_factory=list)
+    na_values: Tuple = field(default_factory=tuple)
 
 
 @dataclass

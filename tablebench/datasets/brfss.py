@@ -33,34 +33,34 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
     Feature("STATE", cat_dtype),
     # Was there a time in the past 12 months when you needed to see a doctor
     # but could not because of cost?
-    Feature("MEDCOST", cat_dtype, na_values=[7, 9]),
+    Feature("MEDCOST", cat_dtype, na_values=(7, 9)),
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
-    Feature("PRACE1", int, na_values=[77, 99]),
+    Feature("PRACE1", int, na_values=(77, 99)),
     # Indicate sex of respondent.
     Feature("SEX", int),
 ])
 
 BRFSS_DIET_FEATURES = [
     # Consume Fruit 1 or more times per day
-    Feature("FRUIT_ONCE_PER_DAY", cat_dtype, na_values=[9]),
+    Feature("FRUIT_ONCE_PER_DAY", cat_dtype, na_values=(9,)),
     # Consume Vegetables 1 or more times per day
-    Feature("VEG_ONCE_PER_DAY", cat_dtype, na_values=[9]),
+    Feature("VEG_ONCE_PER_DAY", cat_dtype, na_values=(9,)),
 ]
 
 BRFSS_ALCOHOL_FEATURES = [
     # Calculated total number of alcoholic beverages consumed per week
-    Feature("DRNK_PER_WEEK", float, na_values=[99900]),
+    Feature("DRNK_PER_WEEK", float, na_values=(99900,)),
     # Binge drinkers (males having five or more drinks on one occasion,
     # females having four or more drinks on one occasion)
-    Feature("RFBING5", cat_dtype, na_values=[9]),
+    Feature("RFBING5", cat_dtype, na_values=(9,)),
 ]
 
 BRFSS_SMOKE_FEATURES = [
     # Have you smoked at least 100 cigarettes in your entire life?
-    Feature("SMOKE100", cat_dtype, na_values=[7, 9]),
+    Feature("SMOKE100", cat_dtype, na_values=(7, 9)),
     # Do you now smoke cigarettes every day, some days, or not at all?
-    Feature("SMOKDAY2", cat_dtype, na_values=[7, 9]),
+    Feature("SMOKDAY2", cat_dtype, na_values=(7, 9)),
 ]
 
 # Brief feature descriptions below; for the full question/description
@@ -72,24 +72,24 @@ BRFSS_SMOKE_FEATURES = [
 
 BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Target ################
-    Feature("DIABETES", int, is_target=True, na_values=[7, 9]),
+    Feature("DIABETES", int, is_target=True, na_values=(7, 9)),
     # (Ever told) you have diabetes
 
     # Below are a set of indicators for known risk factors for diabetes.
     ################ General health ################
     # for how many days during the past 30 days was your
     # physical health not good?
-    Feature("PHYSHLTH", float, na_values=[77, 99]),
+    Feature("PHYSHLTH", float, na_values=(77, 99)),
     ################ High blood pressure ################
     # Adults who have been told they have high blood pressure by a
     # doctor, nurse, or other health professional
-    Feature("HIGH_BLOOD_PRESS", cat_dtype, na_values=[9]),
+    Feature("HIGH_BLOOD_PRESS", cat_dtype, na_values=(9,)),
     ################ High cholesterol ################
     # Cholesterol check within past five years
-    Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype, na_values=[9]),
+    Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype, na_values=(9,)),
     # Have you EVER been told by a doctor, nurse or other health
     # professional that your blood cholesterol is high?
-    Feature("TOLDHI2", cat_dtype, na_values=[7, 9]),
+    Feature("TOLDHI2", cat_dtype, na_values=(7, 9)),
     ################ BMI/Obesity ################
     # Calculated Body Mass Index (BMI)
     Feature("BMI5", float),
@@ -99,7 +99,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     *BRFSS_SMOKE_FEATURES,
     ################ Other chronic health conditions ################
     # (Ever told) you had a stroke.
-    Feature("CVDSTRK3", cat_dtype, na_values=[7, 9]),
+    Feature("CVDSTRK3", cat_dtype, na_values=(7, 9)),
     # ever reported having coronary heart disease (CHD)
     # or myocardial infarction (MI)
     Feature("MICHD", cat_dtype),
@@ -110,19 +110,19 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Exercise ################
     # Adults who reported doing physical activity or exercise
     # during the past 30 days other than their regular job
-    Feature("TOTINDA", cat_dtype, na_values=[9]),
+    Feature("TOTINDA", cat_dtype, na_values=(9,)),
     ################ Household income ################
     # annual household income from all sources
-    Feature("INCOME", cat_dtype, na_values=[77, 99]),
+    Feature("INCOME", cat_dtype, na_values=(77, 99)),
     ################ Marital status ################
-    Feature("MARITAL", cat_dtype, na_values=[9]),
+    Feature("MARITAL", cat_dtype, na_values=(9,)),
     ################ Time since last checkup
     # About how long has it been since you last visited a
     # doctor for a routine checkup?
-    Feature("CHECKUP1", cat_dtype, na_values=[7, 9]),
+    Feature("CHECKUP1", cat_dtype, na_values=(7, 9)),
     ################ Education ################
     # highest grade or year of school completed
-    Feature("EDUCA", cat_dtype, na_values=[9]),
+    Feature("EDUCA", cat_dtype, na_values=(9,)),
     ################ Health care coverage ################
     # Respondents aged 18-64 who have any form of health care coverage
     # Note: we keep missing values (=9) for this column since they are grouped
@@ -132,7 +132,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Mental health ################
     # for how many days during the past 30
     # days was your mental health not good?
-    Feature("MENTHLTH", float, na_values=[77, 99]),
+    Feature("MENTHLTH", float, na_values=(77, 99)),
 ]) + BRFSS_SHARED_FEATURES
 
 BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
@@ -145,7 +145,7 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
 
     ################ Age ################
     Feature("AGEG5YR", int, "Fourteen-level age category",
-            na_values=[14]),
+            na_values=(14,)),
     ################ Family history and genetics ################
     # No questions related to this risk factor.
     ################ Lifestyle habits ################
@@ -153,16 +153,16 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     *BRFSS_ALCOHOL_FEATURES,
     # Adults who reported doing physical activity or exercise
     # during the past 30 days other than their regular job
-    Feature("TOTINDA", cat_dtype, na_values=[9]),
+    Feature("TOTINDA", cat_dtype, na_values=(9,)),
     *BRFSS_SMOKE_FEATURES,
     ################ Medicines ################
     # No questions related to this risk factor.
     ################ Other medical conditions ################
     Feature("CHCSCNCR", cat_dtype, "(Ever told) (you had) skin cancer?",
-            na_values=[7, 9]),
+            na_values=(7, 9)),
     Feature("CHCOCNCR", cat_dtype,
             "(Ever told) you had any other types of cancer?",
-            na_values=[7, 9]),
+            na_values=(7, 9)),
 
     ################ Race/ethnicity ################
     # Covered in BRFSS_SHARED_FEATURES.
@@ -170,10 +170,10 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # Covered in BRFSS_SHARED_FEATURES.
     ################ Social and economic factors ################
     # Income
-    Feature("INCOME", cat_dtype, na_values=[77, 99]),
+    Feature("INCOME", cat_dtype, na_values=(77, 99)),
     # Type job status; related to early/late shifts which is a risk factor.
     Feature("EMPLOY1", cat_dtype, "Are you currently…?",
-            na_values=[9]),
+            na_values=(9,)),
     # Additional relevant features in BRFSS_SHARED_FEATURES.
 ]) + BRFSS_SHARED_FEATURES
 
