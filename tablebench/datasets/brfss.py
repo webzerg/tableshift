@@ -13,7 +13,10 @@ import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
-BRFSS_YEARS = (2011, 2012, 2013, 2014, 2015,)
+# While BRFSS exists for every year back several decades, feature alignment
+# is only implemented for these years due to "rotating core" features occurring
+# only every other year and other changes prior to 2015; see comments below.
+BRFSS_YEARS = (2015, 2017, 2019, 2021)
 
 BRFSS_STATE_LIST = [
     '1.0', '10.0', '11.0', '12.0', '13.0', '15.0', '16.0', '17.0', '18.0',

@@ -7,6 +7,7 @@ Usage:
 import argparse
 from tablebench.core import RandomSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
+from tablebench.datasets.brfss import BRFSS_YEARS
 
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import accuracy_score
@@ -20,6 +21,7 @@ def main(cache_dir):
     splitter = RandomSplitter(test_size=0.5, val_size=0.25, random_state=29746)
     grouper = Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False)
     dset = TabularDataset("brfss_diabetes",
+                          years=BRFSS_YEARS,
                           config=dataset_config,
                           splitter=splitter,
                           grouper=grouper,
