@@ -17,7 +17,7 @@ from tablebench.datasets.acs import ACS_STATE_LIST, preprocess_acs, \
 from tablebench.datasets.adult import ADULT_RESOURCES, ADULT_FEATURE_NAMES, \
     preprocess_adult
 from tablebench.datasets.anes import preprocess_anes
-from tablebench.datasets.brfss import preprocess_brfss, align_brfss_features
+from tablebench.datasets.brfss import preprocess_brfss_diabetes, align_brfss_features
 from tablebench.datasets.communities_and_crime import CANDC_RESOURCES, \
     preprocess_candc, CANDC_INPUT_FEATURES
 from tablebench.datasets.compas import COMPAS_RESOURCES, preprocess_compas
@@ -198,7 +198,7 @@ class BRFSSDataSource(DataSource):
     See also https://www.cdc.gov/brfss/about/brfss_faq.htm , "What are the
     components of the BRFSS questionnaire?"
     """
-    def __init__(self, preprocess_fn=preprocess_brfss,
+    def __init__(self, preprocess_fn=preprocess_brfss_diabetes,
                  years=tuple(range(2015, 2022, 2)), **kwargs):
         self.years = years
         resources = tuple([

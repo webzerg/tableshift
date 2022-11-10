@@ -156,8 +156,16 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
                                    "cancer?"),
 
     ################ Race/ethnicity ################
+    # Covered in BRFSS_SHARED_FEATURES.
     ################ Sex ################
+    # Covered in BRFSS_SHARED_FEATURES.
     ################ Social and economic factors ################
+    # Income
+    Feature("INCOME", cat_dtype, "Annual household income from all sources"),
+    # Type of job; related to early/late shifts which is a risk factor.
+    Feature("SCNTWRK1", int, "About how many hours do you work per week on "
+                             "all of your jobs and businesses combined?")
+    # Additional relevant features in BRFSS_SHARED_FEATURES.
 ]) + BRFSS_SHARED_FEATURES
 
 # Some features have different names over years, due to changes in prompts or
@@ -226,10 +234,12 @@ BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
 # versions (i.e. calculated and not-calculated versions, differing only by a
 # precending underscore).
 _BRFSS_INPUT_FEATURES = list(
-    set(['_AGEG5YR', 'CHECKUP1', 'CHCSCNCR', 'CHCOCNCR', 'CVDSTRK3', 'EDUCA', 'IYEAR',
+    set(['_AGEG5YR', 'CHECKUP1', 'CHCSCNCR', 'CHCOCNCR', 'CVDSTRK3', 'EDUCA',
+         'IYEAR',
          'MARITAL',
          'MEDCOST',
-         'MENTHLTH', 'PHYSHLTH', 'SEX', 'SMOKDAY2', 'SMOKE100', 'TOLDHI2',
+         'MENTHLTH', 'PHYSHLTH', 'SCNTWRK1', 'SEX', 'SMOKDAY2', 'SMOKE100',
+         'TOLDHI2',
          '_BMI5', '_BMI5CAT', '_HCVU651', '_HCVU651', '_MICHD', '_PRACE1',
          '_RFBING5', '_STATE', '_TOTINDA'] +
         list(BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())))
@@ -261,13 +271,9 @@ def align_brfss_features(df):
     return df
 
 
-def preprocess_brfss(df: pd.DataFrame):
+def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame
+    """Shared preprocessing function for BRFSS data tasks."""
     df = df[_BRFSS_INPUT_FEATURES]
-
-    # Label
-    df["DIABETES"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
-    # Drop 1k missing/not sure, plus one missing observation
-    df = df[~(df["DIABETES"].isin([7, 9]))].dropna(subset=["DIABETES"])
 
     # Sensitive columns
     # Drop no preferred race/not answered/don't know/not sure
@@ -321,24 +327,41 @@ def preprocess_brfss(df: pd.DataFrame):
             import ipdb;
             ipdb.set_trace()
 
-    # Also drop samples where age is not reported; this has different coding for
-    # the missing values than other numeric columns.
-    if "_AGEG5YR" in df.columns:
-        df = df[~(df["_AGEG5YR"] != 14)]
-
     # TODO(jpgard): we should be able to remove this loop since feature casting
     #  is handled elsewhere according to the FeatureList.
     # Cast columns to categorical; since some columns have mixed type,
     # we cast the entire column to string.
     for c in df.columns:
-        if c not in NUMERIC_COLS and c != BRFSS_DIABETES_FEATURES.target:
+        if c not in NUMERIC_COLS and c != target_colname:
             df[c] = df[c].apply(str).astype("category")
 
     # Remove leading underscores from column names
     renames = {c: re.sub("^_", "", c) for c in df.columns if c.startswith("_")}
     df.rename(columns=renames, inplace=True)
 
-    # Select features and reset the index after subsampling;
-    # resetting ensures that splitting happens correctly.
-    df = df.reset_index(drop=True)
     return df
+
+
+def preprocess_brfss_diabetes(df: pd.DataFrame):
+    df = preprocess_brfss(df, target_colname=BRFSS_DIABETES_FEATURES.target)
+
+    # Label
+    df["DIABETES"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
+    # Drop 1k missing/not sure, plus one missing observation
+    df = df[~(df["DIABETES"].isin([7, 9]))].dropna(subset=["DIABETES"])
+
+    # Reset the index after preprocessing to ensure splitting happens
+    # correctly (splitting assumes sequential indexing).
+    return df.reset_index(drop=True)
+
+def preprocess_brfss_blood_pressure(df: pd.DataFrame) -> pd.DataFrame:
+    df = preprocess_brfss(df, BRFSS_BLOOD_PRESSURE_FEATURES.target)
+    # Drop samples where age is not reported; this has different coding for
+    # the missing values than other numeric columns.
+    df = df[~(df["_AGEG5YR"] != 14)]
+
+    # TODO(jpgard): Drop samples where hours per week worked is not reported.
+
+    # Reset the index after preprocessing to ensure splitting happens
+    # correctly (splitting assumes sequential indexing).
+    return df.reset_index(drop=True)
