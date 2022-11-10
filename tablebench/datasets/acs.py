@@ -145,6 +145,112 @@ ACS_PUBCOV_FEATURES = FeatureList(features=[
                   "/pums/data_dict/PUMS_Data_Dictionary_2019.pdf"
 )
 
+ACS_UNEMPLOYMENT_FEATURES = FeatureList(features=[
+    Feature('ESR', int, """Employment status recode b .N/A (less than 16 
+    years old) 1 .Civilian employed, at work 2 .Civilian employed, with a job 
+    but not at work 3 .Unemployed 4 .Armed forces, at work 5 .Armed forces, 
+    with a job but not at work 6 .Not in labor force""", is_target=True),
+    Feature('ENG', cat_dtype, """Ability to speak English b .N/A (less than 5 
+    years old/speaks only English) 1 .Very well 2 .Well 3 .Not well 4 .Not at 
+    all"""),
+    Feature('POBP', cat_dtype, "Place of birth (Recode)"),
+    Feature('RELP', cat_dtype),  # Relationship
+    Feature('WKHP', int, """Usual hours worked per week past 12 months bb 
+    .N/A (less than 16 years old/did not work during the past .12 months) 
+    1..98 .1 to 98 usual hours 99 .99 or more usual hours"""),
+    Feature('WKW', int, "Weeks worked during past 12 months."),
+    Feature('WRK', cat_dtype, """Worked last week b .N/A (not reported) 1 
+    .Worked 2 .Did not work"""),
+    Feature('OCCP', cat_dtype,
+            "Occupation recode for 2018 and later based on 2018 OCC codes"),
+    Feature('DIS', cat_dtype, """Disability recode 1 .With a disability 2 
+    .Without a disability"""),
+    Feature('ESP', cat_dtype, """Employment status of parents b .N/A (not own 
+    child of householder, and not child in subfamily) .Living with two 
+    parents: 1 .Both parents in labor force 2 .Father only in labor force 3 
+    .Mother only in labor force 4 .Neither parent in labor force living with 
+    one parent: Living .with father: 5 .Father in the labor force 6 .Father 
+    not in labor force living with mother: 7 .Mother in the labor force 8 
+    .Mother not in labor force"""),
+    Feature('MIG', cat_dtype, """Mobility status (lived here 1 year ago) b 
+    .N/A (less than 1 year old) 1 .Yes, same house (nonmovers) 2 .No, outside 
+    US and Puerto Rico 3 .No, different house in US or Puerto Rico"""),
+    Feature('MIL', cat_dtype, """Military service b .N/A (less than 17 years 
+    old) 1 .Now on active duty 2 .On active duty in the past, but not now 3 
+    .Only on active duty for training in Reserves/National Guard 4 .Never 
+    served in the military"""),
+    Feature('ANC', cat_dtype, """Ancestry recode 1 .Single 2 .Multiple 3 
+    .Unclassified  .Not reported 8 .Suppressed for data year 2018 for select 
+    PUMAs"""),
+    Feature('NATIVITY', cat_dtype, """Nativity 1 .Native 2 .Foreign born"""),
+    Feature('DEAR', cat_dtype, "Hearing difficulty 1 .Yes 2 .No"),
+    Feature('DEYE', cat_dtype, "Vision difficulty 1 .Yes 2 .No"),
+    Feature('DREM', cat_dtype, """Cognitive difficulty b .N/A (Less than 5 
+    years old) 1 .Yes 2 .No"""),
+    Feature('DPHY', cat_dtype, """Ambulatory difficulty b .N/A (Less than 5 
+    years old) 1 .Yes 2 .No"""),
+    Feature('FER', cat_dtype, """Gave birth to child within the past 12 
+    months b .N/A (less than 15 years/greater than 50 years/ male) 1 .Yes 2 
+    .No"""),
+    Feature('AGEP', int, "Age"),
+    Feature('CIT', cat_dtype, """Citizenship status 1 .Born in the U.S. 2 
+    .Born in Puerto Rico, Guam, the U.S. Virgin Islands, or the .Northern 
+    Marianas 3 .Born abroad of American parent(s) 4 .U.S. citizen by 
+    naturalization 5 .Not a citizen of the U.S.""")
+])
+
+ACS_FOODSTAMPS_FEATURES = FeatureList(features=[
+    Feature('FS', int, """Yearly food stamp/Supplemental Nutrition Assistance 
+    Program (SNAP) recipiency (household) b .N/A (vacant) 5 1 .Yes 2 .No""",
+            is_target=True),
+    Feature('ENG', cat_dtype, """Ability to speak English b .N/A (less than 5 
+    years old/speaks only English) 1 .Very well 2 .Well 3 .Not well 4 .Not at 
+    all"""),
+    Feature('FER', cat_dtype, """Gave birth to child within the past 12 
+    months b .N/A (less than 15 years/greater than 50 years/ male) 1 .Yes 2 
+    .No"""),
+    Feature('HUPAC', int, """HH presence and age of children b .N/A (
+    GQ/vacant) 1 .With children under 6 years only 2 .With children 6 to 17 
+    years only 3 .With children under 6 years and 6 to 17 years 4 .No 
+    children"""),
+    Feature('WIF', int, """Workers in family during the past 12 months b .N/A 
+    (GQ/vacant/non-family household) 0 .No workers 1 .1 worker 2 .2 workers 3 
+    .3 or more workers in family"""),
+    Feature('NWLA', cat_dtype, """On layoff from work (UNEDITED - See 
+    "Employment Status Recode" (ESR)) b .N/A (less than 16 years old/at work) 
+    1 .Yes 2 .No 3 .Did not report"""),
+    Feature('NWLK', cat_dtype, """Looking for work (UNEDITED - See 
+    "Employment Status Recode" (ESR)) b .N/A (less than 16 years old/at 
+    work/temporarily .absent/informed of recall) 1 .Yes 2 .No 3 .Did not 
+    report"""),
+    Feature('OCCP', cat_dtype,
+            "Occupation recode for 2018 and later based on 2018 OCC codes"),
+    Feature('POBP', cat_dtype, "Place of birth (Recode)"),
+    Feature('RELP', cat_dtype),  # Relationship
+    Feature('WKHP', int, """Usual hours worked per week past 12 months bb 
+    .N/A (less than 16 years old/did not work during the past .12 months) 
+    1..98 .1 to 98 usual hours 99 .99 or more usual hours"""),
+    Feature('WKW', int, "Weeks worked during past 12 months."),
+    Feature('WRK', cat_dtype, """Worked last week b .N/A (not reported) 1 
+    .Worked 2 .Did not work"""),
+    Feature('DIS', cat_dtype, """Disability recode 1 .With a disability 2 
+    .Without a disability"""),
+    Feature('MIL', cat_dtype, """Military service b .N/A (less than 17 years 
+    old) 1 .Now on active duty 2 .On active duty in the past, but not now 3 
+    .Only on active duty for training in Reserves/National Guard 4 .Never 
+    served in the military"""),
+    Feature('ANC', cat_dtype, """Ancestry recode 1 .Single 2 .Multiple 3 
+    .Unclassified  .Not reported 8 .Suppressed for data year 2018 for select 
+    PUMAs"""),
+    Feature('NATIVITY', cat_dtype, """Nativity 1 .Native 2 .Foreign born"""),
+    Feature('DEAR', cat_dtype, "Hearing difficulty 1 .Yes 2 .No"),
+    Feature('DEYE', cat_dtype, "Vision difficulty 1 .Yes 2 .No"),
+    Feature('DREM', cat_dtype, """Cognitive difficulty b .N/A (Less than 5 
+    years old) 1 .Yes 2 .No"""),
+    Feature('PUBCOV', cat_dtype, """Public health coverage recode"""),
+
+])
+
 
 def map_categorical_features(df, feature_mapping):
     """Convert a subset of features from numeric to categorical format.
@@ -213,6 +319,37 @@ def pubcov_target_transform(y, threshold):
     return y == 1
 
 
+def unemployment_target_transform(y, threshold):
+    """Default Public Coverage target transform from folktables."""
+    del threshold
+    return y == 3
+
+
+def unemployment_filter(data):
+    """
+    Filters for the unemployment; focus on Americans of working age not eligible for Social Security.
+    """
+    df = data
+    df = df[(df['AGEP'] < 62) & (df['AGEP'] >= 18)]
+    return df
+
+
+def foodstamps_target_transform(y, threshold):
+    del threshold
+    return y == 1
+
+
+def foodstamps_filter(data):
+    """Filter for food stamp recipiency task; focus on low income Americans (
+    as in public coverage task) of working age (since these would be
+    individuals actually pplying for this benefit, as opposed to children
+    living in a household that receives food stamps). """
+    df = data
+    df = df[df['HUPAC'] >= 1]  # at least one child in household
+    df = df[(df['AGEP'] < 62) & (df['AGEP'] >= 18)]
+    return df[df['PINCP'] <= 30000]
+
+
 @dataclass
 class ACSTaskConfig:
     """A class to configure data loading/preprocessing for an ACS task."""
@@ -244,6 +381,24 @@ ACS_TASK_CONFIGS = frozendict.frozendict({
         'target_transform': pubcov_target_transform,
         'threshold': None,
     }),
+    'unemployment': ACSTaskConfig(**{
+        'features_to_use': ACS_UNEMPLOYMENT_FEATURES,
+        'group_transform': default_acs_group_transform,
+        'postprocess': default_acs_postprocess,
+        'preprocess': unemployment_filter,
+        'target': 'ESR',
+        'target_transform': unemployment_target_transform,
+        'threshold': None,
+    }),
+    'foodstamps': ACSTaskConfig(**{
+        'features_to_use': ACS_FOODSTAMPS_FEATURES,
+        'group_transform': default_acs_group_transform,
+        'postprocess': default_acs_postprocess,
+        'preprocess': foodstamps_filter,
+        'target': 'FS',
+        'target_transform': foodstamps_target_transform,
+        'threshold': None,
+    })
 })
 
 

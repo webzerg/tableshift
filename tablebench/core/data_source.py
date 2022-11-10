@@ -215,11 +215,12 @@ class BRFSSDataSource(DataSource):
             # TODO(jpgard): subset it to BRFSS_INPUT_FEATURES to avoid large dfs
             df = utils.read_xpt(xpt_fp)
             dfs[url] = df
-        for k,v in dfs.items():
+        for k, v in dfs.items():
             missing_inputs = set(BRFSS_INPUT_FEATURES) - set(v.columns)
             if missing_inputs:
                 print(f"df from {url} is missing features {missing_inputs}")
-        import ipdb;ipdb.set_trace()
+        import ipdb;
+        ipdb.set_trace()
         return pd.concat(dfs.values(), axis=0)
 
 
@@ -307,6 +308,7 @@ class ACSDataSource(DataSource):
             print(f"fetching ACS data for year {year}...")
             data_source = get_acs_data_source(year, self.cache_dir)
             year_data = data_source.get_data(states=self.states,
+                                             join_household=True,
                                              download=True)
             year_data["ACS_YEAR"] = year
             year_dfs.append(year_data)
