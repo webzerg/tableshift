@@ -271,7 +271,7 @@ def align_brfss_features(df):
     return df
 
 
-def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame
+def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame:
     """Shared preprocessing function for BRFSS data tasks."""
     df = df[_BRFSS_INPUT_FEATURES]
 
