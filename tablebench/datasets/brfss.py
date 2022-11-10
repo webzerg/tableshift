@@ -27,7 +27,7 @@ BRFSS_STATE_LIST = [
 BRFSS_SHARED_FEATURES = FeatureList(features=[
     # Derived feature for year; keep as categorical dtype so normalization
     # is not applied.
-    Feature("IYEAR", int, "Year of BRFSS dataset."),
+    Feature("IYEAR", float, "Year of BRFSS dataset."),
     # ################ Demographics/sensitive attributes. ################
     # Also see "INCOME2", "MARITAL", "EDUCA" features below.
     Feature("STATE", cat_dtype),
@@ -36,9 +36,9 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
     Feature("MEDCOST", cat_dtype, na_values=(7, 9)),
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
-    Feature("PRACE1", int, na_values=(77, 99)),
+    Feature("PRACE1", float, na_values=(77, 99)),
     # Indicate sex of respondent.
-    Feature("SEX", int),
+    Feature("SEX", float),
 ])
 
 BRFSS_DIET_FEATURES = [
@@ -72,7 +72,7 @@ BRFSS_SMOKE_FEATURES = [
 
 BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Target ################
-    Feature("DIABETES", int, is_target=True, na_values=(7, 9)),
+    Feature("DIABETES", float, is_target=True, na_values=(7, 9)),
     # (Ever told) you have diabetes
 
     # Below are a set of indicators for known risk factors for diabetes.
@@ -136,7 +136,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
 ]) + BRFSS_SHARED_FEATURES
 
 BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
-    Feature("HI_BP", int, """Have you ever been told by a doctor, nurse or 
+    Feature("HI_BP", float, """Have you ever been told by a doctor, nurse or 
     other health professional that you have high blood pressure?""",
             is_target=True),
 
@@ -144,7 +144,7 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # https://www.nhlbi.nih.gov/health/high-blood-pressure/causes
 
     ################ Age ################
-    Feature("AGEG5YR", int, "Fourteen-level age category",
+    Feature("AGEG5YR", float, "Fourteen-level age category",
             na_values=(14,)),
     ################ Family history and genetics ################
     # No questions related to this risk factor.

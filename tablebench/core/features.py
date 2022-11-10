@@ -15,10 +15,21 @@ def _contains_missing_values(df: pd.DataFrame) -> bool:
 
 
 def safe_cast(x: pd.Series, dtype):
+    print(f"[DEBUG] casting feature {x.name} from dtype "
+          f"{x.dtype.name} to dtype {dtype.__name__}")
     if dtype == cat_dtype:
         return x.apply(str).astype("category")
     else:
-        return x.astype(dtype)
+        try:
+            return x.astype(dtype)
+        except pd.errors.IntCastingNaNError as e:
+            if 'int' in dtype.__name__.lower():
+                # Case: integer with nan values; cast to float instead.
+                print(f"[WARNING] cannot cast feature {x.name} to "
+                      f"dtype {dtype.__name__} due to missing values; "
+                      f"attempting cast to float instead. Recommend changing"
+                      f"the feature spec for this feature to type float.")
+                return x.astype(float)
 
 
 @dataclass(frozen=True)
@@ -107,8 +118,6 @@ class FeatureList:
 
             # Cast to desired type
             if not _column_is_of_type(df[f.name], f.kind):
-                print(f"[DEBUG] casting feature {f.name} from dtype "
-                      f"{df[f.name].dtype.name} to dtype {f.kind.__name__}")
                 df[f.name] = safe_cast(df[f.name], f.kind)
 
         # Drop any rows containing missing values.
