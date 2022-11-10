@@ -12,13 +12,12 @@ from sklearn.metrics import accuracy_score
 
 dataset_config = TabularDatasetConfig()
 
-preprocessor_config = PreprocessorConfig(passthrough_columns=["nhanes_year"],
-                                         numeric_features="kbins")
+preprocessor_config = PreprocessorConfig()
 
 splitter = RandomSplitter(test_size=0.5, val_size=0.25, random_state=29746)
-# Race (non. hispanic white vs. all others; male vs. all others)
-grouper = Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]}, drop=False)
-dset = TabularDataset("nhanes_cholesterol",
+grouper = Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False)
+dset = TabularDataset("acsfoodstamps",
+                      acs_task="acsfoodstamps",
                       config=dataset_config,
                       splitter=splitter,
                       grouper=grouper,
@@ -28,7 +27,7 @@ X_tr, y_tr, G_tr = dset.get_pandas(split="train")
 
 estimator = HistGradientBoostingClassifier()
 
-print(f"fitting estimator of type {type(estimator)} with shape {X_tr.shape}")
+print(f"fitting estimator of type {type(estimator)}")
 estimator.fit(X_tr, y_tr)
 print("fitting estimator complete.")
 

@@ -39,8 +39,12 @@ print(f"fitting estimator of type {type(estimator)}")
 estimator.fit(X_tr, y_tr)
 print("fitting estimator complete.")
 
-X_te, y_te, G_te = acsincome.get_pandas(split="test")
+for split in ("id_test", "ood_test"):
 
-y_hat_te = estimator.predict(X_te)
-test_accuracy = accuracy_score(y_te, y_hat_te)
-print(f"test accuracy is: {test_accuracy:.3f}")
+    X_te, _, _ = dset.get_pandas(split=split)
+
+    y_hat_te = estimator.predict(X_te)
+    metrics = dset.evaluate_predictions(y_hat_te, split=split)
+    print(f"metrics on split {split}:")
+    for k, v in metrics.items():
+        print(f"\t{k:<40}:{v:.3f}")

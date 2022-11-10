@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Sequence, Any
+from typing import Sequence, Any, Optional
 
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -10,10 +10,13 @@ import xgboost as xgb
 
 from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
     TabularDatasetConfig, PreprocessorConfig
-from tablebench.datasets.acs import ACS_STATE_LIST
-from tablebench.datasets.anes import ANES_STATES
+from tablebench.core.utils import sliding_window
+from tablebench.datasets.acs import ACS_STATE_LIST, ACS_YEARS
+from tablebench.datasets.anes import ANES_STATES, ANES_YEARS
+
 from tablebench.datasets.brfss import BRFSS_STATE_LIST, BRFSS_YEARS
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
+from tablebench.datasets.nhanes import NHANES_YEARS
 
 # Estimators to fit
 estimator_cls = (LogisticRegressionCV,
@@ -29,6 +32,7 @@ class DomainShiftExperimentConfig:
     grouper: Grouper
     dataset_config: TabularDatasetConfig
     preprocessor_config: PreprocessorConfig
+    domain_split_id_values: Optional[Sequence[Any]] = None
 
 
 # Set of fixed domain shift experiments.
@@ -42,11 +46,37 @@ experiment_configs = {
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
+    "acsincome_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acsincome",
+                                "acs_task": "acsincome",
+                                "years": ACS_YEARS},
+        domain_split_varname="ACS_YEAR",
+        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
+                                 range(len(ACS_YEARS) - 1)],
+        domain_split_id_values=[[ACS_YEARS[i]] for i in
+                                range(len(ACS_YEARS) - 1)],
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
+
     "acspubcov_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acspubcov",
                                 "acs_task": "acspubcov"},
         domain_split_varname="ST",
         domain_split_ood_values=ACS_STATE_LIST,
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig()),
+
+    "acspubcov_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acspubcov",
+                                "acs_task": "acspubcov",
+                                "years": ACS_YEARS},
+        domain_split_varname="ACS_YEAR",
+        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
+                                 range(len(ACS_YEARS) - 1)],
+        domain_split_id_values=[[ACS_YEARS[i]] for i in
+                                range(len(ACS_YEARS) - 1)],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
@@ -64,10 +94,9 @@ experiment_configs = {
         domain_split_varname="IYEAR",
         domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
                                  range(len(BRFSS_YEARS) - 1)],
-        domain_split_id_values=[BRFSS_YEARS[i] for i in
+        domain_split_id_values=[[BRFSS_YEARS[i]] for i in
                                 range(len(BRFSS_YEARS) - 1)],
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
@@ -117,6 +146,20 @@ experiment_configs = {
         preprocessor_config=PreprocessorConfig(),
     ),
 
+    "nhanes_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "nhanes_cholesterol"},
+        domain_split_varname="nhanes_year",
+        domain_split_ood_values=[NHANES_YEARS[i + 1] for i in
+                                 range(len(NHANES_YEARS) - 1)],
+        domain_split_id_values=[[NHANES_YEARS[i]] for i in
+                                range(len(NHANES_YEARS) - 1)],
+        grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
+                        drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins"),
+
+    ),
+
     "physionet_set": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "physionet"},
         domain_split_varname="set",
@@ -135,6 +178,16 @@ experiment_configs = {
                         drop=False),
         dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
+
+    "anes_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "anes"},
+        domain_split_varname="VCF0004",
+        domain_split_ood_values=ANES_YEARS[4:],
+        domain_split_id_values=list(sliding_window(ANES_YEARS, 4)),
+        grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
+                        drop=False),
+        dataset_config=TabularDatasetConfig(),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
 }
 
 
@@ -142,13 +195,19 @@ def main(experiment):
     iterates = []
 
     expt_config = experiment_configs[experiment]
-    for tgt in expt_config.domain_split_ood_values:
+    for i, tgt in enumerate(expt_config.domain_split_ood_values):
+
+        if expt_config.domain_split_id_values is not None:
+            src = expt_config.domain_split_id_values[i]
+        else:
+            src = None
 
         splitter = DomainSplitter(
             val_size=0.01,
             eval_size=1 / 5.,
             domain_split_varname=expt_config.domain_split_varname,
             domain_split_ood_values=[tgt],
+            domain_split_id_values=src,
             random_state=19542)
 
         try:
@@ -170,7 +229,8 @@ def main(experiment):
             estimator = est_cls()
 
             print(f"fitting estimator of type {type(estimator)} with "
-                  f"target {expt_config.domain_split_varname} = {tgt}")
+                  f"target {expt_config.domain_split_varname} = {tgt}, "
+                  f"src {expt_config.domain_split_varname} = {src}")
             estimator.fit(X_tr, y_tr)
             print("fitting estimator complete.")
 

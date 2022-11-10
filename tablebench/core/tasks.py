@@ -31,8 +31,13 @@ class TaskConfig:
 _TASK_REGISTRY = {
     "acsincome": TaskConfig(ACSDataSource,
                             ACS_INCOME_FEATURES + ACS_SHARED_FEATURES),
+    "acsfoodstamps": TaskConfig(ACSDataSource,
+                                ACS_FOODSTAMPS_FEATURES + ACS_SHARED_FEATURES),
     "acspubcov": TaskConfig(ACSDataSource,
                             ACS_PUBCOV_FEATURES + ACS_SHARED_FEATURES),
+    "acsunemployment": TaskConfig(
+        ACSDataSource,
+        ACS_UNEMPLOYMENT_FEATURES + ACS_SHARED_FEATURES),
     "adult": TaskConfig(AdultDataSource, ADULT_FEATURES),
     "anes": TaskConfig(ANESDataSource, ANES_FEATURES),
     "brfss": TaskConfig(BRFSSDataSource, BRFSS_FEATURES),
