@@ -11,7 +11,7 @@ from tablebench.core.discretization import KBinsDiscretizer
 
 
 def _contains_missing_values(df: pd.DataFrame) -> bool:
-    return np.any(np.isnan(df.values))
+    return np.any(pd.isnull(df).values)
 
 
 def safe_cast(x: pd.Series, dtype):
