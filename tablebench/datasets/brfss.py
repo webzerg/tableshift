@@ -60,7 +60,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ High blood pressure ################
     # Adults who have been told they have high blood pressure by a
     # doctor, nurse, or other health professional
-    Feature("RFHYPE5", cat_dtype),
+    Feature("HIGH_BLOOD_PRESS", cat_dtype),
     ################ High cholesterol ################
     # Cholesterol check within past five years
     Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype),
@@ -85,7 +85,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     Feature("MICHD", cat_dtype),
     ################ Diet ################
     # Consume Fruit 1 or more times per day
-    Feature("FRTLT1", cat_dtype),
+    Feature("FRUIT_ONCE_PER_DAY", cat_dtype),
     # Consume Vegetables 1 or more times per day
     Feature("VEG_ONCE_PER_DAY", cat_dtype),
     ################ Alcohol Consumption ################
@@ -123,11 +123,38 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     Feature("HI_BP", int, """Have you ever been told by a doctor, nurse or 
     other health professional that you have high blood pressure?""",
             is_target=True),
+
+    # Indicators for high blood pressure; see
+    # https://www.nhlbi.nih.gov/health/high-blood-pressure/causes
+
     ################ Age ################
+    Feature("AGEG5YR", int, "Fourteen-level age category"),
     ################ Family history and genetics ################
+    # No questions related to this risk factor.
     ################ Lifestyle habits ################
+    # Consume Fruit 1 or more times per day
+    Feature("FRUIT_ONCE_PER_DAY", cat_dtype),
+    # Consume Vegetables 1 or more times per day
+    Feature("VEG_ONCE_PER_DAY", cat_dtype),
+    # Calculated total number of alcoholic beverages consumed per week
+    Feature("DRNK_PER_WEEK", float),
+    # Binge drinkers (males having five or more drinks on one occasion,
+    # females having four or more drinks on one occasion)
+    Feature("RFBING5", cat_dtype),
+    # Adults who reported doing physical activity or exercise
+    # during the past 30 days other than their regular job
+    Feature("TOTINDA", cat_dtype),
+    # Have you smoked at least 100 cigarettes in your entire life?
+    Feature("SMOKE100", cat_dtype),
+    # Do you now smoke cigarettes every day, some days, or not at all?
+    Feature("SMOKDAY2", cat_dtype),
     ################ Medicines ################
+    # No questions related to this risk factor.
     ################ Other medical conditions ################
+    Feature("CHCSCNCR", cat_dtype, "(Ever told) (you had) skin cancer?"),
+    Feature("CHCOCNCR", cat_dtype, "(Ever told) you had any other types of "
+                                   "cancer?"),
+
     ################ Race/ethnicity ################
     ################ Sex ################
     ################ Social and economic factors ################
@@ -198,15 +225,14 @@ BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
 # subset before preprocessing, since some features contain near-duplicate
 # versions (i.e. calculated and not-calculated versions, differing only by a
 # precending underscore).
-_BRFSS_INPUT_FEATURES = list(set([
-                                     "_STATE", "MEDCOST", "_HCVU651", "_PRACE1",
-                                     "SEX", "PHYSHLTH",
-                                     "TOLDHI2", "_BMI5", "_BMI5CAT", "SMOKE100",
-                                     "SMOKDAY2", "CVDSTRK3",
-                                     "_MICHD", "_RFBING5", "_TOTINDA",
-                                     "MARITAL", "CHECKUP1", "EDUCA",
-                                     "_HCVU651", "MENTHLTH", "IYEAR"] + list(
-    BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())))
+_BRFSS_INPUT_FEATURES = list(
+    set(['_AGEG5YR', 'CHECKUP1', 'CHCSCNCR', 'CHCOCNCR', 'CVDSTRK3', 'EDUCA', 'IYEAR',
+         'MARITAL',
+         'MEDCOST',
+         'MENTHLTH', 'PHYSHLTH', 'SEX', 'SMOKDAY2', 'SMOKE100', 'TOLDHI2',
+         '_BMI5', '_BMI5CAT', '_HCVU651', '_HCVU651', '_MICHD', '_PRACE1',
+         '_RFBING5', '_STATE', '_TOTINDA'] +
+        list(BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())))
 
 
 def align_brfss_features(df):
@@ -294,6 +320,11 @@ def preprocess_brfss(df: pd.DataFrame):
             print(e)
             import ipdb;
             ipdb.set_trace()
+
+    # Also drop samples where age is not reported; this has different coding for
+    # the missing values than other numeric columns.
+    if "_AGEG5YR" in df.columns:
+        df = df[~(df["_AGEG5YR"] != 14)]
 
     # TODO(jpgard): we should be able to remove this loop since feature casting
     #  is handled elsewhere according to the FeatureList.
