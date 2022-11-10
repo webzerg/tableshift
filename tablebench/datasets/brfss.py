@@ -118,15 +118,15 @@ BRFSS_FEATURES = FeatureList([
     Feature("MENTHLTH", float),
 ])
 
-# Raw names of the input features. Useful to subset before preprocessing,
-# since some features contain near-duplicate versions (i.e. calculated
-# and not-calculated versions, differing only by a precending underscore).
+# Raw names of the input features to which mapping is NOT applied. Useful to
+# subset before preprocessing, since some features contain near-duplicate
+# versions (i.e. calculated and not-calculated versions, differing only by a
+# precending underscore).
 BRFSS_INPUT_FEATURES = [
-    "DIABETE3", "_STATE", "MEDCOST", "_HCVU651", "_PRACE1", "SEX",
-    "PHYSHLTH", "_RFHYPE5", "_CHOLCHK", "TOLDHI2", "_BMI5", "_BMI5CAT",
-    "SMOKE100", "SMOKDAY2", "CVDSTRK3", "_MICHD", "_FRTLT1", "_VEGLT1",
-    "_DRNKWEK", "_RFBING5", "_TOTINDA", "PA1MIN_", "INCOME2", "MARITAL",
-    "CHECKUP1", "EDUCA", "_HCVU651", "MENTHLTH", "IYEAR"]
+    "_STATE", "MEDCOST", "_HCVU651", "_PRACE1", "SEX", "PHYSHLTH", "_RFHYPE5",
+    "TOLDHI2", "_BMI5", "_BMI5CAT", "SMOKE100", "SMOKDAY2", "CVDSTRK3",
+    "_MICHD", "_RFBING5", "_TOTINDA", "PA1MIN_", "MARITAL", "CHECKUP1", "EDUCA",
+    "_HCVU651", "MENTHLTH", "IYEAR"]
 
 BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
     # Question: Consume Fruit 1 or more times per day
@@ -208,7 +208,6 @@ def align_brfss_features(df):
 
 
 def preprocess_brfss(df: pd.DataFrame):
-
     keep_features = BRFSS_INPUT_FEATURES + list(
         BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())
     df = df[keep_features]
