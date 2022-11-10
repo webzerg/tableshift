@@ -199,7 +199,7 @@ class BRFSSDataSource(DataSource):
     components of the BRFSS questionnaire?"
     """
     def __init__(self, preprocess_fn=preprocess_brfss_diabetes,
-                 years=tuple(2021), **kwargs):
+                 years=(2021,), **kwargs):
         self.years = years
         resources = tuple([
             f"https://www.cdc.gov/brfss/annual_data/{y}/files/LLCP{y}XPT.zip"
