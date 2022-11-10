@@ -26,9 +26,7 @@ def main(cache_dir):
                           preprocessor_config=preprocessor_config)
 
     X_tr, y_tr, G_tr = dset.get_pandas(split="train")
-    print(X_tr["IYEAR"].value_counts())
-    import ipdb;
-    ipdb.set_trace()
+
     estimator = HistGradientBoostingClassifier()
 
     print(f"fitting estimator of type {type(estimator)}")
