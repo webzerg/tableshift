@@ -24,7 +24,8 @@ def safe_cast(x: pd.Series, dtype):
             return x.astype(dtype)
         except pd.errors.IntCastingNaNError as e:
             if 'int' in dtype.__name__.lower():
-                # Case: integer with nan values; cast to float instead.
+                # Case: integer with nan values; cast to float instead. Integers
+                # are not nullable in Pandas (but "Int64" type is).
                 print(f"[WARNING] cannot cast feature {x.name} to "
                       f"dtype {dtype.__name__} due to missing values; "
                       f"attempting cast to float instead. Recommend changing"
