@@ -33,13 +33,35 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
     Feature("STATE", cat_dtype),
     # Was there a time in the past 12 months when you needed to see a doctor
     # but could not because of cost?
-    Feature("MEDCOST", cat_dtype),
+    Feature("MEDCOST", cat_dtype, na_values=[7, 9]),
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
-    Feature("PRACE1", int),
+    Feature("PRACE1", int, na_values=[77, 99]),
     # Indicate sex of respondent.
     Feature("SEX", int),
 ])
+
+BRFSS_DIET_FEATURES = [
+    # Consume Fruit 1 or more times per day
+    Feature("FRUIT_ONCE_PER_DAY", cat_dtype, na_values=[9]),
+    # Consume Vegetables 1 or more times per day
+    Feature("VEG_ONCE_PER_DAY", cat_dtype, na_values=[9]),
+]
+
+BRFSS_ALCOHOL_FEATURES = [
+    # Calculated total number of alcoholic beverages consumed per week
+    Feature("DRNK_PER_WEEK", float, na_values=[99900]),
+    # Binge drinkers (males having five or more drinks on one occasion,
+    # females having four or more drinks on one occasion)
+    Feature("RFBING5", cat_dtype, na_values=[9]),
+]
+
+BRFSS_SMOKE_FEATURES = [
+    # Have you smoked at least 100 cigarettes in your entire life?
+    Feature("SMOKE100", cat_dtype, na_values=[7, 9]),
+    # Do you now smoke cigarettes every day, some days, or not at all?
+    Feature("SMOKDAY2", cat_dtype, na_values=[7, 9]),
+]
 
 # Brief feature descriptions below; for the full question/description
 # see the data dictionary linked above. Note that in the original data,
@@ -50,73 +72,67 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
 
 BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Target ################
-    Feature("DIABETES", int, is_target=True),  # (Ever told) you have diabetes
+    Feature("DIABETES", int, is_target=True, na_values=[7, 9]),
+    # (Ever told) you have diabetes
 
     # Below are a set of indicators for known risk factors for diabetes.
     ################ General health ################
     # for how many days during the past 30 days was your
     # physical health not good?
-    Feature("PHYSHLTH", float),
+    Feature("PHYSHLTH", float, na_values=[77, 99]),
     ################ High blood pressure ################
     # Adults who have been told they have high blood pressure by a
     # doctor, nurse, or other health professional
-    Feature("HIGH_BLOOD_PRESS", cat_dtype),
+    Feature("HIGH_BLOOD_PRESS", cat_dtype, na_values=[9]),
     ################ High cholesterol ################
     # Cholesterol check within past five years
-    Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype),
+    Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype, na_values=[9]),
     # Have you EVER been told by a doctor, nurse or other health
     # professional that your blood cholesterol is high?
-    Feature("TOLDHI2", cat_dtype),
+    Feature("TOLDHI2", cat_dtype, na_values=[7, 9]),
     ################ BMI/Obesity ################
     # Calculated Body Mass Index (BMI)
     Feature("BMI5", float),
     # Four-categories of Body Mass Index (BMI)
     Feature("BMI5CAT", cat_dtype),
     ################ Smoking ################
-    # Have you smoked at least 100 cigarettes in your entire life?
-    Feature("SMOKE100", cat_dtype),
-    # Do you now smoke cigarettes every day, some days, or not at all?
-    Feature("SMOKDAY2", cat_dtype),
+    *BRFSS_SMOKE_FEATURES,
     ################ Other chronic health conditions ################
     # (Ever told) you had a stroke.
-    Feature("CVDSTRK3", cat_dtype),
+    Feature("CVDSTRK3", cat_dtype, na_values=[7, 9]),
     # ever reported having coronary heart disease (CHD)
     # or myocardial infarction (MI)
     Feature("MICHD", cat_dtype),
     ################ Diet ################
-    # Consume Fruit 1 or more times per day
-    Feature("FRUIT_ONCE_PER_DAY", cat_dtype),
-    # Consume Vegetables 1 or more times per day
-    Feature("VEG_ONCE_PER_DAY", cat_dtype),
+    *BRFSS_DIET_FEATURES,
     ################ Alcohol Consumption ################
-    # Calculated total number of alcoholic beverages consumed per week
-    Feature("DRNK_PER_WEEK", float),
-    # Binge drinkers (males having five or more drinks on one occasion,
-    # females having four or more drinks on one occasion)
-    Feature("RFBING5", cat_dtype),
+    *BRFSS_ALCOHOL_FEATURES,
     ################ Exercise ################
     # Adults who reported doing physical activity or exercise
     # during the past 30 days other than their regular job
-    Feature("TOTINDA", cat_dtype),
+    Feature("TOTINDA", cat_dtype, na_values=[9]),
     ################ Household income ################
     # annual household income from all sources
-    Feature("INCOME", cat_dtype),
+    Feature("INCOME", cat_dtype, na_values=[77, 99]),
     ################ Marital status ################
-    Feature("MARITAL", cat_dtype),
+    Feature("MARITAL", cat_dtype, na_values=[9]),
     ################ Time since last checkup
     # About how long has it been since you last visited a
     # doctor for a routine checkup?
-    Feature("CHECKUP1", cat_dtype),
+    Feature("CHECKUP1", cat_dtype, na_values=[7, 9]),
     ################ Education ################
     # highest grade or year of school completed
-    Feature("EDUCA", cat_dtype),
+    Feature("EDUCA", cat_dtype, na_values=[9]),
     ################ Health care coverage ################
     # Respondents aged 18-64 who have any form of health care coverage
-    Feature("HCVU651", cat_dtype),
+    # Note: we keep missing values (=9) for this column since they are grouped
+    # with respondents aged over 64; otherwise dropping the observations
+    # with this value would exclude all respondents over 64.
+    Feature("HEALTH_COV", cat_dtype),
     ################ Mental health ################
     # for how many days during the past 30
     # days was your mental health not good?
-    Feature("MENTHLTH", float),
+    Feature("MENTHLTH", float, na_values=[77, 99]),
 ]) + BRFSS_SHARED_FEATURES
 
 BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
@@ -128,32 +144,25 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # https://www.nhlbi.nih.gov/health/high-blood-pressure/causes
 
     ################ Age ################
-    Feature("AGEG5YR", int, "Fourteen-level age category"),
+    Feature("AGEG5YR", int, "Fourteen-level age category",
+            na_values=[14]),
     ################ Family history and genetics ################
     # No questions related to this risk factor.
     ################ Lifestyle habits ################
-    # Consume Fruit 1 or more times per day
-    Feature("FRUIT_ONCE_PER_DAY", cat_dtype),
-    # Consume Vegetables 1 or more times per day
-    Feature("VEG_ONCE_PER_DAY", cat_dtype),
-    # Calculated total number of alcoholic beverages consumed per week
-    Feature("DRNK_PER_WEEK", float),
-    # Binge drinkers (males having five or more drinks on one occasion,
-    # females having four or more drinks on one occasion)
-    Feature("RFBING5", cat_dtype),
+    *BRFSS_DIET_FEATURES,
+    *BRFSS_ALCOHOL_FEATURES,
     # Adults who reported doing physical activity or exercise
     # during the past 30 days other than their regular job
-    Feature("TOTINDA", cat_dtype),
-    # Have you smoked at least 100 cigarettes in your entire life?
-    Feature("SMOKE100", cat_dtype),
-    # Do you now smoke cigarettes every day, some days, or not at all?
-    Feature("SMOKDAY2", cat_dtype),
+    Feature("TOTINDA", cat_dtype, na_values=[9]),
+    *BRFSS_SMOKE_FEATURES,
     ################ Medicines ################
     # No questions related to this risk factor.
     ################ Other medical conditions ################
-    Feature("CHCSCNCR", cat_dtype, "(Ever told) (you had) skin cancer?"),
-    Feature("CHCOCNCR", cat_dtype, "(Ever told) you had any other types of "
-                                   "cancer?"),
+    Feature("CHCSCNCR", cat_dtype, "(Ever told) (you had) skin cancer?",
+            na_values=[7, 9]),
+    Feature("CHCOCNCR", cat_dtype,
+            "(Ever told) you had any other types of cancer?",
+            na_values=[7, 9]),
 
     ################ Race/ethnicity ################
     # Covered in BRFSS_SHARED_FEATURES.
@@ -161,10 +170,10 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # Covered in BRFSS_SHARED_FEATURES.
     ################ Social and economic factors ################
     # Income
-    Feature("INCOME", cat_dtype, "Annual household income from all sources"),
-    # Type of job; related to early/late shifts which is a risk factor.
-    Feature("SCNTWRK1", int, "About how many hours do you work per week on "
-                             "all of your jobs and businesses combined?")
+    Feature("INCOME", cat_dtype, na_values=[77, 99]),
+    # Type job status; related to early/late shifts which is a risk factor.
+    Feature("EMPLOY1", cat_dtype, "Are you currently…?",
+            na_values=[9]),
     # Additional relevant features in BRFSS_SHARED_FEATURES.
 ]) + BRFSS_SHARED_FEATURES
 
@@ -226,6 +235,11 @@ BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
     "HIGH_BLOOD_PRESS": (
         "_RFHYPE5",  # 2015, 2017, 2019
         "_RFHYPE6",  # 2021
+    ),
+    # Question: Respondents aged 18-64 who have any form of health insurance
+    "HEALTH_COV": (
+        "_HCVU651",  # 2015, 2017, 2019
+        "_HCVU652",  # 2021
     )
 }
 
@@ -238,7 +252,7 @@ _BRFSS_INPUT_FEATURES = list(
          'IYEAR',
          'MARITAL',
          'MEDCOST',
-         'MENTHLTH', 'PHYSHLTH', 'SCNTWRK1', 'SEX', 'SMOKDAY2', 'SMOKE100',
+         'MENTHLTH', 'PHYSHLTH', 'SEX', 'SMOKDAY2', 'SMOKE100',
          'TOLDHI2',
          '_BMI5', '_BMI5CAT', '_HCVU651', '_HCVU651', '_MICHD', '_PRACE1',
          '_RFBING5', '_STATE', '_TOTINDA'] +
@@ -300,41 +314,6 @@ def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame:
     df["IYEAR"] = df["IYEAR"].apply(
         lambda x: re.search("\d+", x).group()).astype(int)
 
-    NUMERIC_COLS = ("_BMI5", "DRNK_PER_WEEK", "PHYSHLTH", "MENTHLTH", "IYEAR")
-
-    # For these categorical columns, drop respondents who were not sure,
-    # refused, or had missing responses. This is also useful because
-    # sometimes those responses (dk/refuse/missing) are lumped into
-    # a single category (e.g. "_TOTINDA").
-    DROP_MISSING_REFUSED_COLS = (
-        "MEDCOST", "PHYSHLTH", "HIGH_BLOOD_PRESS", "CHOL_CHK_PAST_5_YEARS",
-        "SMOKE100", "SMOKDAY2", "TOLDHI2", "CVDSTRK3", "_TOTINDA",
-        "FRUIT_ONCE_PER_DAY", "VEG_ONCE_PER_DAY", "_RFBING5", "INCOME",
-        "MARITAL", "CHECKUP1", "EDUCA", "_MICHD", "_BMI5", "_BMI5CAT")
-
-    for c in DROP_MISSING_REFUSED_COLS:
-        try:
-            if c not in NUMERIC_COLS:
-                assert c in df.columns, f"column {c} not in df columns {df.columns}"
-                # Apply coded values for missing/refused/idk, for categorical cols.
-                # Note that 88 is sometimes used for for these, but 8 is NOT
-                # and constitutes a valid value in the above columns.
-                df = df[~(df[c].isin([7, 9, 77, 88, 99]))]
-            # Drop actual missing values, for all column dtypes
-            df.dropna(subset=[c], inplace=True)
-        except Exception as e:
-            print(e)
-            import ipdb;
-            ipdb.set_trace()
-
-    # TODO(jpgard): we should be able to remove this loop since feature casting
-    #  is handled elsewhere according to the FeatureList.
-    # Cast columns to categorical; since some columns have mixed type,
-    # we cast the entire column to string.
-    for c in df.columns:
-        if c not in NUMERIC_COLS and c != target_colname:
-            df[c] = df[c].apply(str).astype("category")
-
     # Remove leading underscores from column names
     renames = {c: re.sub("^_", "", c) for c in df.columns if c.startswith("_")}
     df.rename(columns=renames, inplace=True)
@@ -345,22 +324,20 @@ def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame:
 def preprocess_brfss_diabetes(df: pd.DataFrame):
     df = preprocess_brfss(df, target_colname=BRFSS_DIABETES_FEATURES.target)
 
-    # Label
     df["DIABETES"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
-    # Drop 1k missing/not sure, plus one missing observation
-    df = df[~(df["DIABETES"].isin([7, 9]))].dropna(subset=["DIABETES"])
 
     # Reset the index after preprocessing to ensure splitting happens
     # correctly (splitting assumes sequential indexing).
     return df.reset_index(drop=True)
 
+
 def preprocess_brfss_blood_pressure(df: pd.DataFrame) -> pd.DataFrame:
     df = preprocess_brfss(df, BRFSS_BLOOD_PRESSURE_FEATURES.target)
+
+    # TODO(jpgard): this shouldnt be needed if na_values are dropped.
     # Drop samples where age is not reported; this has different coding for
     # the missing values than other numeric columns.
     df = df[~(df["_AGEG5YR"] != 14)]
-
-    # TODO(jpgard): Drop samples where hours per week worked is not reported.
 
     # Reset the index after preprocessing to ensure splitting happens
     # correctly (splitting assumes sequential indexing).
