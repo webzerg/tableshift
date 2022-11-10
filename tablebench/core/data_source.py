@@ -227,8 +227,6 @@ class BRFSSDataSource(DataSource):
             df = align_brfss_features(df)
             dfs[url] = df
 
-        import ipdb;
-        ipdb.set_trace()
         return pd.concat(dfs.values(), axis=0)
 
 
