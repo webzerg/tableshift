@@ -14,7 +14,7 @@ from tablebench.core.utils import sliding_window
 from tablebench.datasets.acs import ACS_STATE_LIST, ACS_YEARS
 from tablebench.datasets.anes import ANES_STATES, ANES_YEARS
 
-from tablebench.datasets.brfss_diabetes import BRFSS_STATE_LIST, BRFSS_YEARS
+from tablebench.datasets.brfss import BRFSS_STATE_LIST, BRFSS_YEARS
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
 from tablebench.datasets.nhanes import NHANES_YEARS
 
