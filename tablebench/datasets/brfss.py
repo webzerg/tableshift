@@ -139,8 +139,9 @@ BRFSS_DIABETES_FEATURES = FeatureList([
 ]) + BRFSS_SHARED_FEATURES
 
 BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
-    Feature("HI_BP", float, """Have you ever been told by a doctor, nurse or 
-    other health professional that you have high blood pressure?""",
+    Feature("HIGH_BLOOD_PRESS", float,
+            """Have you ever been told by a doctor, nurse or other health 
+            professional that you have high blood pressure?""",
             is_target=True),
 
     # Indicators for high blood pressure; see
@@ -254,10 +255,11 @@ BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
 # versions (i.e. calculated and not-calculated versions, differing only by a
 # precending underscore).
 _BRFSS_INPUT_FEATURES = list(
-    set(['_AGEG5YR', 'CHECKUP1', 'CHCSCNCR', 'CHCOCNCR', 'CVDSTRK3', 'EDUCA',
-         'IYEAR', 'MARITAL', 'MEDCOST', 'MENTHLTH', 'PHYSHLTH', 'SEX',
-         'SMOKDAY2', 'SMOKE100', 'TOLDHI2', '_BMI5', '_BMI5CAT', '_MICHD',
-         '_PRACE1', '_RFBING5', '_STATE', '_TOTINDA', 'HI_BP', 'EMPLOY1'] +
+    set(['CHCOCNCR', 'CHCSCNCR', 'CHECKUP1', 'CVDSTRK3', 'EDUCA', 'EMPLOY1',
+         'HIGH_BLOOD_PRESS', 'IYEAR', 'MARITAL', 'MEDCOST', 'MENTHLTH',
+         'PHYSHLTH', 'SEX', 'SMOKDAY2', 'SMOKE100', 'TOLDHI2', '_AGEG5YR',
+         '_BMI5', '_BMI5CAT', '_MICHD', '_PRACE1', '_RFBING5', '_STATE',
+         '_TOTINDA'] +
         list(BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())))
 
 
