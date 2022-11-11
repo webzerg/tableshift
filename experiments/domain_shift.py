@@ -30,7 +30,6 @@ class DomainShiftExperimentConfig:
     domain_split_varname: str
     domain_split_ood_values: Sequence[Any]
     grouper: Grouper
-    dataset_config: TabularDatasetConfig
     preprocessor_config: PreprocessorConfig
     domain_split_id_values: Optional[Sequence[Any]] = None
 
@@ -43,7 +42,6 @@ experiment_configs = {
         domain_split_varname="ST",
         domain_split_ood_values=ACS_STATE_LIST,
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "acsfoodstamps_year": DomainShiftExperimentConfig(
@@ -56,7 +54,6 @@ experiment_configs = {
         domain_split_id_values=[[ACS_YEARS[i]] for i in
                                 range(len(ACS_YEARS) - 1)],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "acsincome_st": DomainShiftExperimentConfig(
@@ -65,7 +62,6 @@ experiment_configs = {
         domain_split_varname="ST",
         domain_split_ood_values=ACS_STATE_LIST,
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "acsincome_year": DomainShiftExperimentConfig(
@@ -78,7 +74,6 @@ experiment_configs = {
         domain_split_id_values=[[ACS_YEARS[i]] for i in
                                 range(len(ACS_YEARS) - 1)],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "acspubcov_st": DomainShiftExperimentConfig(
@@ -87,7 +82,6 @@ experiment_configs = {
         domain_split_varname="ST",
         domain_split_ood_values=ACS_STATE_LIST,
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "acspubcov_year": DomainShiftExperimentConfig(
@@ -100,7 +94,6 @@ experiment_configs = {
         domain_split_id_values=[[ACS_YEARS[i]] for i in
                                 range(len(ACS_YEARS) - 1)],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "acsunemployment_st": DomainShiftExperimentConfig(
@@ -109,7 +102,6 @@ experiment_configs = {
         domain_split_varname="ST",
         domain_split_ood_values=ACS_STATE_LIST,
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "acsunemployment_year": DomainShiftExperimentConfig(
@@ -122,7 +114,6 @@ experiment_configs = {
         domain_split_id_values=[[ACS_YEARS[i]] for i in
                                 range(len(ACS_YEARS) - 1)],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "brfss_st": DomainShiftExperimentConfig(
@@ -130,7 +121,6 @@ experiment_configs = {
         domain_split_varname="STATE",
         domain_split_ood_values=BRFSS_STATE_LIST,
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "brfss_year": DomainShiftExperimentConfig(
@@ -141,7 +131,6 @@ experiment_configs = {
         domain_split_id_values=[[BRFSS_YEARS[i]] for i in
                                 range(len(BRFSS_YEARS) - 1)],
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig()),
 
     "candc_st": DomainShiftExperimentConfig(
@@ -150,7 +139,6 @@ experiment_configs = {
         domain_split_ood_values=CANDC_STATE_LIST,
         grouper=Grouper({"Race": [1, ], "income_level_above_median": [1, ]},
                         drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(),
     ),
 
@@ -160,7 +148,6 @@ experiment_configs = {
         domain_split_ood_values=[1, 2, 3, 4, 5, 6, 7, 8],
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(),
     ),
 
@@ -171,7 +158,6 @@ experiment_configs = {
                                  20, 22, 25],
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(),
     ),
 
@@ -186,7 +172,6 @@ experiment_configs = {
         grouper=Grouper({"gender": ["m", ],
                          "LoE_DI": ["Bachelor's", "Master's", "Doctorate"]},
                         drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(),
     ),
 
@@ -199,7 +184,6 @@ experiment_configs = {
                                 range(len(NHANES_YEARS) - 1)],
         grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
                         drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins"),
 
     ),
@@ -210,7 +194,6 @@ experiment_configs = {
         domain_split_ood_values=["a", "b"],
         grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
                         drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")
     ),
 
@@ -220,7 +203,6 @@ experiment_configs = {
         domain_split_ood_values=ANES_STATES,
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
 
     "anes_year": DomainShiftExperimentConfig(
@@ -230,15 +212,15 @@ experiment_configs = {
         domain_split_id_values=list(sliding_window(ANES_YEARS, 4)),
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
-        dataset_config=TabularDatasetConfig(),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
 }
 
 
-def main(experiment):
+def main(experiment, cache_dir):
     iterates = []
 
     expt_config = experiment_configs[experiment]
+    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
     for i, tgt in enumerate(expt_config.domain_split_ood_values):
 
         if expt_config.domain_split_id_values is not None:
@@ -257,7 +239,7 @@ def main(experiment):
         try:
             dset = TabularDataset(
                 **expt_config.tabular_dataset_kwargs,
-                config=expt_config.dataset_config,
+                config=dataset_config,
                 splitter=splitter,
                 grouper=expt_config.grouper,
                 preprocessor_config=expt_config.preprocessor_config)
@@ -309,5 +291,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", choices=list(experiment_configs.keys()),
                         default="brfss_st")
+    parser.add_argument("--cache_dir", default="tmp",
+                        help="Directory to cache raw data files to.")
     args = parser.parse_args()
     main(**vars(args))
