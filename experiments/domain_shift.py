@@ -14,7 +14,7 @@ from tablebench.core.utils import sliding_window
 from tablebench.datasets.acs import ACS_STATE_LIST, ACS_YEARS
 from tablebench.datasets.anes import ANES_STATES, ANES_YEARS
 
-from tablebench.datasets.brfss import BRFSS_STATE_LIST, BRFSS_YEARS
+from tablebench.datasets.brfss_diabetes import BRFSS_STATE_LIST, BRFSS_YEARS
 from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
 from tablebench.datasets.nhanes import NHANES_YEARS
 
@@ -116,15 +116,32 @@ experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "brfss_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss"},
+    "brfss_diabetes_st": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_diabetes"},
         domain_split_varname="STATE",
         domain_split_ood_values=BRFSS_STATE_LIST,
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "brfss_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss", "years": BRFSS_YEARS},
+    "brfss_diabetes_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_diabetes", "years": BRFSS_YEARS},
+        domain_split_varname="IYEAR",
+        domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
+                                 range(len(BRFSS_YEARS) - 1)],
+        domain_split_id_values=[[BRFSS_YEARS[i]] for i in
+                                range(len(BRFSS_YEARS) - 1)],
+        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig()),
+    "brfss_bloodpressure_st": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_bloodpressure"},
+        domain_split_varname="STATE",
+        domain_split_ood_values=BRFSS_STATE_LIST,
+        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig()),
+
+    "brfss_bloodpressure_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_bloodpressure",
+                                "years": BRFSS_YEARS},
         domain_split_varname="IYEAR",
         domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
                                  range(len(BRFSS_YEARS) - 1)],
@@ -290,7 +307,7 @@ def main(experiment, cache_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", choices=list(experiment_configs.keys()),
-                        default="brfss_st")
+                        default="brfss_diabetes_st")
     parser.add_argument("--cache_dir", default="tmp",
                         help="Directory to cache raw data files to.")
     args = parser.parse_args()
