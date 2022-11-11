@@ -132,15 +132,15 @@ experiment_configs = {
                                 range(len(BRFSS_YEARS) - 1)],
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
-    "brfss_bloodpressure_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_bloodpressure"},
+    "brfss_blood_pressure_st": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_blood_pressure"},
         domain_split_varname="STATE",
         domain_split_ood_values=BRFSS_STATE_LIST,
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "brfss_bloodpressure_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_bloodpressure",
+    "brfss_blood_pressure_year": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_blood_pressure",
                                 "years": BRFSS_YEARS},
         domain_split_varname="IYEAR",
         domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
