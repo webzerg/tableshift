@@ -13,6 +13,13 @@ import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
+# Features present in every year of BRFSS
+BRFSS_GLOBAL_FEATURES = [
+    'CHCOCNCR', 'CHCSCNCR', 'CHECKUP1', 'CVDSTRK3', 'EDUCA', 'EMPLOY1',
+    'HIGH_BLOOD_PRESS', 'IYEAR', 'MARITAL', 'MEDCOST', 'MENTHLTH',
+    'PHYSHLTH', 'SEX', 'SMOKDAY2', 'SMOKE100', 'TOLDHI2', '_AGEG5YR',
+    '_BMI5', '_BMI5CAT', '_MICHD', '_PRACE1', '_RFBING5', '_STATE', '_TOTINDA']
+
 # While BRFSS exists for every year back several decades, feature alignment
 # is only implemented for these years due to "rotating core" features occurring
 # only every other year and other changes prior to 2015; see comments below.
@@ -255,11 +262,7 @@ BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
 # versions (i.e. calculated and not-calculated versions, differing only by a
 # precending underscore).
 _BRFSS_INPUT_FEATURES = list(
-    set(['CHCOCNCR', 'CHCSCNCR', 'CHECKUP1', 'CVDSTRK3', 'EDUCA', 'EMPLOY1',
-         'HIGH_BLOOD_PRESS', 'IYEAR', 'MARITAL', 'MEDCOST', 'MENTHLTH',
-         'PHYSHLTH', 'SEX', 'SMOKDAY2', 'SMOKE100', 'TOLDHI2', '_AGEG5YR',
-         '_BMI5', '_BMI5CAT', '_MICHD', '_PRACE1', '_RFBING5', '_STATE',
-         '_TOTINDA'] +
+    set(BRFSS_GLOBAL_FEATURES +
         list(BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())))
 
 
