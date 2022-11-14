@@ -228,10 +228,13 @@ class DomainSplitter(Splitter):
                     f"values not in {ood_vals}.")
 
         if not len(ood_idxs):
+            vals = domain_vals.unique()
+            import ipdb;ipdb.set_trace()
             raise ValueError(
                 f"No OOD observations with {self.domain_split_varname} values "
                 f"{ood_vals}; are the values of same type"
-                f"as the column type of {domain_vals.dtype}?")
+                f"as the column type of {domain_vals.dtype}? Examples of "
+                f"values in {self.domain_split_varname}: {vals[:10]}")
 
         stratify = _stratify(labels, groups)
 

@@ -19,7 +19,7 @@ GERMAN_FEATURES = FeatureList(features=[
     Feature("other_debtors", cat_dtype),
     Feature("pres_res_since", float),
     Feature("property", cat_dtype),
-    Feature("age_>=_median", cat_dtype),
+    Feature("age_geq_median", cat_dtype),
     Feature("sex", cat_dtype),
     Feature("other_installment", cat_dtype),
     Feature("housing", cat_dtype),
@@ -49,7 +49,7 @@ def preprocess_german(df: pd.DataFrame):
         lambda x: 1 if x not in ["A92", "A95"] else 0)
     # Age is 1 if above median age, else 0.
     median_age = df["age"].median()
-    df["age_>=_median"] = df["age"].apply(lambda x: 1 if x > median_age else 0)
+    df["age_geq_median"] = df["age"].apply(lambda x: 1 if x > median_age else 0)
 
     df["single"] = df["per_status_sex"].apply(
         lambda x: 1 if x in ["A93", "A95"] else 0)

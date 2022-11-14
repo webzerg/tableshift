@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import re
-from typing import List, Any, Sequence, Optional, Mapping, Tuple
+from typing import List, Any, Sequence, Optional, Mapping, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -160,7 +160,7 @@ class PreprocessorConfig:
     passthrough_columns: List[str] = None  # Feature names to passthrough.
     # If "rows", drop rows containing na values, if "columns", drop columns
     # containing na values; if None do not do anything for missing values.
-    dropna: str = "rows"
+    dropna: Union[str, None] = "rows"
 
     def _get_categorical_transforms(self, data: pd.DataFrame,
                                     categorical_columns: List[str],
@@ -271,11 +271,21 @@ class PreprocessorConfig:
               f"({(start_len - len(data)) / start_len}% of data).")
         return data.reset_index(drop=True)
 
+    def _pre_transform(self, data):
+        prohibited_chars = "[].<>"
+        for char in prohibited_chars:
+            for colname in data.columns:
+                if char in colname:
+                    raise ValueError(
+                        f"[ERROR] illegal character {c} in column name "
+                        f"{colname}; this will likely lead to an error.")
+
     def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         dtypes_in = data.dtypes.to_dict()
         if self.passthrough_columns:
             passthrough_columns += self.passthrough_columns
+        self._pre_transform(data)
         passthrough_dtypes = ({c: dtypes_in[c] for c in
                                passthrough_columns}
                               if passthrough_columns

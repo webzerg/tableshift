@@ -11,10 +11,10 @@ COMPAS_FEATURES = FeatureList(features=[
     Feature('juv_other_count', int),
     Feature('priors_count', int),
     Feature('age', int),
-    Feature('c_charge_degree', int),
+    Feature('c_charge_degree', cat_dtype),
     Feature('sex', cat_dtype),
     Feature('race', cat_dtype),
-    Feature('Target', cat_dtype),
+    Feature('Target', float, is_target=True),
 ])
 
 
