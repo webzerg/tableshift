@@ -4,6 +4,7 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import torch
 
 from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
@@ -133,17 +134,30 @@ class TabularDataset(ABC):
             passthrough_columns=self.grouper.features + [self.target])
         return data
 
-    def get_pandas(self, split) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
-        """Fetch the (data, labels, groups) for this TabularDataset."""
+    def _check_split(self, split):
+        """Check that a split name is valid."""
         assert split in self.splits.keys(), \
             f"split {split} not in {list(self.splits.keys())}"
+
+    def get_pandas(self, split) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
+        """Fetch the (data, labels, groups) for this TabularDataset."""
+        self._check_split(split)
         idxs = self.splits[split]
         return (self.data.iloc[idxs],
                 self.labels.iloc[idxs],
                 self.groups.iloc[idxs])
 
-    def get_dataloader(self):
-        raise NotImplementedError
+    def get_dataloader(self, split, batch_size,
+                       shuffle=True) -> torch.utils.data.DataLoader:
+        """Fetch a dataloader yielding (X, y, G) tuples."""
+        self._check_split(split)
+        idxs = self.splits[split]
+        data = (self.data.iloc[idxs],
+                self.labels.iloc[idxs],
+                self.groups.iloc[idxs])
+        data = tuple(map(lambda x: torch.tensor(x.values), data))
+        tds = torch.utils.data.TensorDataset(*data)
+        return torch.utils.data.DataLoader(tds, batch_size, shuffle)
 
     def get_dataset_baseline_metrics(self, split):
 
