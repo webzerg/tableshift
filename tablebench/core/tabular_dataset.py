@@ -60,6 +60,10 @@ class TabularDataset(ABC):
     def target(self):
         return self.task_config.feature_list.target
 
+    @property
+    def X_shape(self):
+        return self.data.shape
+
     def _check_data(self, X: pd.DataFrame, y: pd.Series,
                     g: Union[pd.DataFrame, pd.Series]):
         """Helper function to check data after all preprocessing/splitting."""
@@ -155,7 +159,7 @@ class TabularDataset(ABC):
         data = (self.data.iloc[idxs],
                 self.labels.iloc[idxs],
                 self.groups.iloc[idxs])
-        data = tuple(map(lambda x: torch.tensor(x.values), data))
+        data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
         tds = torch.utils.data.TensorDataset(*data)
         return torch.utils.data.DataLoader(tds, batch_size, shuffle)
 
