@@ -4,6 +4,7 @@ import sklearn
 import numpy as np
 import scipy
 import torch
+from tablebench.models.compat import SklearnStylePytorchModel
 
 
 # def apply_model(x_num, x_cat=None):
@@ -35,7 +36,14 @@ def evaluate(model, loader):
     return score
 
 
-class ResNetModel(rtdl.ResNet):
+class ResNetModel(rtdl.ResNet, SklearnStylePytorchModel):
+    def predict(self, X) -> np.ndarray:
+        return self(X)
+
+    def predict_proba(self, X) -> np.ndarray:
+        prediction = self.predict(X)
+        return scipy.special.expit(prediction)
+
     def fit(self,
             train_loader: torch.utils.data.DataLoader,
             optimizer: torch.optim.Optimizer,
