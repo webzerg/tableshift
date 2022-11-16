@@ -2,7 +2,7 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 import xgboost as xgb
 
-from tablebench.models.rtdl import ResNetModel
+from tablebench.models.rtdl import ResNetModel, MLPModel
 
 
 def get_estimator(model, **kwargs):
@@ -10,6 +10,8 @@ def get_estimator(model, **kwargs):
         return HistGradientBoostingClassifier(**kwargs)
     elif model == "lightgbm":
         return LGBMClassifier(**kwargs)
+    elif model == "mlp":
+        return MLPModel.make_baseline(d_out=1, dropout=0., **kwargs)
     elif model == "resnet":
         assert "d_in" in kwargs, "missing required argument d_in."
         return ResNetModel.make_baseline(

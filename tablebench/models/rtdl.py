@@ -4,6 +4,7 @@ import sklearn
 import numpy as np
 import scipy
 import torch
+
 from tablebench.models.compat import SklearnStylePytorchModel
 
 
@@ -36,13 +37,44 @@ def evaluate(model, loader):
     return score
 
 
+def fit(model: torch.nn.Module,
+        train_loader: torch.utils.data.DataLoader,
+        optimizer: torch.optim.Optimizer,
+        loss_fn,
+        n_epochs=1,
+        other_loaders: Optional[
+            Mapping[str, torch.utils.data.DataLoader]] = None):
+    """Fit a model."""
+    for epoch in range(1, n_epochs + 1):
+        for iteration, (x_batch, y_batch, _) in enumerate(train_loader):
+            model.train()
+            optimizer.zero_grad()
+            loss = loss_fn(model(x_batch).squeeze(1), y_batch)
+            loss.backward()
+            optimizer.step()
+            print(f'(epoch) {epoch} (batch) {iteration} '
+                  f'(loss) {loss.item():.4f}')
+        split_scores = {}
+        log_str = f'Epoch {epoch:03d}'
+        if other_loaders:
+            for split, loader in other_loaders.items():
+                split_score = evaluate(model, loader)
+                split_scores[split] = split_score
+                log_str += f' | {split} score: {split_score:.4f}'
+
+        print(log_str, end='')
+
+
+@torch.no_grad()
+def predict_proba(model, X):
+    prediction = model.predict(X)
+    return scipy.special.expit(prediction)
+
+
 class ResNetModel(rtdl.ResNet, SklearnStylePytorchModel):
-    def predict(self, X) -> np.ndarray:
-        return self(X)
 
     def predict_proba(self, X) -> np.ndarray:
-        prediction = self.predict(X)
-        return scipy.special.expit(prediction)
+        return predict_proba(self, X)
 
     def fit(self,
             train_loader: torch.utils.data.DataLoader,
@@ -51,22 +83,22 @@ class ResNetModel(rtdl.ResNet, SklearnStylePytorchModel):
             n_epochs=1,
             other_loaders: Optional[
                 Mapping[str, torch.utils.data.DataLoader]] = None):
+        fit(self, train_loader=train_loader, optimizer=optimizer,
+            loss_fn=loss_fn, n_epochs=n_epochs,
+            other_loaders=other_loaders)
 
-        for epoch in range(1, n_epochs + 1):
-            for iteration, (x_batch, y_batch, _) in enumerate(train_loader):
-                self.train()
-                optimizer.zero_grad()
-                loss = loss_fn(self(x_batch).squeeze(1), y_batch)
-                loss.backward()
-                optimizer.step()
-                print(f'(epoch) {epoch} (batch) {iteration} '
-                      f'(loss) {loss.item():.4f}')
-            split_scores = {}
-            log_str = f'Epoch {epoch:03d}'
-            if other_loaders:
-                for split, loader in other_loaders.items():
-                    split_score = evaluate(self, loader)
-                    split_scores[split] = split_score
-                    log_str += f' | {split} score: {split_score:.4f}'
 
-            print(log_str, end='')
+class MLPModel(rtdl.MLP, SklearnStylePytorchModel):
+    def predict_proba(self, X) -> np.ndarray:
+        return predict_proba(self, X)
+
+    def fit(self,
+            train_loader: torch.utils.data.DataLoader,
+            optimizer: torch.optim.Optimizer,
+            loss_fn,
+            n_epochs=1,
+            other_loaders: Optional[
+                Mapping[str, torch.utils.data.DataLoader]] = None):
+        fit(self, train_loader=train_loader, optimizer=optimizer,
+            loss_fn=loss_fn, n_epochs=n_epochs,
+            other_loaders=other_loaders)

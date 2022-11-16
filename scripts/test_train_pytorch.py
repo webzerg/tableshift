@@ -18,9 +18,10 @@ dset = TabularDataset(experiment,
                       preprocessor_config=expt_config.preprocessor_config,
                       **expt_config.tabular_dataset_kwargs)
 train_loader = dset.get_dataloader("train", 512)
-loaders = {s: dset.get_dataloader(s, 512) for s in ("validation", "test")}
+loaders = {s: dset.get_dataloader(s, 2048) for s in ("validation", "test")}
 
-model = get_estimator("resnet", d_in=dset.X_shape[1])
+model = get_estimator("mlp", d_in=dset.X_shape[1], d_layers=[256, 256])
+# model = get_estimator("resnet", d_in=dset.X_shape[1])
 
 lr = 0.001
 weight_decay = 0.0

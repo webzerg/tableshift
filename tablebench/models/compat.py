@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 import numpy as np
 from torch import nn
 
@@ -9,13 +10,15 @@ class SklearnStylePytorchModel(ABC, nn.Module):
     def __init__(self):
         super().__init__()
 
-    @abstractmethod
     def predict(self, X) -> np.ndarray:
-        raise
+        """sklearn-compatible prediction function."""
+        return self(X).detach().cpu().numpy()
 
     @abstractmethod
     def predict_proba(self, X) -> np.ndarray:
+        """sklearn-compatible probability prediction function."""
         raise
+
 
     @abstractmethod
     def fit(self, **kwargs):
