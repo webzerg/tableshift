@@ -2,11 +2,14 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 import xgboost as xgb
 
+from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
 
 def get_estimator(model, **kwargs):
-    if model == "ft_transformer":
+    if model == "expgrad":
+        return ExponentiatedGradient(**kwargs)
+    elif model == "ft_transformer":
         return FTTransformerModel.make_baseline(last_layer_query_idx=[-1],
                                                d_out=1, **kwargs)
     elif model == "histgbm":
