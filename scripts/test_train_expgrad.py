@@ -24,23 +24,6 @@ expt_config = ExperimentConfig(
     preprocessor_config=PreprocessorConfig(),
     tabular_dataset_kwargs={"name": experiment})
 
-# experiment = "acsfoodstamps"
-# domain_split_varname = "ST"
-# expt_config = ExperimentConfig(
-#     splitter=DomainSplitter(
-#         val_size=0.01,
-#         id_test_size=1 / 5.,
-#         domain_split_varname=domain_split_varname,
-#         domain_split_ood_values=["CA"],
-#         random_state=92234,
-#         drop_domain_split_col=False
-#     ),
-#     grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-#     preprocessor_config=PreprocessorConfig(),
-#     tabular_dataset_kwargs={"name": experiment,
-#                             "acs_task": experiment},
-# )
-
 dataset_config = TabularDatasetConfig()
 
 dset = TabularDataset(config=dataset_config,
