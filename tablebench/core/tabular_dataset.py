@@ -99,6 +99,12 @@ class TabularDataset(ABC):
         if not self.grouper.drop:
             # Retain the group variables as features.
             data_features.extend(self.grouper.features)
+
+        if (isinstance(self.splitter, DomainSplitter)
+                and self.splitter.drop_domain_split_col):
+            # Retain the domain split variable as feature.
+            data_features.append(self.splitter.domain_split_varname)
+
         X = data.loc[:, data_features]
         y = data.loc[:, self.target]
         G = data.loc[:, self.grouper.features]
@@ -119,9 +125,10 @@ class TabularDataset(ABC):
     def _post_split_feature_selection(self,
                                       data: pd.DataFrame) -> pd.DataFrame:
         """Select features for post-split processing."""
-        if isinstance(self.splitter, DomainSplitter):
-            # Case: domain split; now that the split has been made, drop the
-            # domain split feature.
+        if (isinstance(self.splitter, DomainSplitter)
+                and self.splitter.drop_domain_split_col):
+            # Case: domain split with feature to drop; now that the split has
+            # been made, drop the domain split feature.
             data.drop(columns=self.splitter.domain_split_varname, inplace=True)
         if "Split" in data.columns:
             data.drop(columns=["Split"], inplace=True)
@@ -132,10 +139,16 @@ class TabularDataset(ABC):
 
         Conducts any processing required **after** splitting (e.g.
         normalization, drop features needed only for splitting)."""
+        passthrough_columns = self.grouper.features + [self.target]
+
+        if (isinstance(self.splitter, DomainSplitter)
+                and not self.splitter.drop_domain_split_col):
+            passthrough_columns.append(self.splitter.domain_split_varname)
+
         data = self.preprocessor_config.fit_transform(
             data,
             self.splits["train"],
-            passthrough_columns=self.grouper.features + [self.target])
+            passthrough_columns=passthrough_columns)
         return data
 
     def _check_split(self, split):
