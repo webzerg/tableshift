@@ -247,7 +247,7 @@ def main(experiment, cache_dir):
 
         splitter = DomainSplitter(
             val_size=0.01,
-            eval_size=1 / 5.,
+            id_test_size=1 / 5.,
             domain_split_varname=expt_config.domain_split_varname,
             domain_split_ood_values=[tgt],
             domain_split_id_values=src,
