@@ -3,7 +3,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 import xgboost as xgb
 
 from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
-
+from tablebench.models.wcs import WeightedCovariateShiftClassifier
 
 def get_estimator(model, **kwargs):
     if model == "ft_transformer":
@@ -27,6 +27,9 @@ def get_estimator(model, **kwargs):
             d_out=1,
             **kwargs
         )
+    elif model == "wcs":
+        # Weighted Covariate Shift classifier.
+        return WeightedCovariateShiftClassifier()
     elif model == "xgb":
         return xgb.XGBClassifier(**kwargs)
     else:

@@ -173,13 +173,14 @@ class DomainSplitter(Splitter):
 
     All observations with domain_split_varname values in domain_split_ood_values
     are placed in the target (test) set; the remaining observations are split
-    between the train and validation set.
+    between the train, validation, and eval set.
     """
-    eval_size: float  # The "eval" set is the in-domain test set.
+    id_test_size: float  # The in-domain test set.
     domain_split_varname: str
     domain_split_ood_values: Sequence[Any]
     domain_split_id_values: Optional[Sequence[Any]] = None
     drop_domain_split_col: bool = True  # If True, drop column after splitting.
+    ood_val_size: float = 0  # Fraction of OOD data to use for OOD validation set.
 
     def __call__(self, data: pd.DataFrame, labels: pd.Series,
                  groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
@@ -229,7 +230,6 @@ class DomainSplitter(Splitter):
 
         if not len(ood_idxs):
             vals = domain_vals.unique()
-            import ipdb;ipdb.set_trace()
             raise ValueError(
                 f"No OOD observations with {self.domain_split_varname} values "
                 f"{ood_vals}; are the values of same type"
@@ -238,16 +238,31 @@ class DomainSplitter(Splitter):
 
         stratify = _stratify(labels, groups)
 
-        train_idxs, valid_eval_idxs = train_test_split(
+        train_idxs, id_valid_eval_idxs = train_test_split(
             data.iloc[id_idxs],
-            test_size=(self.val_size + self.eval_size),
+            test_size=(self.val_size + self.id_test_size),
             random_state=self.random_state,
             stratify=stratify.iloc[id_idxs])
 
         valid_idxs, id_test_idxs = train_test_split(
-            data.loc[valid_eval_idxs],
-            test_size=self.eval_size / (self.val_size + self.eval_size),
+            data.loc[id_valid_eval_idxs],
+            test_size=self.id_test_size / (self.val_size + self.id_test_size),
             random_state=self.random_state,
-            stratify=stratify.iloc[valid_eval_idxs])
-        return {"train": train_idxs, "validation": valid_idxs,
-                "id_test": id_test_idxs, "ood_test": ood_idxs}
+            stratify=stratify.iloc[id_valid_eval_idxs])
+
+        outputs = {"train": train_idxs, "validation": valid_idxs,
+                   "id_test": id_test_idxs}
+
+        if self.ood_val_size:
+            ood_test_idxs, ood_valid_idxs = train_test_split(
+                data.loc[ood_idxs],
+                test_size=self.ood_val_size,
+                random_state=self.random_state,
+                stratify=stratify.iloc[ood_idxs])
+            outputs["ood_test"] = ood_test_idxs
+            outputs["ood_validation"] = ood_valid_idxs
+
+        else:
+            outputs["ood_test"] = ood_idxs
+
+        return outputs

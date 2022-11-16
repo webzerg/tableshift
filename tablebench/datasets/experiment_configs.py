@@ -23,7 +23,7 @@ EXPERIMENT_CONFIGS = {
 
     "acsincome": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.01, random_state=956523,
-                                eval_size=0.5,
+                                id_test_size=0.5,
                                 domain_split_varname="ACS_YEAR",
                                 domain_split_ood_values=[2018],
                                 domain_split_id_values=[2017]),
@@ -52,7 +52,7 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
     "anes": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.01, eval_size=0.2,
+        splitter=DomainSplitter(val_size=0.01, id_test_size=0.2,
                                 random_state=45345,
                                 domain_split_varname="VCF0004",
                                 domain_split_ood_values=[2020],
@@ -111,7 +111,7 @@ EXPERIMENT_CONFIGS = {
 
     "mooc": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.01,
-                                eval_size=0.2,
+                                id_test_size=0.2,
                                 random_state=43406,
                                 domain_split_varname="course_id",
                                 domain_split_ood_values=[
@@ -134,7 +134,7 @@ EXPERIMENT_CONFIGS = {
 
     "physionet": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.05,
-                                eval_size=0.2,
+                                id_test_size=0.2,
                                 random_state=43406,
                                 domain_split_varname="set",
                                 domain_split_ood_values=["a"]),
