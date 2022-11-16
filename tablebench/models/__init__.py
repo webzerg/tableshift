@@ -2,11 +2,14 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 import xgboost as xgb
 
-from tablebench.models.rtdl import ResNetModel, MLPModel
+from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 
 
 def get_estimator(model, **kwargs):
-    if model == "histgbm":
+    if model == "ft_transformer":
+        return FTTransformerModel.make_baseline(last_layer_query_idx=[-1],
+                                               d_out=1, **kwargs)
+    elif model == "histgbm":
         return HistGradientBoostingClassifier(**kwargs)
     elif model == "lightgbm":
         return LGBMClassifier(**kwargs)

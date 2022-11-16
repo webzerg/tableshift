@@ -1,3 +1,9 @@
+"""
+Wrappers for tabular baseline models from the rtdl package.
+
+rtdl source: https://github.com/Yura52/rtdl
+"""
+
 from typing import Mapping, Optional
 import rtdl
 import sklearn
@@ -8,17 +14,17 @@ import torch
 from tablebench.models.compat import SklearnStylePytorchModel
 
 
-# def apply_model(x_num, x_cat=None):
-#     if isinstance(model, rtdl.FTTransformer):
-#         return model(x_num, x_cat)
-#     elif isinstance(model, (rtdl.MLP, rtdl.ResNet)):
-#         assert x_cat is None
-#         return model(x_num)
-#     else:
-#         raise NotImplementedError(
-#             f'Looks like you are using a custom model: {type(model)}.'
-#             ' Then you have to implement this branch first.'
-#         )
+def apply_model(model: torch.nn.Module, x_num, x_cat=None):
+    if isinstance(model, rtdl.FTTransformer):
+        return model(x_num, x_cat)
+    elif isinstance(model, (rtdl.MLP, rtdl.ResNet)):
+        assert x_cat is None
+        return model(x_num)
+    else:
+        raise NotImplementedError(
+            f'Looks like you are using a custom model: {type(model)}.'
+            ' Then you have to implement this branch first.'
+        )
 
 
 @torch.no_grad()
@@ -27,7 +33,8 @@ def evaluate(model, loader):
     prediction = []
     label = []
     for (batch_x, batch_y, _) in loader:
-        prediction.append(model(batch_x))
+        # TODO(jpgard): handle categorical features here.
+        prediction.append(apply_model(model, batch_x))
         label.append(batch_y.squeeze())
     prediction = torch.cat(prediction).squeeze(1).cpu().numpy()
     target = torch.cat(label).squeeze().cpu().numpy()
@@ -49,7 +56,8 @@ def fit(model: torch.nn.Module,
         for iteration, (x_batch, y_batch, _) in enumerate(train_loader):
             model.train()
             optimizer.zero_grad()
-            loss = loss_fn(model(x_batch).squeeze(1), y_batch)
+            # TODO(jpgard): handle categorical features here.
+            loss = loss_fn(apply_model(model, x_batch).squeeze(1), y_batch)
             loss.backward()
             optimizer.step()
             print(f'(epoch) {epoch} (batch) {iteration} '
@@ -89,6 +97,22 @@ class ResNetModel(rtdl.ResNet, SklearnStylePytorchModel):
 
 
 class MLPModel(rtdl.MLP, SklearnStylePytorchModel):
+    def predict_proba(self, X) -> np.ndarray:
+        return predict_proba(self, X)
+
+    def fit(self,
+            train_loader: torch.utils.data.DataLoader,
+            optimizer: torch.optim.Optimizer,
+            loss_fn,
+            n_epochs=1,
+            other_loaders: Optional[
+                Mapping[str, torch.utils.data.DataLoader]] = None):
+        fit(self, train_loader=train_loader, optimizer=optimizer,
+            loss_fn=loss_fn, n_epochs=n_epochs,
+            other_loaders=other_loaders)
+
+
+class FTTransformerModel(rtdl.FTTransformer, SklearnStylePytorchModel):
     def predict_proba(self, X) -> np.ndarray:
         return predict_proba(self, X)
 
