@@ -9,7 +9,7 @@ class OnDeviceDataLoader(torch.utils.data.DataLoader):
         super().__init__(**kwargs)
 
     def _move_batch_to_device(self, batch):
-        return tuple(tens.to(self.device_) for tens in batch)
+        return tuple([tens.to(self.device_) for tens in batch])
 
     def __iter__(self):
         batches = iter(self)
