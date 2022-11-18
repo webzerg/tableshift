@@ -36,8 +36,7 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
         # TODO(jpgard): send these Tensors to device.
         self.group_weights_step_size = torch.Tensor([group_weights_step_size])
         # initialize adversarial weights
-        self.group_weights = torch.ones(n_groups)
-        self.group_weights = self.group_weights / self.group_weights.sum()
+        self.group_weights = torch.full([n_groups], 1. / n_groups)
 
     @classmethod
     def make_baseline(cls: Type['GroupDROModel'],
@@ -86,6 +85,3 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
             loss = group_losses @ self.group_weights
             loss.backward()
             optimizer.step()
-            # TODO(jpgard): verify that group weights are being updated.
-            raise NotImplementedError("check that weights are being updated.")
-
