@@ -9,10 +9,10 @@ from tablebench.models import get_estimator
 from tablebench.models.dro import group_dro_loss, GroupDROModel
 
 
-def main(experiment: str, device: str, model: str):
+def main(experiment: str, device: str, model: str, cache_dir: str):
     expt_config = EXPERIMENT_CONFIGS[experiment]
 
-    dataset_config = TabularDatasetConfig()
+    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
     dset = TabularDataset(experiment,
                           config=dataset_config,
                           splitter=expt_config.splitter,
@@ -62,5 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--model", default="mlp", choices=(
         "ft_transformer", "mlp", "resnet", "group_dro"))
+    parser.add_argument("--cache_dir", default="tmp",
+                        help="Directory to cache raw data files to.")
     args = parser.parse_args()
     main(**vars(args))
