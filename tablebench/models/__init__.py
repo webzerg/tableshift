@@ -5,13 +5,17 @@ import xgboost as xgb
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
+from tablebench.models.dro import GroupDROModel
+
 
 def get_estimator(model, **kwargs):
     if model == "expgrad":
         return ExponentiatedGradient(**kwargs)
     elif model == "ft_transformer":
         return FTTransformerModel.make_baseline(last_layer_query_idx=[-1],
-                                               d_out=1, **kwargs)
+                                                d_out=1, **kwargs)
+    elif model == "group_dro":
+        return GroupDROModel.make_baseline(d_out=1, dropout=0., **kwargs)
     elif model == "histgbm":
         return HistGradientBoostingClassifier(**kwargs)
     elif model == "lightgbm":
