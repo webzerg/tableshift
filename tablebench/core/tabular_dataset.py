@@ -11,6 +11,7 @@ from .grouper import Grouper
 from .tasks import get_task_config
 from .features import PreprocessorConfig
 from .metrics import metrics_by_group
+from .torchutils import OnDeviceDataLoader
 
 
 @dataclass
@@ -170,7 +171,7 @@ class TabularDataset(ABC):
                 self.labels.iloc[idxs],
                 self.groups.iloc[idxs])
 
-    def get_dataloader(self, split, batch_size,
+    def get_dataloader(self, split, batch_size, device='cpu',
                        shuffle=True) -> torch.utils.data.DataLoader:
         """Fetch a dataloader yielding (X, y, G) tuples."""
         self._check_split(split)
@@ -180,7 +181,8 @@ class TabularDataset(ABC):
                 self.groups.iloc[idxs])
         data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
         tds = torch.utils.data.TensorDataset(*data)
-        return torch.utils.data.DataLoader(tds, batch_size, shuffle)
+        return OnDeviceDataLoader(dataset=tds, batch_size=batch_size,
+                                  shuffle=shuffle, device=device)
 
     def get_dataset_baseline_metrics(self, split):
 

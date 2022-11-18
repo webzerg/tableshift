@@ -30,13 +30,17 @@ def group_dro_loss(outputs: torch.Tensor, targets: torch.Tensor,
 
 
 class GroupDROModel(MLPModel, SklearnStylePytorchModel):
-    def __init__(self, group_weights_step_size: float, n_groups: int,
-                 **kwargs):
+    def __init__(self, group_weights_step_size: float, n_groups: int, **kwargs):
         MLPModel.__init__(self, **kwargs)
-        # TODO(jpgard): send these Tensors to device.
+
         self.group_weights_step_size = torch.Tensor([group_weights_step_size])
         # initialize adversarial weights
         self.group_weights = torch.full([n_groups], 1. / n_groups)
+
+    def to(self, device):
+        super().to(device)
+        for attr in ("group_weights_step_size", "group_weights"):
+            setattr(self, attr, getattr(self, attr).to(device))
 
     @classmethod
     def make_baseline(cls: Type['GroupDROModel'],
