@@ -24,10 +24,10 @@ loaders = {s: dset.get_dataloader(s, 2048) for s in ("validation", "test")}
 
 # TODO(jpgard): set all architectural defaults here
 #  based on [gorishniy2021revisiting] paper.
-model = get_estimator("ft_transformer",
-                      n_num_features=dset.X_shape[1],
-                      cat_cardinalities=None)
-# model = get_estimator("mlp", d_in=dset.X_shape[1], d_layers=[256, 256])
+# model = get_estimator("ft_transformer",
+#                       n_num_features=dset.X_shape[1],
+#                       cat_cardinalities=None)
+model = get_estimator("mlp", d_in=dset.X_shape[1], d_layers=[256, 256])
 # model = get_estimator("resnet", d_in=dset.X_shape[1])
 # model = get_estimator("group_dro", d_in=dset.X_shape[1], d_layers=[256, 256],
 #                       n_groups=dset.n_groups, group_weights_step_size=0.05)
