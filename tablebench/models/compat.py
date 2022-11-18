@@ -20,9 +20,6 @@ def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
 class SklearnStylePytorchModel(ABC, nn.Module):
     """A pytorch model with an sklearn-style interface."""
 
-    def __init__(self):
-        super().__init__()
-
     def predict(self, X) -> np.ndarray:
         """sklearn-compatible prediction function."""
         return self(X).detach().cpu().numpy()

@@ -21,7 +21,7 @@ def get_estimator(model, **kwargs):
     elif model == "lightgbm":
         return LGBMClassifier(**kwargs)
     elif model == "mlp":
-        return MLPModel.make_baseline(d_out=1, dropout=0., **kwargs)
+        return MLPModel(d_out=1, dropouts=0., activation='ReLU', **kwargs)
     elif model == "resnet":
         assert "d_in" in kwargs, "missing required argument d_in."
         return ResNetModel.make_baseline(
