@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Optional, Mapping, Union
+from typing import Optional, Mapping, Union, Callable
 
 import numpy as np
 from ray import tune
 import torch
 from torch import nn
+
+from tablebench.models.utils import evaluate
 
 
 def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
@@ -30,8 +32,21 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         """sklearn-compatible probability prediction function."""
         raise
 
+    def evaluate(self, train_loader, other_loaders):
+        split_scores = {"train": evaluate(self, train_loader)}
+        if other_loaders:
+            for split, loader in other_loaders.items():
+                split_score = evaluate(self, loader)
+                split_scores[split] = split_score
+        return split_scores
+
     @abstractmethod
-    def train_epoch(self, **kwargs):
+    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+                    optimizer: torch.optim.Optimizer,
+                    loss_fn: Callable,
+                    other_loaders: Optional[
+                        Mapping[str, torch.utils.data.DataLoader]] = None
+                    ):
         """Conduct one epoch of training."""
         raise
 
@@ -49,10 +64,11 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             assert tune_report_split in list(other_loaders.keys()) + ["train"]
 
         for epoch in range(1, n_epochs + 1):
-            metrics = self.train_epoch(train_loader=train_loader,
-                                       optimizer=optimizer,
-                                       loss_fn=loss_fn,
-                                       other_loaders=other_loaders)
+            self.train_epoch(train_loader=train_loader,
+                             optimizer=optimizer,
+                             loss_fn=loss_fn,
+                             other_loaders=other_loaders)
+            metrics = self.evaluate(train_loader, other_loaders)
             log_str = f'Epoch {epoch:03d} ' + ' | '.join(
                 f"{k} score: {v:.4f}" for k, v in metrics.items())
             print(log_str)

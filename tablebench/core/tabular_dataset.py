@@ -62,7 +62,13 @@ class TabularDataset(ABC):
 
     @property
     def X_shape(self):
+        """Shape of the data matrix for training."""
         return self.data.shape
+
+    @property
+    def n_groups(self) -> int:
+        """Number of sensitive groups, across all sensitive attributes."""
+        return np.prod(self.groups.nunique(axis=0).values)
 
     def _check_data(self, X: pd.DataFrame, y: pd.Series,
                     g: Union[pd.DataFrame, pd.Series]):
