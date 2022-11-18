@@ -8,8 +8,10 @@ class OnDeviceDataLoader(torch.utils.data.DataLoader):
         self.device_ = torch.device(device)
         super().__init__(**kwargs)
 
-    def __next__(self):
-        data = super().__next__(self)
-        for x in data:
-            x.to(self.device_)
-        return data
+    def _move_batch_to_device(self, *batch):
+        return tuple(tens.to(self.device_) for tens in batch)
+
+    def __iter__(self):
+        batches = iter(self)
+        for b in batches:
+            yield self._move_batch_to_device(*b)
