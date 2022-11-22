@@ -15,8 +15,9 @@ expt_config = ExperimentConfig(
                             random_state=43406,
                             domain_split_varname=domain_split_varname,
                             # OOD values: car(new), car(used), furniture/equipment
-                            domain_split_ood_values=["A40", "A41", "A42", "A43"],
-                            drop_domain_split_col=False),
+                            domain_split_ood_values=["A40", "A41", "A42",
+                                                     "A43"],
+                            drop_domain_split_col=True),
     grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                     drop=False),
     preprocessor_config=PreprocessorConfig(),
@@ -31,17 +32,15 @@ dset = TabularDataset(config=dataset_config,
                       **expt_config.tabular_dataset_kwargs)
 
 X_tr, y_tr, _, d_tr = dset.get_pandas(split="train")
-raise NotImplementedError("need to use d_tr in training.")
 
 base_estimator = xgb.XGBClassifier()
 constraint = ErrorRateParity()
 estimator = get_estimator(
     "expgrad",
     estimator=base_estimator,
-    constraints=constraint,
-    domain_feature_colname=[domain_split_varname])
+    constraints=constraint)
 
-estimator.fit(X_tr, y_tr)
+estimator.fit(X_tr, y_tr, d=d_tr)
 
 for split in ("id_test", "ood_test"):
 
