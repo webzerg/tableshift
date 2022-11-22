@@ -43,7 +43,7 @@ def main(experiment, cache_dir, device: str):
             print(f"[WARNING] error initializing dataset for expt {experiment} "
                   f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
             continue
-        for model in ["mlp"]:
+        for model in ["xgb"]:
             # for model in list(PYTORCH_MODELS) + list(SKLEARN_MODELS):
 
             config = get_pytorch_model_config(
@@ -73,15 +73,13 @@ def main(experiment, cache_dir, device: str):
                 try:
                     if model in PYTORCH_MODELS:
                         loader = dset.get_dataloader(split)
-                        y_hat_te, _ = get_predictions_and_labels(estimator,
-                                                                 loader)
+                        y_hat, _ = get_predictions_and_labels(estimator, loader)
 
                     else:
                         X_te, _, _ = dset.get_pandas(split=split)
-                        y_hat_te = estimator.predict(X_te)
+                        y_hat = estimator.predict(X_te)
 
-                    split_metrics = dset.evaluate_predictions(y_hat_te,
-                                                              split=split)
+                    split_metrics = dset.evaluate_predictions(y_hat, split)
                     metrics.update(split_metrics)
                 except Exception as e:
                     print(f"exception evaluating split {split} with "
