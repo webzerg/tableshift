@@ -17,6 +17,24 @@ PYTORCH_MODELS = ("ft_transformer",
                   "mlp",
                   "resnet")
 
+_DEFAULT_CONFIGS = {
+    "mlp": dict(d_layers=[256, 256]),
+    "ft_transformer": dict(cat_cardinalities=None),
+    "resnet": dict(),
+    "group_dro": dict(d_layers=[256, 256],
+                      group_weights_step_size=0.05),
+
+}
+
+
+def get_pytorch_model_config(model, dset) -> dict:
+    """Get a default config for a pytorch model."""
+    config = _DEFAULT_CONFIGS[model]
+    config.update({"d_in": dset.X_shape[1]})
+    if model == "group_dro":
+        config["n_groups"] = dset.n_groups
+    return config
+
 
 def get_estimator(model, d_out=1, **kwargs):
     if model == "expgrad":
