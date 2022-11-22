@@ -5,13 +5,13 @@ from typing import Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import torch
+from torch.utils.data.dataloader import default_collate
 
 from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
 from .tasks import get_task_config
 from .features import PreprocessorConfig
 from .metrics import metrics_by_group
-from .torchutils import OnDeviceDataLoader
 
 
 @dataclass
@@ -179,10 +179,12 @@ class TabularDataset(ABC):
         data = (self.data.iloc[idxs],
                 self.labels.iloc[idxs],
                 self.groups.iloc[idxs])
+        device = torch.device(device)
         data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
         tds = torch.utils.data.TensorDataset(*data)
-        return OnDeviceDataLoader(dataset=tds, batch_size=batch_size,
-                                  shuffle=shuffle, device=device)
+        return torch.utils.data.DataLoader(
+            dataset=tds, batch_size=batch_size,
+            shuffle=shuffle, collate_fn=lambda x: default_collate(x).to(device))
 
     def get_dataset_baseline_metrics(self, split):
 
