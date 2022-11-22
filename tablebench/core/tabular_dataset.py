@@ -178,7 +178,7 @@ class TabularDataset(ABC):
                 self.labels.iloc[idxs],
                 self.groups.iloc[idxs])
 
-    def get_dataloader(self, split, batch_size, device='cpu',
+    def get_dataloader(self, split, batch_size=2048, device='cpu',
                        shuffle=True) -> torch.utils.data.DataLoader:
         """Fetch a dataloader yielding (X, y, G) tuples."""
         self._check_split(split)
