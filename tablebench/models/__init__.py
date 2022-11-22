@@ -5,6 +5,7 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 import xgboost as xgb
 
+from tablebench.core import TabularDataset, DomainSplitter
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
@@ -54,17 +55,22 @@ def is_pytorch_model_name(model: str) -> bool:
     return is_pt
 
 
-def get_pytorch_model_config(model, dset) -> dict:
+def get_model_config(model: str, dset: TabularDataset) -> dict:
     """Get a default config for a pytorch model."""
-    config = _DEFAULT_CONFIGS[model]
+    config = _DEFAULT_CONFIGS.get(model, {})
 
-    if model != "ft_transformer":
+    if is_pytorch_model_name(model) and model != "ft_transformer":
         config.update({"d_in": dset.X_shape[1]})
-    else:
+    elif is_pytorch_model_name(model):
         config.update({"n_num_features": dset.X_shape[1]})
 
     if model == "group_dro":
         config["n_groups"] = dset.n_groups
+
+    if model == "expgrad":
+        assert isinstance(dset.splitter, DomainSplitter)
+        config.update(
+            {"domain_feature_colname": dset.splitter.domain_split_varname})
     return config
 
 

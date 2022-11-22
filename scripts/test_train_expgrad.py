@@ -4,25 +4,38 @@ from tablebench.core import TabularDataset, TabularDatasetConfig, \
 from fairlearn.reductions import ErrorRateParity
 import xgboost as xgb
 
-from tablebench.datasets.experiment_configs import ExperimentConfig, \
-    EXPERIMENT_CONFIGS
+from tablebench.datasets.experiment_configs import ExperimentConfig
 from tablebench.models import get_estimator
 
-experiment = "mooc"
-domain_split_varname = "course_id"
+experiment = "german"
+domain_split_varname = "purpose"
 expt_config = ExperimentConfig(
     splitter=DomainSplitter(val_size=0.01,
                             id_test_size=0.2,
                             random_state=43406,
                             domain_split_varname=domain_split_varname,
-                            domain_split_ood_values=[
-                                "HarvardX/CB22x/2013_Spring"],
+                            # OOD values: car(new), car(used), furniture/equipment
+                            domain_split_ood_values=["A40", "A41", "A42", "A43"],
                             drop_domain_split_col=False),
-    grouper=Grouper({"gender": ["m", ],
-                     "LoE_DI": ["Bachelor's", "Master's", "Doctorate"]},
+    grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                     drop=False),
     preprocessor_config=PreprocessorConfig(),
     tabular_dataset_kwargs={"name": experiment})
+
+#
+# expt_config = ExperimentConfig(
+#     splitter=DomainSplitter(val_size=0.01,
+#                             id_test_size=0.2,
+#                             random_state=43406,
+#                             domain_split_varname=domain_split_varname,
+#                             domain_split_ood_values=[
+#                                 "HarvardX/CB22x/2013_Spring"],
+#                             drop_domain_split_col=False),
+#     grouper=Grouper({"gender": ["m", ],
+#                      "LoE_DI": ["Bachelor's", "Master's", "Doctorate"]},
+#                     drop=False),
+#     preprocessor_config=PreprocessorConfig(),
+#     tabular_dataset_kwargs={"name": experiment})
 
 dataset_config = TabularDatasetConfig()
 
