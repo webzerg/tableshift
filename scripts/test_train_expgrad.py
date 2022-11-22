@@ -22,21 +22,6 @@ expt_config = ExperimentConfig(
     preprocessor_config=PreprocessorConfig(),
     tabular_dataset_kwargs={"name": experiment})
 
-#
-# expt_config = ExperimentConfig(
-#     splitter=DomainSplitter(val_size=0.01,
-#                             id_test_size=0.2,
-#                             random_state=43406,
-#                             domain_split_varname=domain_split_varname,
-#                             domain_split_ood_values=[
-#                                 "HarvardX/CB22x/2013_Spring"],
-#                             drop_domain_split_col=False),
-#     grouper=Grouper({"gender": ["m", ],
-#                      "LoE_DI": ["Bachelor's", "Master's", "Doctorate"]},
-#                     drop=False),
-#     preprocessor_config=PreprocessorConfig(),
-#     tabular_dataset_kwargs={"name": experiment})
-
 dataset_config = TabularDatasetConfig()
 
 dset = TabularDataset(config=dataset_config,
