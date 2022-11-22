@@ -86,14 +86,15 @@ def main(experiment, cache_dir, device: str):
             f"results-{experiment}-{str(datetime.now()).replace(' ', '')}.csv")
         return
 
-    if __name__ == "__main__":
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--cache_dir", default="tmp",
-                            help="Directory to cache raw data files to.")
-        parser.add_argument("--device", default="cpu")
-        parser.add_argument("--experiment",
-                            choices=list(
-                                domain_shift_experiment_configs.keys()),
-                            default="brfss_diabetes_st")
-        args = parser.parse_args()
-        main(**vars(args))
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cache_dir", default="tmp",
+                        help="Directory to cache raw data files to.")
+    parser.add_argument("--device", default="cpu")
+    parser.add_argument("--experiment",
+                        choices=list(
+                            domain_shift_experiment_configs.keys()),
+                        default="brfss_diabetes_st")
+    args = parser.parse_args()
+    main(**vars(args))
