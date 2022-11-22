@@ -1,6 +1,5 @@
 import argparse
-from tablebench.core import DomainSplitter, TabularDataset, \
-    TabularDatasetConfig
+from tablebench.core import TabularDataset, TabularDatasetConfig
 
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models import get_estimator
