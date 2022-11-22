@@ -71,6 +71,13 @@ class TabularDataset(ABC):
         """Number of sensitive groups, across all sensitive attributes."""
         return np.prod(self.groups.nunique(axis=0).values)
 
+    @property
+    def eval_split_names(self) -> Tuple[str]:
+        """Fetch the names of the eval splits."""
+        eval_splits = ("test",) if not isinstance(
+            self.splitter, DomainSplitter) else ("id_test", "ood_test")
+        return eval_splits
+
     def _check_data(self, X: pd.DataFrame, y: pd.Series,
                     g: Union[pd.DataFrame, pd.Series]):
         """Helper function to check data after all preprocessing/splitting."""
@@ -108,7 +115,7 @@ class TabularDataset(ABC):
             data_features.extend(self.grouper.features)
 
         if (isinstance(self.splitter, DomainSplitter)
-                and self.splitter.drop_domain_split_col):
+                and not self.splitter.drop_domain_split_col):
             # Retain the domain split variable as feature.
             data_features.append(self.splitter.domain_split_varname)
 
