@@ -119,6 +119,8 @@ class TabularDataset(ABC):
             # Retain the domain split variable as feature.
             data_features.append(self.splitter.domain_split_varname)
 
+        data_features = list(set(data_features))
+
         X = data.loc[:, data_features]
         y = data.loc[:, self.target]
         G = data.loc[:, self.grouper.features]
