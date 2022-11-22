@@ -20,7 +20,8 @@ def main(experiment: str, device: str, model: str, cache_dir: str):
                           preprocessor_config=expt_config.preprocessor_config,
                           **expt_config.tabular_dataset_kwargs)
     train_loader = dset.get_dataloader("train", 512, device=device)
-    loaders = {s: dset.get_dataloader(s, 2048) for s in ("validation", "test")}
+    loaders = {s: dset.get_dataloader(s, 2048, device=device) for s in
+               ("validation", "test")}
 
     # TODO(jpgard): set all architectural defaults here
     #  based on [gorishniy2021revisiting] paper.
