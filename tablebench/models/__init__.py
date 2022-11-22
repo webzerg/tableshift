@@ -1,5 +1,6 @@
 from typing import Any
 
+from fairlearn.reductions import ErrorRateParity
 from frozendict import frozendict
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -56,7 +57,7 @@ def is_pytorch_model_name(model: str) -> bool:
 
 
 def get_model_config(model: str, dset: TabularDataset) -> dict:
-    """Get a default config for a pytorch model."""
+    """Get a default config for a model by name."""
     config = _DEFAULT_CONFIGS.get(model, {})
 
     if is_pytorch_model_name(model) and model != "ft_transformer":
@@ -70,7 +71,9 @@ def get_model_config(model: str, dset: TabularDataset) -> dict:
     if model == "expgrad":
         assert isinstance(dset.splitter, DomainSplitter)
         config.update(
-            {"domain_feature_colname": dset.splitter.domain_split_varname})
+            {"domain_feature_colname": [dset.splitter.domain_split_varname],
+             "estimator": xgb.XGBClassifier(),
+             "constraints": ErrorRateParity()})
     return config
 
 
