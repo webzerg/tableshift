@@ -1,16 +1,16 @@
 import rtdl
 import torch
 from torch.nn import functional as F
-
+from frozendict import frozendict
 from tablebench.models import GroupDROModel
 from tablebench.models.dro import group_dro_loss
 
-PYTORCH_DEFAULTS = {
+PYTORCH_DEFAULTS = frozendict({
     "lr": 0.001,
     "weight_decay": 0.0,
     "n_epochs": 1,
     "batch_size": 512,
-}
+})
 
 
 def train_pytorch(estimator, dset, device, config=PYTORCH_DEFAULTS):
@@ -55,3 +55,5 @@ def train_sklearn(estimator, dset):
         for k, v in metrics.items():
             print(f"\t{k:<40}:{v:.3f}")
     return estimator
+
+def train(estimator, dset, **kwargs):

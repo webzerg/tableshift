@@ -1,3 +1,4 @@
+from frozendict import frozendict
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 import xgboost as xgb
@@ -19,14 +20,13 @@ PYTORCH_MODELS = ("ft_transformer",
 
 # TODO(jpgard): set all architectural defaults here
 #  based on [gorishniy2021revisiting] paper.
-_DEFAULT_CONFIGS = {
-    "mlp": dict(d_layers=[256, 256]),
+_DEFAULT_CONFIGS = frozendict({
     "ft_transformer": dict(cat_cardinalities=None),
-    "resnet": dict(),
     "group_dro": dict(d_layers=[256, 256],
                       group_weights_step_size=0.05),
-
-}
+    "mlp": dict(d_layers=[256, 256]),
+    "resnet": dict(),
+})
 
 
 def get_pytorch_model_config(model, dset) -> dict:
