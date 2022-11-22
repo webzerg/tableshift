@@ -184,6 +184,7 @@ class TabularDataset(ABC):
         tds = torch.utils.data.TensorDataset(*data)
         return torch.utils.data.DataLoader(
             dataset=tds, batch_size=batch_size,
+            pin_memory=True,
             shuffle=shuffle, collate_fn=lambda x: default_collate(x).to(device))
 
     def get_dataset_baseline_metrics(self, split):
