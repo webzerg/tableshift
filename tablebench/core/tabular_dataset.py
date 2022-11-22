@@ -172,22 +172,21 @@ class TabularDataset(ABC):
         assert split in self.splits.keys(), \
             f"split {split} not in {list(self.splits.keys())}"
 
-    def get_pandas(self, split) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
-        """Fetch the (data, labels, groups) for this TabularDataset."""
+    def _get_split_data(self, split):
         self._check_split(split)
         idxs = self.splits[split]
         return (self.data.iloc[idxs],
                 self.labels.iloc[idxs],
                 self.groups.iloc[idxs])
 
+    def get_pandas(self, split) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
+        """Fetch the (data, labels, groups) for this TabularDataset."""
+        return self._get_split_data(split)
+
     def get_dataloader(self, split, batch_size=2048, device='cpu',
                        shuffle=True) -> torch.utils.data.DataLoader:
         """Fetch a dataloader yielding (X, y, G) tuples."""
-        self._check_split(split)
-        idxs = self.splits[split]
-        data = (self.data.iloc[idxs],
-                self.labels.iloc[idxs],
-                self.groups.iloc[idxs])
+        data = self._get_split_data(split)
         device = torch.device(device)
         data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
         tds = torch.utils.data.TensorDataset(*data)
