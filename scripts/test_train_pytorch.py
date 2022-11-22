@@ -2,7 +2,7 @@ import argparse
 from tablebench.core import TabularDataset, TabularDatasetConfig
 
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models import get_estimator
+from tablebench.models import get_estimator, get_pytorch_model_config
 from tablebench.models.training import train_pytorch
 
 
@@ -17,19 +17,8 @@ def main(experiment: str, device: str, model: str, cache_dir: str):
                           preprocessor_config=expt_config.preprocessor_config,
                           **expt_config.tabular_dataset_kwargs)
 
-    # TODO(jpgard): set all architectural defaults here
-    #  based on [gorishniy2021revisiting] paper.
-    # A default set of arguments for each model. Note: these could be
-    # bad choices for defaults; they are strictly for testing!
-    model_args = {
-        "ft_transformer": dict(n_num_features=dset.X_shape[1],
-                               cat_cardinalities=None),
-        "mlp": dict(d_in=dset.X_shape[1], d_layers=[256, 256]),
-        "resnet": dict(d_in=dset.X_shape[1]),
-        "group_dro": dict(d_in=dset.X_shape[1], d_layers=[256, 256],
-                          n_groups=dset.n_groups, group_weights_step_size=0.05),
-    }
-    model = get_estimator(model, **model_args[model])
+    config = get_pytorch_model_config(model, dset)
+    model = get_estimator(model, **config)
 
     train_pytorch(model, dset, device)
 

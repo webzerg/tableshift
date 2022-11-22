@@ -17,6 +17,8 @@ PYTORCH_MODELS = ("ft_transformer",
                   "mlp",
                   "resnet")
 
+# TODO(jpgard): set all architectural defaults here
+#  based on [gorishniy2021revisiting] paper.
 _DEFAULT_CONFIGS = {
     "mlp": dict(d_layers=[256, 256]),
     "ft_transformer": dict(cat_cardinalities=None),
@@ -30,7 +32,12 @@ _DEFAULT_CONFIGS = {
 def get_pytorch_model_config(model, dset) -> dict:
     """Get a default config for a pytorch model."""
     config = _DEFAULT_CONFIGS[model]
-    config.update({"d_in": dset.X_shape[1]})
+
+    if model != "ft_transformer":
+        config.update({"d_in": dset.X_shape[1]})
+    else:
+        config.update({"n_num_features": dset.X_shape[1]})
+
     if model == "group_dro":
         config["n_groups"] = dset.n_groups
     return config

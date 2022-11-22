@@ -43,8 +43,9 @@ def main(experiment, cache_dir, device: str):
             print(f"[WARNING] error initializing dataset for expt {experiment} "
                   f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
             continue
-        for model in ["xgb"]:
-            # for model in list(PYTORCH_MODELS) + list(SKLEARN_MODELS):
+
+        for model in list(PYTORCH_MODELS):
+        # for model in list(PYTORCH_MODELS) + list(SKLEARN_MODELS):
 
             config = get_pytorch_model_config(
                 model, dset) if model in PYTORCH_MODELS else {}

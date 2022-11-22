@@ -8,7 +8,7 @@ from tablebench.models.dro import group_dro_loss
 PYTORCH_DEFAULTS = {
     "lr": 0.001,
     "weight_decay": 0.0,
-    "n_epochs": 3,
+    "n_epochs": 1,
     "batch_size": 512,
 }
 
