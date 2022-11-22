@@ -14,10 +14,9 @@ expt_config = ExperimentConfig(
                             id_test_size=0.2,
                             random_state=43406,
                             domain_split_varname=domain_split_varname,
-                            # OOD values: car(new), car(used), furniture/equipment
-                            domain_split_ood_values=["A40", "A41", "A42",
-                                                     "A43"],
-                            drop_domain_split_col=True),
+                            # values: car(new), car(used), furniture/equipment
+                            domain_split_ood_values=["A40", "A41", "A42", "A43"]
+                            ),
     grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                     drop=False),
     preprocessor_config=PreprocessorConfig(),
