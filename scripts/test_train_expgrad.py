@@ -30,7 +30,8 @@ dset = TabularDataset(config=dataset_config,
                       preprocessor_config=expt_config.preprocessor_config,
                       **expt_config.tabular_dataset_kwargs)
 
-X_tr, y_tr, _ = dset.get_pandas(split="train")
+X_tr, y_tr, _, d_tr = dset.get_pandas(split="train")
+raise NotImplementedError("need to use d_tr in training.")
 
 base_estimator = xgb.XGBClassifier()
 constraint = ErrorRateParity()
@@ -44,7 +45,7 @@ estimator.fit(X_tr, y_tr)
 
 for split in ("id_test", "ood_test"):
 
-    X_te, _, _ = dset.get_pandas(split=split)
+    X_te, _, _, _ = dset.get_pandas(split=split)
 
     y_hat_te = estimator.predict(X_te)
     metrics = dset.evaluate_predictions(y_hat_te, split=split)

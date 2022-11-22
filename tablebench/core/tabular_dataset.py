@@ -5,6 +5,7 @@ from typing import Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import torch
+from pandas import DataFrame, Series
 from torch.utils.data.dataloader import default_collate
 
 from .splitter import Splitter, DomainSplitter
@@ -45,6 +46,7 @@ class TabularDataset(ABC):
         self.data = None
         self.labels = None
         self.groups = None
+        self.domain_labels = None
         self.splits = None  # dict mapping {split_name: list of idxs in split}
 
         self._initialize_data()
@@ -96,17 +98,19 @@ class TabularDataset(ABC):
         data = self._generate_splits(data)
         data = self._process_post_split(data)
 
-        X, y, G = self._X_y_G_split(data)
+        X, y, G, d = self._X_y_G_d_split(data)
         self._check_data(X, y, G)
         self.data = X
         self.labels = y
         self.groups = G
+        self.domain_labels = d
         del data
         return
 
-    def _X_y_G_split(self, data, default_targets_dtype=int) -> \
-            Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
-        """Fetch the (data, labels, groups) arrays from a DataFrame."""
+    def _X_y_G_d_split(self, data, default_targets_dtype=int) -> \
+            Tuple[pd.DataFrame, pd.Series,
+                  pd.DataFrame, Union[pd.Series, None]]:
+        """Fetch the (data, labels, groups, domain_labels) arrays."""
         data_features = [x for x in data.columns
                          if x not in self.grouper.features
                          and x != self.target]
@@ -114,10 +118,16 @@ class TabularDataset(ABC):
             # Retain the group variables as features.
             data_features.extend(self.grouper.features)
 
-        if (isinstance(self.splitter, DomainSplitter)
-                and not self.splitter.drop_domain_split_col):
-            # Retain the domain split variable as feature.
-            data_features.append(self.splitter.domain_split_varname)
+        if isinstance(self.splitter, DomainSplitter):
+            # Case: a domain split is used; store domain labels.
+            d = data.loc[:, self.splitter.domain_split_varname]
+
+            if not self.splitter.drop_domain_split_col:
+                # Retain the domain split variable as feature in X.
+                data_features.append(self.splitter.domain_split_varname)
+        else:
+            # Case: domain split is not used; no domain labels exist.
+            d = None
 
         data_features = list(set(data_features))
 
@@ -127,13 +137,14 @@ class TabularDataset(ABC):
 
         if y.dtype == "O":
             y = y.astype(default_targets_dtype)
-        return X, y, G
+
+        return X, y, G, d
 
     def _generate_splits(self, data):
         """Call the splitter to generate splits for the dataset."""
         assert self.splits is None, "attempted to overwrite existing splits."
 
-        X_y_g = self._X_y_G_split(data)
+        X_y_g = self._X_y_G_d_split(data)
         self.splits = self.splitter(*X_y_g)
         data = self._post_split_feature_selection(data)
         return data
@@ -172,20 +183,24 @@ class TabularDataset(ABC):
         assert split in self.splits.keys(), \
             f"split {split} not in {list(self.splits.keys())}"
 
-    def _get_split_data(self, split):
+    def _get_split_data(self, split) -> Tuple[
+        DataFrame, Series, DataFrame, Optional[Series]]:
         self._check_split(split)
         idxs = self.splits[split]
-        return (self.data.iloc[idxs],
-                self.labels.iloc[idxs],
-                self.groups.iloc[idxs])
+        X = self.data.iloc[idxs]
+        y = self.labels.iloc[idxs]
+        G = self.groups.iloc[idxs]
+        d = self.domain_labels.iloc[idxs] if self.domain_labels else None
+        return X, y, G, d
 
-    def get_pandas(self, split) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
-        """Fetch the (data, labels, groups) for this TabularDataset."""
+    def get_pandas(self, split) -> Tuple[
+        DataFrame, Series, DataFrame, Optional[Series]]:
+        """Fetch the (data, labels, groups, domains) for this TabularDataset."""
         return self._get_split_data(split)
 
     def get_dataloader(self, split, batch_size=2048, device='cpu',
                        shuffle=True) -> torch.utils.data.DataLoader:
-        """Fetch a dataloader yielding (X, y, G) tuples."""
+        """Fetch a dataloader yielding (X, y, G, d) tuples."""
         data = self._get_split_data(split)
         device = torch.device(device)
         data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
@@ -198,7 +213,7 @@ class TabularDataset(ABC):
 
     def get_dataset_baseline_metrics(self, split):
 
-        X_tr, y_tr, g = self.get_pandas(split)
+        X_tr, y_tr, g, _ = self.get_pandas(split)
         n_by_y = pd.value_counts(y_tr).to_dict()
         y_maj = pd.value_counts(y_tr).idxmax()
         # maps {class_label: p_class_label}
@@ -233,7 +248,7 @@ class TabularDataset(ABC):
         return overall_acc, min(sensitive_subgroup_accuracies)
 
     def evaluate_predictions(self, preds, split):
-        _, labels, groups = self.get_pandas(split)
+        _, labels, groups, _ = self.get_pandas(split)
         metrics = metrics_by_group(labels, preds, groups, suffix=split)
         # Add baseline metrics.
         metrics["majority_baseline_" + split] = max(labels.mean(),

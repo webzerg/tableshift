@@ -26,14 +26,14 @@ dset = TabularDataset(experiment,
                       preprocessor_config=expt_config.preprocessor_config,
                       **expt_config.tabular_dataset_kwargs)
 
-X_tr, y_tr, _ = dset.get_pandas(split="train")
-X_ood_tr, y_ood_tr, _ = dset.get_pandas(split="ood_validation")
+X_tr, y_tr, _, _ = dset.get_pandas(split="train")
+X_ood_tr, y_ood_tr, _, _ = dset.get_pandas(split="ood_validation")
 estimator = get_estimator("wcs")
 estimator.fit(X_tr, y_tr, X_ood_tr)
 
 for split in ("id_test", "ood_test"):
 
-    X_te, _, _ = dset.get_pandas(split=split)
+    X_te, _, _, _ = dset.get_pandas(split=split)
 
     y_hat_te = estimator.predict(X_te)
     metrics = dset.evaluate_predictions(y_hat_te, split=split)
