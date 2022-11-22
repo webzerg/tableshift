@@ -111,25 +111,26 @@ class TabularDataset(ABC):
             Tuple[pd.DataFrame, pd.Series,
                   pd.DataFrame, Union[pd.Series, None]]:
         """Fetch the (data, labels, groups, domain_labels) arrays."""
-        data_features = [x for x in data.columns
-                         if x not in self.grouper.features
-                         and x != self.target]
+        data_features = set([x for x in data.columns
+                             if x not in self.grouper.features
+                             and x != self.target])
         if not self.grouper.drop:
             # Retain the group variables as features.
-            data_features.extend(self.grouper.features)
+            for x in self.grouper.features: data_features.add(x)
 
         if isinstance(self.splitter, DomainSplitter):
             # Case: a domain split is used; store domain labels.
             d = data.loc[:, self.splitter.domain_split_varname]
 
-            if not self.splitter.drop_domain_split_col:
+            if self.splitter.drop_domain_split_col and \
+                    (self.splitter.domain_split_varname in data_features):
                 # Retain the domain split variable as feature in X.
-                data_features.append(self.splitter.domain_split_varname)
+                data_features.remove(self.splitter.domain_split_varname)
         else:
             # Case: domain split is not used; no domain labels exist.
             d = None
 
-        data_features = list(set(data_features))
+        data_features = list(data_features)
 
         X = data.loc[:, data_features]
         y = data.loc[:, self.target]
@@ -144,19 +145,9 @@ class TabularDataset(ABC):
         """Call the splitter to generate splits for the dataset."""
         assert self.splits is None, "attempted to overwrite existing splits."
 
-        X_y_g = self._X_y_G_d_split(data)
-        self.splits = self.splitter(*X_y_g)
-        data = self._post_split_feature_selection(data)
-        return data
-
-    def _post_split_feature_selection(self,
-                                      data: pd.DataFrame) -> pd.DataFrame:
-        """Select features for post-split processing."""
-        if (isinstance(self.splitter, DomainSplitter)
-                and self.splitter.drop_domain_split_col):
-            # Case: domain split with feature to drop; now that the split has
-            # been made, drop the domain split feature.
-            data.drop(columns=self.splitter.domain_split_varname, inplace=True)
+        X, y, G, d = self._X_y_G_d_split(data)
+        self.splits = self.splitter(data=X, labels=y, groups=G,
+                                    domain_labels=d)
         if "Split" in data.columns:
             data.drop(columns=["Split"], inplace=True)
         return data
@@ -168,8 +159,7 @@ class TabularDataset(ABC):
         normalization, drop features needed only for splitting)."""
         passthrough_columns = self.grouper.features + [self.target]
 
-        if (isinstance(self.splitter, DomainSplitter)
-                and not self.splitter.drop_domain_split_col):
+        if isinstance(self.splitter, DomainSplitter):
             passthrough_columns.append(self.splitter.domain_split_varname)
 
         data = self.preprocessor_config.fit_transform(
@@ -190,7 +180,8 @@ class TabularDataset(ABC):
         X = self.data.iloc[idxs]
         y = self.labels.iloc[idxs]
         G = self.groups.iloc[idxs]
-        d = self.domain_labels.iloc[idxs] if self.domain_labels else None
+        d = self.domain_labels.iloc[
+            idxs] if self.domain_labels is not None else None
         return X, y, G, d
 
     def get_pandas(self, split) -> Tuple[

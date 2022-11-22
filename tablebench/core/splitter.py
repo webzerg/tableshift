@@ -185,6 +185,9 @@ class DomainSplitter(Splitter):
     def __call__(self, data: pd.DataFrame, labels: pd.Series,
                  groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
         str, List[int]]:
+        assert "domain_labels" in kwargs, "domain labels are required."
+        domain_vals = kwargs.pop("domain_labels")
+        assert isinstance(domain_vals, pd.Series)
 
         def _idx_where_in(x: pd.Series, vals: Sequence[Any],
                           negate=False) -> np.ndarray:
@@ -199,7 +202,6 @@ class DomainSplitter(Splitter):
             else:
                 return idxs_in
 
-        domain_vals = data[self.domain_split_varname]
         ood_vals = self.domain_split_ood_values
 
         # Fetch the out-of-domain indices.
