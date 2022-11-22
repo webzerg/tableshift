@@ -185,7 +185,6 @@ class TabularDataset(ABC):
         _collate_fn = lambda x: tuple(t.to(device) for t in default_collate(x))
         return torch.utils.data.DataLoader(
             dataset=tds, batch_size=batch_size,
-            pin_memory=True,
             shuffle=shuffle,
             collate_fn=_collate_fn)
 
