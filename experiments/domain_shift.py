@@ -1,242 +1,19 @@
 import argparse
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Sequence, Any, Optional
 
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.linear_model import LogisticRegressionCV
-import xgboost as xgb
+from tablebench.models import get_estimator, PYTORCH_MODELS, SKLEARN_MODELS, \
+    training
 
-from tablebench.core import DomainSplitter, Grouper, TabularDataset, \
-    TabularDatasetConfig, PreprocessorConfig
-from tablebench.core.utils import sliding_window
-from tablebench.datasets.acs import ACS_STATE_LIST, ACS_YEARS
-from tablebench.datasets.anes import ANES_STATES, ANES_YEARS
-
-from tablebench.datasets.brfss import BRFSS_STATE_LIST, BRFSS_YEARS
-from tablebench.datasets.communities_and_crime import CANDC_STATE_LIST
-from tablebench.datasets.nhanes import NHANES_YEARS
-
-# Estimators to fit
-estimator_cls = (LogisticRegressionCV,
-                 HistGradientBoostingClassifier,
-                 xgb.XGBClassifier)
+from tablebench.configs.domain_shift import domain_shift_experiment_configs
+from tablebench.core import DomainSplitter, TabularDataset, \
+    TabularDatasetConfig
 
 
-@dataclass
-class DomainShiftExperimentConfig:
-    tabular_dataset_kwargs: dict
-    domain_split_varname: str
-    domain_split_ood_values: Sequence[Any]
-    grouper: Grouper
-    preprocessor_config: PreprocessorConfig
-    domain_split_id_values: Optional[Sequence[Any]] = None
-
-
-# Set of fixed domain shift experiments.
-experiment_configs = {
-    "acsfoodstamps_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsfoodstamps",
-                                "acs_task": "acsfoodstamps"},
-        domain_split_varname="ST",
-        domain_split_ood_values=ACS_STATE_LIST,
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acsfoodstamps_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsfoodstamps",
-                                "acs_task": "acsfoodstamps",
-                                "years": ACS_YEARS},
-        domain_split_varname="ACS_YEAR",
-        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
-                                 range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[[ACS_YEARS[i]] for i in
-                                range(len(ACS_YEARS) - 1)],
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acsincome_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsincome",
-                                "acs_task": "acsincome"},
-        domain_split_varname="ST",
-        domain_split_ood_values=ACS_STATE_LIST,
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acsincome_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsincome",
-                                "acs_task": "acsincome",
-                                "years": ACS_YEARS},
-        domain_split_varname="ACS_YEAR",
-        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
-                                 range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[[ACS_YEARS[i]] for i in
-                                range(len(ACS_YEARS) - 1)],
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acspubcov_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acspubcov",
-                                "acs_task": "acspubcov"},
-        domain_split_varname="ST",
-        domain_split_ood_values=ACS_STATE_LIST,
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acspubcov_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acspubcov",
-                                "acs_task": "acspubcov",
-                                "years": ACS_YEARS},
-        domain_split_varname="ACS_YEAR",
-        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
-                                 range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[[ACS_YEARS[i]] for i in
-                                range(len(ACS_YEARS) - 1)],
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acsunemployment_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsunemployment",
-                                "acs_task": "acsunemployment"},
-        domain_split_varname="ST",
-        domain_split_ood_values=ACS_STATE_LIST,
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acsunemployment_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsunemployment",
-                                "acs_task": "acsunemployment",
-                                "years": ACS_YEARS},
-        domain_split_varname="ACS_YEAR",
-        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
-                                 range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[[ACS_YEARS[i]] for i in
-                                range(len(ACS_YEARS) - 1)],
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "brfss_diabetes_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_diabetes"},
-        domain_split_varname="STATE",
-        domain_split_ood_values=BRFSS_STATE_LIST,
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "brfss_diabetes_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_diabetes", "years": BRFSS_YEARS},
-        domain_split_varname="IYEAR",
-        domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
-                                 range(len(BRFSS_YEARS) - 1)],
-        domain_split_id_values=[[BRFSS_YEARS[i]] for i in
-                                range(len(BRFSS_YEARS) - 1)],
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-    "brfss_blood_pressure_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_blood_pressure"},
-        domain_split_varname="STATE",
-        domain_split_ood_values=BRFSS_STATE_LIST,
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "brfss_blood_pressure_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_blood_pressure",
-                                "years": BRFSS_YEARS},
-        domain_split_varname="IYEAR",
-        domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
-                                 range(len(BRFSS_YEARS) - 1)],
-        domain_split_id_values=[[BRFSS_YEARS[i]] for i in
-                                range(len(BRFSS_YEARS) - 1)],
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "candc_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "communities_and_crime"},
-        domain_split_varname="state",
-        domain_split_ood_values=CANDC_STATE_LIST,
-        grouper=Grouper({"Race": [1, ], "income_level_above_median": [1, ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(),
-    ),
-
-    "diabetes_admtype": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "diabetes_readmission"},
-        domain_split_varname='admission_type_id',
-        domain_split_ood_values=[1, 2, 3, 4, 5, 6, 7, 8],
-        grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(),
-    ),
-
-    "diabetes_admsrc": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "diabetes_readmission"},
-        domain_split_varname='admission_source_id',
-        domain_split_ood_values=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 17,
-                                 20, 22, 25],
-        grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(),
-    ),
-
-    "mooc_course": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "mooc"},
-        domain_split_varname="course_id",
-        domain_split_ood_values=['HarvardX/CB22x/2013_Spring',
-                                 'HarvardX/CS50x/2012',
-                                 'HarvardX/ER22x/2013_Spring',
-                                 'HarvardX/PH207x/2012_Fall',
-                                 'HarvardX/PH278x/2013_Spring'],
-        grouper=Grouper({"gender": ["m", ],
-                         "LoE_DI": ["Bachelor's", "Master's", "Doctorate"]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(),
-    ),
-
-    "nhanes_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "nhanes_cholesterol"},
-        domain_split_varname="nhanes_year",
-        domain_split_ood_values=[NHANES_YEARS[i + 1] for i in
-                                 range(len(NHANES_YEARS) - 1)],
-        domain_split_id_values=[[NHANES_YEARS[i]] for i in
-                                range(len(NHANES_YEARS) - 1)],
-        grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins"),
-
-    ),
-
-    "physionet_set": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "physionet"},
-        domain_split_varname="set",
-        domain_split_ood_values=["a", "b"],
-        grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins")
-    ),
-
-    "anes_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
-        domain_split_varname="VCF0901b",
-        domain_split_ood_values=ANES_STATES,
-        grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
-
-    "anes_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "anes"},
-        domain_split_varname="VCF0004",
-        domain_split_ood_values=ANES_YEARS[4:],
-        domain_split_id_values=list(sliding_window(ANES_YEARS, 4)),
-        grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
-}
-
-
-def main(experiment, cache_dir):
+def main(experiment, cache_dir, device: str):
     iterates = []
 
-    expt_config = experiment_configs[experiment]
+    expt_config = domain_shift_experiment_configs[experiment]
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
     for i, tgt in enumerate(expt_config.domain_split_ood_values):
 
@@ -266,16 +43,22 @@ def main(experiment, cache_dir):
                   f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
             continue
 
-        X_tr, y_tr, G_tr = dset.get_pandas(split="train")
+        eval_splits = ("test",) if not isinstance(
+            expt_config.splitter, DomainSplitter) else ("id_test", "ood_test")
 
-        for est_cls in estimator_cls:
-            estimator = est_cls()
+        for model in list(PYTORCH_MODELS) + list(SKLEARN_MODELS):
+            estimator = get_estimator(model, d_out=dset.X_shape[1])
 
             print(f"fitting estimator of type {type(estimator)} with "
                   f"target {expt_config.domain_split_varname} = {tgt}, "
                   f"src {expt_config.domain_split_varname} = {src}")
-            estimator.fit(X_tr, y_tr)
-            print("fitting estimator complete.")
+
+            if model in SKLEARN_MODELS:
+                estimator = training.train_sklearn(estimator, dset, eval_splits)
+
+            else:
+                estimator = training.train_pytorch(model, dset, device,
+                                                   eval_splits)
 
             metrics = {"estimator": str(type(estimator)),
                        "task": expt_config.tabular_dataset_kwargs[
@@ -298,17 +81,19 @@ def main(experiment, cache_dir):
                     continue
             iterates.append(metrics)
 
-    results = pd.DataFrame(iterates)
-    results.to_csv(
-        f"results-{experiment}-{str(datetime.now()).replace(' ', '')}.csv")
-    return
+        results = pd.DataFrame(iterates)
+        results.to_csv(
+            f"results-{experiment}-{str(datetime.now()).replace(' ', '')}.csv")
+        return
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", choices=list(experiment_configs.keys()),
-                        default="brfss_diabetes_st")
-    parser.add_argument("--cache_dir", default="tmp",
-                        help="Directory to cache raw data files to.")
-    args = parser.parse_args()
-    main(**vars(args))
+    if __name__ == "__main__":
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--cache_dir", default="tmp",
+                            help="Directory to cache raw data files to.")
+        parser.add_argument("--device", default="cpu")
+        parser.add_argument("--experiment",
+                            choices=list(
+                                domain_shift_experiment_configs.keys()),
+                            default="brfss_diabetes_st")
+        args = parser.parse_args()
+        main(**vars(args))

@@ -7,6 +7,16 @@ from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
 from tablebench.models.dro import GroupDROModel
 
+SKLEARN_MODELS = ("expgrad",
+                  "histgbm",
+                  "lightgbm",
+                  "wcs",
+                  "xgb")
+PYTORCH_MODELS = ("ft_transformer",
+                  "group_dro",
+                  "mlp",
+                  "resnet")
+
 
 def get_estimator(model, d_out=1, **kwargs):
     if model == "expgrad":
