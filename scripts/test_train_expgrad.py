@@ -40,7 +40,7 @@ estimator = get_estimator(
     "expgrad",
     estimator=base_estimator,
     constraints=constraint,
-    sensitive_feature_colnames=[domain_split_varname])
+    domain_feature_colname=[domain_split_varname])
 
 estimator.fit(X_tr, y_tr)
 
