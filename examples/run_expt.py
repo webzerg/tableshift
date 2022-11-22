@@ -4,7 +4,7 @@ from tablebench.core import DomainSplitter, TabularDataset, \
 
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models import get_estimator
-from tablebench.models.training import train_sklearn
+from tablebench.models.training import train
 
 
 def main(experiment, cache_dir, model):
@@ -20,7 +20,7 @@ def main(experiment, cache_dir, model):
                           preprocessor_config=expt_config.preprocessor_config,
                           **expt_config.tabular_dataset_kwargs)
     estimator = get_estimator(model)
-    train_sklearn(estimator, dset)
+    train(estimator, dset)
     return
 
 

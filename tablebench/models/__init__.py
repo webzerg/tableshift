@@ -1,3 +1,5 @@
+from typing import Any
+
 from frozendict import frozendict
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -8,15 +10,15 @@ from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
 from tablebench.models.dro import GroupDROModel
 
-SKLEARN_MODELS = ("expgrad",
-                  "histgbm",
-                  "lightgbm",
-                  "wcs",
-                  "xgb")
-PYTORCH_MODELS = ("ft_transformer",
-                  "group_dro",
-                  "mlp",
-                  "resnet")
+SKLEARN_MODEL_CLS = {"expgrad": ExponentiatedGradient,
+                     "histgbm": HistGradientBoostingClassifier,
+                     "lightgbm": LGBMClassifier,
+                     "wcs": WeightedCovariateShiftClassifier,
+                     "xgb": xgb.XGBClassifier}
+PYTORCH_MODEL_CLS = {"ft_transformer": FTTransformerModel,
+                     "group_dro": GroupDROModel,
+                     "mlp": MLPModel,
+                     "resnet": ResNetModel}
 
 # TODO(jpgard): set all architectural defaults here
 #  based on [gorishniy2021revisiting] paper.
@@ -27,6 +29,29 @@ _DEFAULT_CONFIGS = frozendict({
     "mlp": dict(d_layers=[256, 256]),
     "resnet": dict(),
 })
+
+
+def is_pytorch_model(model: Any) -> bool:
+    """Helper function to determine whether a model object is a pytorch model.
+
+    If True, uses the standard pytorch training loop defined in
+    tableshift.models.training.train_pytorch(); if False,
+    uses the sklearn training loop defined in
+    tableshift.models.training.train_sklearn()."""
+    is_sklearn = isinstance(model, tuple(SKLEARN_MODEL_CLS.values()))
+    is_pt = isinstance(model, tuple(PYTORCH_MODEL_CLS.values()))
+    assert is_sklearn or is_pt, f"unknown model type {type(model)}"
+    return is_pt
+
+
+def is_pytorch_model_name(model: str) -> bool:
+    """Helper function to determine whether a model name is a pytorch model.
+
+    ISee description of is_pytorch_model() above."""
+    is_sklearn = model in SKLEARN_MODEL_CLS
+    is_pt = model in PYTORCH_MODEL_CLS
+    assert is_sklearn or is_pt, f"unknown model name {model}"
+    return is_pt
 
 
 def get_pytorch_model_config(model, dset) -> dict:

@@ -2,8 +2,9 @@ import argparse
 from datetime import datetime
 
 import pandas as pd
-from tablebench.models import get_estimator, PYTORCH_MODELS, SKLEARN_MODELS, \
-    training, get_pytorch_model_config
+from tablebench.models import get_estimator, get_pytorch_model_config, \
+    is_pytorch_model_name, PYTORCH_MODEL_CLS, SKLEARN_MODEL_CLS
+from tablebench.models.training import train
 from tablebench.models.utils import get_predictions_and_labels
 
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
@@ -12,10 +13,14 @@ from tablebench.core import DomainSplitter, TabularDataset, \
 
 
 def main(experiment, cache_dir, device: str):
+
+    # List of dictionaries containing metrics and metadata for each
+    # experimental iterate.
     iterates = []
 
     expt_config = domain_shift_experiment_configs[experiment]
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
+
     for i, tgt in enumerate(expt_config.domain_split_ood_values):
 
         if expt_config.domain_split_id_values is not None:
@@ -44,35 +49,30 @@ def main(experiment, cache_dir, device: str):
                   f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
             continue
 
-        for model in list(PYTORCH_MODELS):
-        # for model in list(PYTORCH_MODELS) + list(SKLEARN_MODELS):
+        for model in PYTORCH_MODEL_CLS.keys():
+            # for model in list(PYTORCH_MODEL_CLS) + list(SKLEARN_MODELS):
 
             config = get_pytorch_model_config(
-                model, dset) if model in PYTORCH_MODELS else {}
+                model, dset) if is_pytorch_model_name(model) else {}
 
             estimator = get_estimator(model, **config)
 
-            print(f"fitting estimator of type {type(estimator)} with "
+            print(f"[INFO] fitting estimator of type {type(estimator)} with "
                   f"target {expt_config.domain_split_varname} = {tgt}, "
                   f"src {expt_config.domain_split_varname} = {src}")
 
-            if model in SKLEARN_MODELS:
-                estimator = training.train_sklearn(estimator, dset)
-
-            else:
-                estimator = training.train_pytorch(estimator, dset, device)
+            estimator = train(estimator, dset, device=device)
 
             # Initialize the metrics dict with some experiment metadata.
             metrics = {"estimator": str(type(estimator)),
                        "task": expt_config.tabular_dataset_kwargs[
                            "name"],
                        "domain_split_varname": expt_config.domain_split_varname,
-                       "domain_split_ood_values": tgt,
-                       }
+                       "domain_split_ood_values": tgt}
 
             for split in dset.eval_split_names:
                 try:
-                    if model in PYTORCH_MODELS:
+                    if model in PYTORCH_MODEL_CLS:
                         loader = dset.get_dataloader(split)
                         y_hat, _ = get_predictions_and_labels(estimator, loader)
 

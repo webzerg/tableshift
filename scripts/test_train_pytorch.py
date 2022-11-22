@@ -3,7 +3,7 @@ from tablebench.core import TabularDataset, TabularDatasetConfig
 
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models import get_estimator, get_pytorch_model_config
-from tablebench.models.training import train_pytorch
+from tablebench.models.training import _train_pytorch
 
 
 def main(experiment: str, device: str, model: str, cache_dir: str):
@@ -20,7 +20,7 @@ def main(experiment: str, device: str, model: str, cache_dir: str):
     config = get_pytorch_model_config(model, dset)
     model = get_estimator(model, **config)
 
-    train_pytorch(model, dset, device)
+    _train_pytorch(model, dset, device)
 
 
 if __name__ == "__main__":
