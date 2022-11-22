@@ -5,18 +5,22 @@ from torch.nn import functional as F
 from tablebench.models import GroupDROModel
 from tablebench.models.dro import group_dro_loss
 
+PYTORCH_DEFAULTS = {
+    "lr": 0.001,
+    "weight_decay": 0.0,
+    "n_epochs": 25,
+    "batch_size": 512,
+}
 
-def train_pytorch(estimator, dset, device):
+
+def train_pytorch(estimator, dset, device, config=PYTORCH_DEFAULTS):
     """Helper function to train a pytorch estimator."""
-    config = {
-        "lr": 0.001,
-        "weight_decay": 0.0,
-        "n_epochs": 25,
-        "batch_size": 512,
-    }
-    train_loader = dset.get_dataloader("train", 512, device=device)
-    eval_loaders = {s: dset.get_dataloader(s, 2048, device=device) for s in
-                    dset.eval_split_names}
+
+    train_loader = dset.get_dataloader("train", config["batch_size"],
+                                       device=device)
+    eval_loaders = {
+        s: dset.get_dataloader(s, config["batch_size"], device=device) for s in
+        dset.eval_split_names}
 
     loss_fn = (group_dro_loss
                if isinstance(estimator, GroupDROModel)
