@@ -20,8 +20,7 @@ def main(experiment, cache_dir, model):
                           preprocessor_config=expt_config.preprocessor_config,
                           **expt_config.tabular_dataset_kwargs)
     estimator = get_estimator(model)
-    train_sklearn(estimator, dset, eval_splits=("test",) if not isinstance(
-        expt_config.splitter, DomainSplitter) else ("id_test", "ood_test"))
+    train_sklearn(estimator, dset)
     return
 
 
