@@ -1,9 +1,23 @@
 import argparse
-from tablebench.core import TabularDataset, TabularDatasetConfig
 
+from ray import air, tune
+
+from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models import get_estimator, get_model_config
-from tablebench.models.training import _train_pytorch
+from tablebench.models.training import train
+
+search_space = {
+    "d_hidden": tune.choice([64, 128, 256, 512]),
+
+    # Samples a float uniformly between 0.0001 and 0.1, while
+    # sampling in log space and rounding to multiples of 0.00005
+    "lr": tune.qloguniform(1e-4, 1e-1, 5e-5),
+
+    "n_epochs": tune.randint(1, 2),
+    "num_layers": tune.randint(1, 4),
+    "weight_decay": tune.quniform(0., 1., 0.1),
+}
 
 
 def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool):
@@ -27,10 +41,23 @@ def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool):
                           preprocessor_config=expt_config.preprocessor_config,
                           **tabular_dataset_kwargs)
 
-    config = get_model_config(model, dset)
-    model = get_estimator(model, **config)
+    def _train_fn(run_config):
+        # Get the default configs
+        config = get_model_config(model, dset)
+        # Override the defaults with run_config
+        config.update(run_config)
+        estimator = get_estimator(model, **config)
+        train(estimator, dset, device=device, config=config)
 
-    _train_pytorch(model, dset, device)
+    tuner = tune.Tuner(
+        _train_fn,
+        param_space=search_space,
+        tune_config=tune.tune_config.TuneConfig(num_samples=1),
+        run_config=air.RunConfig(local_dir="./ray-results",
+                                 name="test_experiment")
+    )
+
+    tuner.fit()
 
 
 if __name__ == "__main__":

@@ -68,6 +68,9 @@ def get_model_config(model: str, dset: TabularDataset) -> dict:
     if model == "group_dro":
         config["n_groups"] = dset.n_domains
 
+    if is_pytorch_model_name(model):
+        config.update({"batch_size": 512})
+
     if model == "expgrad":
         assert isinstance(dset.splitter, DomainSplitter)
         config.update(
@@ -93,7 +96,12 @@ def get_estimator(model, d_out=1, **kwargs):
     elif model == "lightgbm":
         return LGBMClassifier(**kwargs)
     elif model == "mlp":
-        return MLPModel(d_out=d_out, dropouts=0., activation='ReLU', **kwargs)
+        return MLPModel(d_in=kwargs["d_in"],
+                        d_layers=kwargs["d_layers"],
+                        d_out=d_out,
+                        dropouts=0.,
+                        activation='ReLU',
+                        )
     elif model == "resnet":
         return ResNetModel(
             n_blocks=2,
