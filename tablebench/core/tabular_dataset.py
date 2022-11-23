@@ -69,9 +69,12 @@ class TabularDataset(ABC):
         return self.data.shape
 
     @property
-    def n_groups(self) -> int:
-        """Number of sensitive groups, across all sensitive attributes."""
-        return np.prod(self.groups.nunique(axis=0).values)
+    def n_domains(self) -> int:
+        """Number of domains, across all sensitive attributes."""
+        if self.domain_labels is None:
+            return 0
+        else:
+            return np.prod(self.domain_labels.nunique(axis=0).values)
 
     @property
     def eval_split_names(self) -> Tuple[str]:
@@ -80,12 +83,26 @@ class TabularDataset(ABC):
             self.splitter, DomainSplitter) else ("id_test", "ood_test")
         return eval_splits
 
+    @property
+    def domain_label_colname(self) -> Union[str, None]:
+        """Return the name of the domain split column, if one exists."""
+        if isinstance(self.splitter, DomainSplitter):
+            return self.splitter.domain_split_varname
+        else:
+            return None
+
     def _check_data(self, X: pd.DataFrame, y: pd.Series,
-                    g: Union[pd.DataFrame, pd.Series]):
+                    g: Union[pd.DataFrame, pd.Series],
+                    d: pd.Series):
         """Helper function to check data after all preprocessing/splitting."""
         if not pd.api.types.is_numeric_dtype(y):
             print(f"[WARNING] y is of type {y.dtype}; non-numeric types "
                   f"are not accepted by all estimators (e.g. xgb.XGBClassifier")
+        if self.domain_label_colname:
+            assert self.domain_label_colname not in X.columns
+
+        if self.grouper.drop:
+            for c in self.grouper.features: assert c not in X.columns
         return
 
     def _initialize_data(self):
@@ -99,7 +116,7 @@ class TabularDataset(ABC):
         data = self._process_post_split(data)
 
         X, y, G, d = self._X_y_G_d_split(data)
-        self._check_data(X, y, G)
+        self._check_data(X, y, G, d)
         self.data = X
         self.labels = y
         self.groups = G
@@ -118,9 +135,12 @@ class TabularDataset(ABC):
             # Retain the group variables as features.
             for x in self.grouper.features: data_features.add(x)
 
-        if isinstance(self.splitter, DomainSplitter):
+        if self.domain_label_colname:
             # Case: a domain split is used; store domain labels.
-            d = data.loc[:, self.splitter.domain_split_varname]
+            d = data.loc[:, self.domain_label_colname]
+
+            # Check type since following lines assume a splitter of this type.
+            assert isinstance(self.splitter, DomainSplitter)
 
             if self.splitter.drop_domain_split_col and \
                     (self.splitter.domain_split_varname in data_features):
@@ -159,12 +179,10 @@ class TabularDataset(ABC):
         normalization, drop features needed only for splitting)."""
         passthrough_columns = self.grouper.features + [self.target]
 
-        if isinstance(self.splitter, DomainSplitter):
-            passthrough_columns.append(self.splitter.domain_split_varname)
-
         data = self.preprocessor_config.fit_transform(
             data,
             self.splits["train"],
+            domain_label_colname=self.domain_label_colname,
             passthrough_columns=passthrough_columns)
         return data
 
@@ -187,12 +205,19 @@ class TabularDataset(ABC):
     def get_pandas(self, split) -> Tuple[
         DataFrame, Series, DataFrame, Optional[Series]]:
         """Fetch the (data, labels, groups, domains) for this TabularDataset."""
+
+        # TODO(jpgard): consider naming these outputs, or creating
+        #  a DataClass object to "hold" them. This will allow for easy access of
+        #  e.g. numeric vs. categorical features, where this is needed.
         return self._get_split_data(split)
 
     def get_dataloader(self, split, batch_size=2048, device='cpu',
                        shuffle=True) -> torch.utils.data.DataLoader:
         """Fetch a dataloader yielding (X, y, G, d) tuples."""
         data = self._get_split_data(split)
+        if self.domain_labels is None:
+            # Drop the empty domain labels.
+            data = data[:-1]
         device = torch.device(device)
         data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
         tds = torch.utils.data.TensorDataset(*data)

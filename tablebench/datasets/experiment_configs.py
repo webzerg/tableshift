@@ -95,6 +95,19 @@ EXPERIMENT_CONFIGS = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
+    "_debug": ExperimentConfig(
+        splitter=DomainSplitter(val_size=0.01,
+                                id_test_size=0.2,
+                                random_state=43406,
+                                domain_split_varname="purpose",
+                                # values: car(new), car(used), furniture/equipment
+                                domain_split_ood_values=["A40", "A41", "A42",
+                                                         "A43"]
+                                ),
+        grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
+                        drop=False),
+        preprocessor_config=PreprocessorConfig(),
+        tabular_dataset_kwargs={"name": "german"}),
     "diabetes_readmission": ExperimentConfig(
         splitter=RandomSplitter(test_size=0.25, val_size=0.01,
                                 random_state=29746),

@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import CategoricalDtype as cat_dtype
 from sklearn.compose import ColumnTransformer, make_column_selector
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler, \
+    LabelEncoder
 from tablebench.core.discretization import KBinsDiscretizer
 
 
@@ -152,11 +153,16 @@ def _transformed_columns_to_numeric(df, prefix: str,
     return df
 
 
+# TODO(jpgard): separate the PreprocessorConfig from the Preprocessor class,
+#  which should have a classmethod to instantiate Preprocessor from
+#  PreprocessorConfig.
 @dataclass
 class PreprocessorConfig:
     categorical_features: str = "one_hot"  # also applies to boolean features.
     numeric_features: str = "normalize"
+    domain_labels: str = "label_encode"
     feature_transformer: ColumnTransformer = None
+    domain_label_transformer: LabelEncoder = None
     passthrough_columns: List[str] = None  # Feature names to passthrough.
     # If "rows", drop rows containing na values, if "columns", drop columns
     # containing na values; if None do not do anything for missing values.
@@ -199,8 +205,8 @@ class PreprocessorConfig:
                 if "scale" in c: print(f"{c}: mean {data[c].mean()}, "
                                        f"std {data[c].std()}")
 
-    def fit_transformer(self, data, train_idxs: List[int],
-                        passthrough_columns: List[str] = None):
+    def fit_feature_transformer(self, data, train_idxs: List[int],
+                                passthrough_columns: List[str] = None):
         """Fits the feature_transformer defined by this PreprocessorConfig."""
 
         numeric_columns = make_column_selector(
@@ -226,7 +232,7 @@ class PreprocessorConfig:
         self.feature_transformer.fit(data.loc[train_idxs, :])
         return
 
-    def transform(self, data) -> pd.DataFrame:
+    def transform_features(self, data) -> pd.DataFrame:
         transformed = self.feature_transformer.transform(data)
         transformed = pd.DataFrame(
             transformed,
@@ -280,9 +286,24 @@ class PreprocessorConfig:
                         f"[ERROR] illegal character {c} in column name "
                         f"{colname}; this will likely lead to an error.")
 
+    def fit_transform_domain_labels(self, x: pd.Series):
+        if self.domain_labels == "label_encode":
+            self.domain_label_transformer = LabelEncoder()
+            return self.domain_label_transformer.fit_transform(x)
+        else:
+            raise NotImplementedError(f"Method {self.domain_labels} not "
+                                      f"implemented.")
+
     def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
+                      domain_label_colname: Optional[str],
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         """Fit a feature_transformer and apply it to the input features."""
+
+        if domain_label_colname and domain_label_colname not in passthrough_columns:
+            print(f"[DEBUG] adding domain label column {domain_label_colname} "
+                  f"to passthrough columns")
+            passthrough_columns.append(domain_label_colname)
+
         dtypes_in = data.dtypes.to_dict()
         if self.passthrough_columns:
             passthrough_columns += self.passthrough_columns
@@ -291,8 +312,16 @@ class PreprocessorConfig:
                                passthrough_columns}
                               if passthrough_columns
                               else None)
-        self.fit_transformer(data, train_idxs, passthrough_columns)
-        transformed = self.transform(data)
+        # Fit the feature transformer and apply it.
+        self.fit_feature_transformer(data, train_idxs, passthrough_columns)
+        transformed = self.transform_features(data)
+
+        if domain_label_colname:
+            # Case: fit the domain label transformer and apply it.
+            data.loc[:,
+            domain_label_colname] = self.fit_transform_domain_labels(
+                data.loc[:, domain_label_colname])
+
         transformed = self._post_transform(transformed,
                                            cast_dtypes=passthrough_dtypes)
         self._post_transform_summary(transformed)
