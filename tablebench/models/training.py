@@ -1,19 +1,26 @@
+from typing import Any
+
 import rtdl
 import torch
 from torch.nn import functional as F
+from frozendict import frozendict
 
+from tablebench.core import TabularDataset
 from tablebench.models import GroupDROModel
 from tablebench.models.dro import group_dro_loss
+from tablebench.models import is_pytorch_model
+from tablebench.models.expgrad import ExponentiatedGradient
 
-PYTORCH_DEFAULTS = {
+PYTORCH_DEFAULTS = frozendict({
     "lr": 0.001,
     "weight_decay": 0.0,
     "n_epochs": 1,
     "batch_size": 512,
-}
+})
 
 
-def train_pytorch(estimator, dset, device, config=PYTORCH_DEFAULTS):
+def _train_pytorch(estimator, dset: TabularDataset, device: str,
+                   config=PYTORCH_DEFAULTS):
     """Helper function to train a pytorch estimator."""
 
     train_loader = dset.get_dataloader("train", config["batch_size"],
@@ -38,16 +45,19 @@ def train_pytorch(estimator, dset, device, config=PYTORCH_DEFAULTS):
     return estimator
 
 
-def train_sklearn(estimator, dset):
+def _train_sklearn(estimator, dset: TabularDataset):
     """Helper function to train a sklearn-type estimator."""
     print(f"fitting estimator of type {type(estimator)}")
-    X_tr, y_tr, G_tr = dset.get_pandas(split="train")
-    estimator.fit(X_tr, y_tr)
+    X_tr, y_tr, _, d_tr = dset.get_pandas(split="train")
+    if isinstance(estimator, ExponentiatedGradient):
+        estimator.fit(X_tr, y_tr, d=d_tr)
+    else:
+        estimator.fit(X_tr, y_tr)
     print("fitting estimator complete.")
 
     for split in dset.eval_split_names:
 
-        X_te, _, _ = dset.get_pandas(split=split)
+        X_te, _, _, _ = dset.get_pandas(split=split)
 
         y_hat_te = estimator.predict(X_te)
         metrics = dset.evaluate_predictions(y_hat_te, split=split)
@@ -55,3 +65,10 @@ def train_sklearn(estimator, dset):
         for k, v in metrics.items():
             print(f"\t{k:<40}:{v:.3f}")
     return estimator
+
+
+def train(estimator: Any, dset: TabularDataset, **kwargs):
+    if is_pytorch_model(estimator):
+        return _train_pytorch(estimator, dset, **kwargs)
+    else:
+        return _train_sklearn(estimator, dset)

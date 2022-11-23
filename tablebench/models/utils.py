@@ -1,9 +1,20 @@
-from typing import Tuple
+from typing import Tuple, Union
 import numpy as np
 import rtdl
 import scipy
 import sklearn
 import torch
+
+
+def unpack_batch(batch: Tuple[Union[torch.Tensor, None]]) -> Tuple[
+    torch.Tensor, torch.Tensor, torch.Tensor, Union[torch.Tensor, None]
+]:
+    (x_batch, y_batch, g_batch) = batch[:3]
+    if len(batch) == 4:
+        d_batch = batch[3]
+    else:
+        d_batch = None
+    return x_batch, y_batch, g_batch, d_batch
 
 
 @torch.no_grad()
@@ -13,7 +24,8 @@ def get_predictions_and_labels(model, loader, as_logits=False) -> Tuple[
     prediction = []
     label = []
 
-    for (batch_x, batch_y, _) in loader:
+    for batch in loader:
+        batch_x, batch_y, _, _ = unpack_batch(batch)
         # TODO(jpgard): handle categorical features here.
         prediction.append(apply_model(model, batch_x))
         label.append(batch_y.squeeze())
