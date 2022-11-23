@@ -12,7 +12,7 @@ import scipy
 import torch
 
 from tablebench.models.compat import SklearnStylePytorchModel
-from tablebench.models.utils import apply_model
+from tablebench.models.utils import apply_model, unpack_batch
 
 
 @torch.no_grad()
@@ -30,7 +30,8 @@ class SklearnStyleRTDLModel(SklearnStylePytorchModel):
                         Mapping[str, torch.utils.data.DataLoader]] = None
                     ):
         """Run a single epoch of model training."""
-        for iteration, (x_batch, y_batch, _) in enumerate(train_loader):
+        for iteration, batch in enumerate(train_loader):
+            x_batch, y_batch, _, _ = unpack_batch(batch)
             self.train()
             optimizer.zero_grad()
             # TODO(jpgard): handle categorical features here.

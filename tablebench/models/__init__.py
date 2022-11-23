@@ -66,7 +66,7 @@ def get_model_config(model: str, dset: TabularDataset) -> dict:
         config.update({"n_num_features": dset.X_shape[1]})
 
     if model == "group_dro":
-        config["n_groups"] = dset.n_groups
+        config["n_groups"] = dset.n_domains
 
     if model == "expgrad":
         assert isinstance(dset.splitter, DomainSplitter)

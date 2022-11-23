@@ -74,7 +74,8 @@ class TabularDataset(ABC):
         if self.domain_labels is None:
             return 0
         else:
-            return np.prod(self.domain_labels.nunique(axis=0).values)
+            assert isinstance(self.domain_labels, Series)
+            return self.domain_labels.nunique()
 
     @property
     def eval_split_names(self) -> Tuple[str]:

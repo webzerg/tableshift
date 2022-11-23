@@ -7,26 +7,26 @@ from torch.nn.functional import binary_cross_entropy_with_logits
 
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.rtdl import MLPModel
-from tablebench.models.utils import evaluate, apply_model
+from tablebench.models.utils import apply_model, unpack_batch
 
 
+# TODO(jpgard): make this a loss object, with n_groups as an attribute.
 def group_dro_loss(outputs: torch.Tensor, targets: torch.Tensor,
-                   sens: torch.Tensor):
-    assert torch.all(torch.logical_or(sens == 0., sens == 1.)), \
-        "only binary groups supported."
-    subgroup_losses = []
-    # TODO(jpgard): check that sens is a binary matrix (only 0/1).
-    n_attrs = sens.shape[1]
+                   group_ids: torch.Tensor, n_groups: int) -> torch.Tensor:
+    group_ids = group_ids.int()
+    assert group_ids.max() < n_groups
+    subgroup_losses = torch.zeros(n_groups, dtype=torch.float)
+
     elementwise_loss = binary_cross_entropy_with_logits(input=outputs,
                                                         target=targets,
                                                         reduction="none")
-    # Compute the loss on each subgroup
-    for subgroup_idxs in itertools.product(*[(0, 1)] * n_attrs):
-        subgroup_idxs = torch.Tensor(subgroup_idxs).to(sens.device)
-        mask = torch.all(sens == subgroup_idxs, dim=1)
-        subgroup_loss = elementwise_loss[mask].sum() / mask.sum()
-        subgroup_losses.append(subgroup_loss)
-    return torch.stack(subgroup_losses)
+    # Compute the average loss on each subgroup present in the data.
+    for group_id in torch.unique(group_ids):
+        mask = (group_ids == group_id)
+        subgroup_loss = elementwise_loss[mask].mean()
+        subgroup_losses[group_id] = subgroup_loss
+
+    return subgroup_losses
 
 
 class GroupDROModel(MLPModel, SklearnStylePytorchModel):
@@ -75,11 +75,13 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
                     other_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None
                     ):
-        for iteration, (x_batch, y_batch, g_batch) in enumerate(train_loader):
+        for iteration, batch in enumerate(train_loader):
+            x_batch, y_batch, _, d_batch = unpack_batch(batch)
             self.train()
             optimizer.zero_grad()
             outputs = apply_model(self, x_batch)
-            group_losses = loss_fn(outputs.squeeze(1), y_batch, g_batch)
+            group_losses = loss_fn(outputs.squeeze(1), y_batch, d_batch,
+                                   n_groups=len(self.group_weights))
             # update group weights
             self.group_weights = self.group_weights * torch.exp(
                 self.group_weights_step_size * group_losses.data)
