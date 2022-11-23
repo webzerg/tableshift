@@ -2,8 +2,8 @@ import argparse
 from datetime import datetime
 
 import pandas as pd
-from tablebench.models import get_estimator, get_pytorch_model_config, \
-    is_pytorch_model_name, PYTORCH_MODEL_CLS, SKLEARN_MODEL_CLS
+from tablebench.models import get_estimator, get_model_config, \
+    PYTORCH_MODEL_CLS, SKLEARN_MODEL_CLS
 from tablebench.models.training import train
 from tablebench.models.utils import get_predictions_and_labels
 
@@ -12,8 +12,7 @@ from tablebench.core import DomainSplitter, TabularDataset, \
     TabularDatasetConfig
 
 
-def main(experiment, cache_dir, device: str):
-
+def main(experiment, cache_dir, device: str, debug: bool):
     # List of dictionaries containing metrics and metadata for each
     # experimental iterate.
     iterates = []
@@ -21,7 +20,11 @@ def main(experiment, cache_dir, device: str):
     expt_config = domain_shift_experiment_configs[experiment]
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
 
-    for i, tgt in enumerate(expt_config.domain_split_ood_values):
+    ood_values = expt_config.domain_split_ood_values
+    if debug:
+        ood_values = [ood_values[0]]
+
+    for i, tgt in enumerate(ood_values):
 
         if expt_config.domain_split_id_values is not None:
             src = expt_config.domain_split_id_values[i]
@@ -49,11 +52,10 @@ def main(experiment, cache_dir, device: str):
                   f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
             continue
 
-        for model in PYTORCH_MODEL_CLS.keys():
+        for model in SKLEARN_MODEL_CLS.keys():
             # for model in list(PYTORCH_MODEL_CLS) + list(SKLEARN_MODELS):
 
-            config = get_pytorch_model_config(
-                model, dset) if is_pytorch_model_name(model) else {}
+            config = get_model_config(model, dset)
 
             estimator = get_estimator(model, **config)
 
@@ -65,8 +67,7 @@ def main(experiment, cache_dir, device: str):
 
             # Initialize the metrics dict with some experiment metadata.
             metrics = {"estimator": str(type(estimator)),
-                       "task": expt_config.tabular_dataset_kwargs[
-                           "name"],
+                       "task": expt_config.tabular_dataset_kwargs["name"],
                        "domain_split_varname": expt_config.domain_split_varname,
                        "domain_split_ood_values": tgt}
 
@@ -77,7 +78,7 @@ def main(experiment, cache_dir, device: str):
                         y_hat, _ = get_predictions_and_labels(estimator, loader)
 
                     else:
-                        X_te, _, _ = dset.get_pandas(split=split)
+                        X_te, _, _, _ = dset.get_pandas(split=split)
                         y_hat = estimator.predict(X_te)
 
                     split_metrics = dset.evaluate_predictions(y_hat, split)
@@ -100,10 +101,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache_dir", default="tmp",
                         help="Directory to cache raw data files to.")
+    parser.add_argument("--debug", action="store_true", default=False,
+                        help="Whether to run in debug mode. If True, various "
+                             "truncations/simplifications are performed to "
+                             "speed up experiment.")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--experiment",
-                        choices=list(
-                            domain_shift_experiment_configs.keys()),
+                        choices=list(domain_shift_experiment_configs.keys()),
                         default="mooc_course")
     args = parser.parse_args()
     main(**vars(args))
