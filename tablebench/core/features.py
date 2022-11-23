@@ -156,7 +156,7 @@ def _transformed_columns_to_numeric(df, prefix: str,
 class PreprocessorConfig:
     categorical_features: str = "one_hot"  # also applies to boolean features.
     numeric_features: str = "normalize"
-    transformer: ColumnTransformer = None
+    feature_transformer: ColumnTransformer = None
     passthrough_columns: List[str] = None  # Feature names to passthrough.
     # If "rows", drop rows containing na values, if "columns", drop columns
     # containing na values; if None do not do anything for missing values.
@@ -201,7 +201,7 @@ class PreprocessorConfig:
 
     def fit_transformer(self, data, train_idxs: List[int],
                         passthrough_columns: List[str] = None):
-        """Fits the transformer associated with this PreprocessorConfig."""
+        """Fits the feature_transformer defined by this PreprocessorConfig."""
 
         numeric_columns = make_column_selector(
             pattern="^(?![Tt]arget)",
@@ -217,20 +217,20 @@ class PreprocessorConfig:
             data, categorical_columns, passthrough_columns)
 
         transforms = numeric_transforms + categorical_transforms
-        self.transformer = ColumnTransformer(
+        self.feature_transformer = ColumnTransformer(
             transforms,
             remainder='passthrough',
             sparse_threshold=0,
             verbose_feature_names_out=True)
 
-        self.transformer.fit(data.loc[train_idxs, :])
+        self.feature_transformer.fit(data.loc[train_idxs, :])
         return
 
     def transform(self, data) -> pd.DataFrame:
-        transformed = self.transformer.transform(data)
+        transformed = self.feature_transformer.transform(data)
         transformed = pd.DataFrame(
             transformed,
-            columns=self.transformer.get_feature_names_out())
+            columns=self.feature_transformer.get_feature_names_out())
 
         return transformed
 
@@ -282,6 +282,7 @@ class PreprocessorConfig:
 
     def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
+        """Fit a feature_transformer and apply it to the input features."""
         dtypes_in = data.dtypes.to_dict()
         if self.passthrough_columns:
             passthrough_columns += self.passthrough_columns
