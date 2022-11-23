@@ -277,13 +277,13 @@ class PreprocessorConfig:
               f"({(start_len - len(data)) / start_len}% of data).")
         return data.reset_index(drop=True)
 
-    def _pre_transform(self, data):
+    def _check_inputs(self, data):
         prohibited_chars = "[].<>"
         for char in prohibited_chars:
             for colname in data.columns:
                 if char in colname:
                     raise ValueError(
-                        f"[ERROR] illegal character {c} in column name "
+                        f"[ERROR] illegal character {char} in column name "
                         f"{colname}; this will likely lead to an error.")
 
     def fit_transform_domain_labels(self, x: pd.Series):
@@ -299,30 +299,36 @@ class PreprocessorConfig:
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         """Fit a feature_transformer and apply it to the input features."""
 
+        if self.passthrough_columns:
+            passthrough_columns += self.passthrough_columns
+
         if domain_label_colname and domain_label_colname not in passthrough_columns:
             print(f"[DEBUG] adding domain label column {domain_label_colname} "
                   f"to passthrough columns")
             passthrough_columns.append(domain_label_colname)
 
+        # All non-domain label passthrough columns will be cast to their
+        # original type post-transformation (ColumnTransformer
+        # actually casts all columns to object type).
         dtypes_in = data.dtypes.to_dict()
-        if self.passthrough_columns:
-            passthrough_columns += self.passthrough_columns
-        self._pre_transform(data)
-        passthrough_dtypes = ({c: dtypes_in[c] for c in
-                               passthrough_columns}
-                              if passthrough_columns
-                              else None)
+        post_transform_cast_dtypes = (
+            {c: dtypes_in[c] for c in passthrough_columns if
+             c != domain_label_colname}
+            if passthrough_columns else None)
+
+        self._check_inputs(data)
+
         # Fit the feature transformer and apply it.
         self.fit_feature_transformer(data, train_idxs, passthrough_columns)
         transformed = self.transform_features(data)
 
+        transformed = self._post_transform(
+            transformed, cast_dtypes=post_transform_cast_dtypes)
+
         if domain_label_colname:
             # Case: fit the domain label transformer and apply it.
-            data.loc[:,
-            domain_label_colname] = self.fit_transform_domain_labels(
-                data.loc[:, domain_label_colname])
+            transformed.loc[:, domain_label_colname] = self.fit_transform_domain_labels(
+                transformed.loc[:, domain_label_colname])
 
-        transformed = self._post_transform(transformed,
-                                           cast_dtypes=passthrough_dtypes)
         self._post_transform_summary(transformed)
         return transformed
