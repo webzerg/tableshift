@@ -39,6 +39,7 @@ def run_tuner(train_fn: Callable, param_space: dict,
 def run_tuning_experiment(model: str, dset: TabularDataset, device: str,
                           tune_config: Optional[TuneConfig]):
     def _train_fn(run_config=None, checkpoint_dir=None):
+        del checkpoint_dir
         # Get the default configs
         config = get_model_config(model, dset)
         if run_config:
