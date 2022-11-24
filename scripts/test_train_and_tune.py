@@ -2,25 +2,15 @@ import argparse
 
 from ray import air, tune
 
+from tablebench.configs.hparams import search_space
 from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models import get_estimator, get_model_config
 from tablebench.models.training import train
 
-search_space = {
-    "d_hidden": tune.choice([64, 128, 256, 512]),
 
-    # Samples a float uniformly between 0.0001 and 0.1, while
-    # sampling in log space and rounding to multiples of 0.00005
-    "lr": tune.qloguniform(1e-4, 1e-1, 5e-5),
-
-    "n_epochs": tune.randint(1, 2),
-    "num_layers": tune.randint(1, 4),
-    "weight_decay": tune.quniform(0., 1., 0.1),
-}
-
-
-def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool):
+def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool,
+         no_tune: bool, num_samples: int):
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
@@ -41,23 +31,26 @@ def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool):
                           preprocessor_config=expt_config.preprocessor_config,
                           **tabular_dataset_kwargs)
 
-    def _train_fn(run_config):
+    def _train_fn(run_config=None):
         # Get the default configs
         config = get_model_config(model, dset)
-        # Override the defaults with run_config
-        config.update(run_config)
+        if run_config:
+            # Override the defaults with run_config, if provided.
+            config.update(run_config)
         estimator = get_estimator(model, **config)
         train(estimator, dset, device=device, config=config)
 
-    tuner = tune.Tuner(
-        _train_fn,
-        param_space=search_space,
-        tune_config=tune.tune_config.TuneConfig(num_samples=1),
-        run_config=air.RunConfig(local_dir="./ray-results",
-                                 name="test_experiment")
-    )
+    if no_tune:
+        _train_fn()
+    else:
+        tuner = tune.Tuner(
+            _train_fn,
+            param_space=search_space[model],
+            tune_config=tune.tune_config.TuneConfig(num_samples=num_samples),
+            run_config=air.RunConfig(local_dir="./ray-results",
+                                     name="test_experiment"))
 
-    tuner.fit()
+        tuner.fit()
 
 
 if __name__ == "__main__":
@@ -71,7 +64,12 @@ if __name__ == "__main__":
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--experiment", default="adult",
                         help="Experiment to run. Overridden when debug=True.")
-    parser.add_argument("--model", default="mlp", choices=(
-        "ft_transformer", "mlp", "resnet", "group_dro"))
+    parser.add_argument("--model", default="mlp")
+    parser.add_argument("--num_samples", type=int, default=1,
+                        help="Number of hparam samples to take in tuning "
+                             "sweep.")
+    parser.add_argument("--no_tune", action="store_true", default=False,
+                        help="If set, suppresses hyperparameter tuning of the "
+                             "model (for faster testing).")
     args = parser.parse_args()
     main(**vars(args))
