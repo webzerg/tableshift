@@ -87,10 +87,19 @@ def get_estimator(model, d_out=1, **kwargs):
         tconfig = FTTransformerModel.get_default_transformer_config()
         tconfig["last_layer_query_idx"] = [-1]
         tconfig["d_out"] = 1
-        return FTTransformerModel._make(**kwargs, transformer_config=tconfig)
+        return FTTransformerModel._make(
+            n_num_features=kwargs["n_num_features"],
+            cat_cardinalities=kwargs["cat_cardinalities"],
+            transformer_config=tconfig)
     elif model == "group_dro":
-        return GroupDROModel(d_out=d_out, dropouts=0., activation='ReLU',
-                             **kwargs)
+        return GroupDROModel(
+            d_in=kwargs["d_in"],
+            d_layers=kwargs["d_layers"],
+            d_out=d_out,
+            dropouts=0.,
+            activation='ReLU',
+            group_weights_step_size=kwargs["group_weights_step_size"],
+            n_groups=kwargs["n_groups"])
     elif model == "histgbm":
         return HistGradientBoostingClassifier(**kwargs)
     elif model == "lightgbm":
@@ -104,6 +113,7 @@ def get_estimator(model, d_out=1, **kwargs):
                         )
     elif model == "resnet":
         return ResNetModel(
+            d_in=kwargs["d_in"],
             n_blocks=2,
             d_main=128,
             d_hidden=256,
@@ -111,9 +121,8 @@ def get_estimator(model, d_out=1, **kwargs):
             dropout_second=0.0,
             normalization='BatchNorm1d',
             activation='ReLU',
-            d_out=d_out,
-            **kwargs
-        )
+            d_out=d_out)
+
     elif model == "wcs":
         # Weighted Covariate Shift classifier.
         return WeightedCovariateShiftClassifier()
