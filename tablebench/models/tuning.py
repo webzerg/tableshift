@@ -14,6 +14,7 @@ class TuneConfig:
     num_samples: int = 1
     tune_metric_name: str = "metric"
     tune_metric_higher_is_better: bool = True
+    report_split: str = "ood_test"
 
     @property
     def mode(self):
@@ -45,7 +46,7 @@ def run_tuning_experiment(model: str, dset: TabularDataset, device: str,
             config.update(run_config)
         estimator = get_estimator(model, **config)
         train(estimator, dset, device=device, config=config,
-              tune_report_split="ood_test")
+              tune_report_split=tune_config.report_split)
 
     if not tune_config:
         # TODO(jpgard): return a metrics dict.
