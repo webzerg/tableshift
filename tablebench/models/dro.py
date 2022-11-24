@@ -33,6 +33,7 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
     def __init__(self, group_weights_step_size: float, n_groups: int, **kwargs):
         MLPModel.__init__(self, **kwargs)
 
+        assert n_groups > 0, "require nonzero n_groups."
         self.group_weights_step_size = torch.Tensor([group_weights_step_size])
         # initialize adversarial weights
         self.group_weights = torch.full([n_groups], 1. / n_groups)

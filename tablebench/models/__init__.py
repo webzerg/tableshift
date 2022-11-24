@@ -25,6 +25,7 @@ PYTORCH_MODEL_CLS = {"ft_transformer": FTTransformerModel,
 # TODO(jpgard): set all architectural defaults here
 #  based on [gorishniy2021revisiting] paper.
 _DEFAULT_CONFIGS = frozendict({
+    "expgrad": {"constraints": ErrorRateParity()},
     "ft_transformer": dict(cat_cardinalities=None),
     "group_dro": dict(d_layers=[256, 256],
                       group_weights_step_size=0.05),
@@ -68,12 +69,9 @@ def get_model_config(model: str, dset: TabularDataset) -> dict:
     if model == "group_dro":
         config["n_groups"] = dset.n_domains
 
-    if model == "expgrad":
-        assert isinstance(dset.splitter, DomainSplitter)
-        config.update(
-            {"domain_feature_colname": [dset.splitter.domain_split_varname],
-             "estimator": xgb.XGBClassifier(),
-             "constraints": ErrorRateParity()})
+    if is_pytorch_model_name(model):
+        config.update({"batch_size": 512})
+
     return config
 
 
@@ -84,18 +82,33 @@ def get_estimator(model, d_out=1, **kwargs):
         tconfig = FTTransformerModel.get_default_transformer_config()
         tconfig["last_layer_query_idx"] = [-1]
         tconfig["d_out"] = 1
-        return FTTransformerModel._make(**kwargs, transformer_config=tconfig)
+        return FTTransformerModel._make(
+            n_num_features=kwargs["n_num_features"],
+            cat_cardinalities=kwargs["cat_cardinalities"],
+            transformer_config=tconfig)
     elif model == "group_dro":
-        return GroupDROModel(d_out=d_out, dropouts=0., activation='ReLU',
-                             **kwargs)
+        return GroupDROModel(
+            d_in=kwargs["d_in"],
+            d_layers=kwargs["d_layers"],
+            d_out=d_out,
+            dropouts=0.,
+            activation='ReLU',
+            group_weights_step_size=kwargs["group_weights_step_size"],
+            n_groups=kwargs["n_groups"])
     elif model == "histgbm":
         return HistGradientBoostingClassifier(**kwargs)
     elif model == "lightgbm":
         return LGBMClassifier(**kwargs)
     elif model == "mlp":
-        return MLPModel(d_out=d_out, dropouts=0., activation='ReLU', **kwargs)
+        return MLPModel(d_in=kwargs["d_in"],
+                        d_layers=kwargs["d_layers"],
+                        d_out=d_out,
+                        dropouts=0.,
+                        activation='ReLU',
+                        )
     elif model == "resnet":
         return ResNetModel(
+            d_in=kwargs["d_in"],
             n_blocks=2,
             d_main=128,
             d_hidden=256,
@@ -103,12 +116,11 @@ def get_estimator(model, d_out=1, **kwargs):
             dropout_second=0.0,
             normalization='BatchNorm1d',
             activation='ReLU',
-            d_out=d_out,
-            **kwargs
-        )
+            d_out=d_out)
+
     elif model == "wcs":
         # Weighted Covariate Shift classifier.
-        return WeightedCovariateShiftClassifier()
+        return WeightedCovariateShiftClassifier(**kwargs)
     elif model == "xgb":
         return xgb.XGBClassifier(**kwargs)
     else:

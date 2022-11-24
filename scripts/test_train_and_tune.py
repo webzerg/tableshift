@@ -1,12 +1,14 @@
 import argparse
+
 from tablebench.core import TabularDataset, TabularDatasetConfig
-
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models import get_estimator, get_model_config
-from tablebench.models.training import _train_pytorch
+from tablebench.models.tuning import TuneConfig, \
+    run_tuning_experiment
 
 
-def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool):
+def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool,
+         no_tune: bool, num_samples: int, tune_metric_name: str = "metric",
+         tune_metric_higher_is_better: bool = True):
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
@@ -26,11 +28,15 @@ def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool):
                           grouper=expt_config.grouper,
                           preprocessor_config=expt_config.preprocessor_config,
                           **tabular_dataset_kwargs)
-
-    config = get_model_config(model, dset)
-    model = get_estimator(model, **config)
-
-    _train_pytorch(model, dset, device)
+    if no_tune:
+        tune_config = None
+    else:
+        tune_config = TuneConfig(
+            num_samples=num_samples,
+            tune_metric_name=tune_metric_name,
+            tune_metric_higher_is_better=tune_metric_higher_is_better)
+    run_tuning_experiment(model=model, dset=dset, device=device,
+                          tune_config=tune_config)
 
 
 if __name__ == "__main__":
@@ -44,7 +50,12 @@ if __name__ == "__main__":
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--experiment", default="adult",
                         help="Experiment to run. Overridden when debug=True.")
-    parser.add_argument("--model", default="mlp", choices=(
-        "ft_transformer", "mlp", "resnet", "group_dro"))
+    parser.add_argument("--model", default="mlp")
+    parser.add_argument("--num_samples", type=int, default=1,
+                        help="Number of hparam samples to take in tuning "
+                             "sweep.")
+    parser.add_argument("--no_tune", action="store_true", default=False,
+                        help="If set, suppresses hyperparameter tuning of the "
+                             "model (for faster testing).")
     args = parser.parse_args()
     main(**vars(args))

@@ -1,11 +1,7 @@
-from tablebench.core import TabularDataset, TabularDatasetConfig, \
-    DomainSplitter, Grouper, PreprocessorConfig
-
-from fairlearn.reductions import ErrorRateParity
-import xgboost as xgb
+from tablebench.core import TabularDataset, TabularDatasetConfig
 
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models import get_estimator
+from tablebench.models import get_estimator, get_model_config
 
 expt_config = EXPERIMENT_CONFIGS["_debug"]
 
@@ -19,12 +15,8 @@ dset = TabularDataset(config=dataset_config,
 
 X_tr, y_tr, _, d_tr = dset.get_pandas(split="train")
 
-base_estimator = xgb.XGBClassifier()
-constraint = ErrorRateParity()
-estimator = get_estimator(
-    "expgrad",
-    estimator=base_estimator,
-    constraints=constraint)
+config = get_model_config("expgrad", dset)
+estimator = get_estimator("expgrad", **config)
 
 estimator.fit(X_tr, y_tr, d=d_tr)
 

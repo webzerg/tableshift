@@ -9,11 +9,11 @@ from sklearn import linear_model
 
 
 class WeightedCovariateShiftClassifier:
-    def __init__(self):
+    def __init__(self, C_domain:float, C_discrim:float):
         # Used to predict weights for training examples
-        self.domain_classifier = linear_model.LogisticRegressionCV()
+        self.domain_classifier = linear_model.LogisticRegression(C=C_domain)
         # Used to predict labels
-        self.discriminator = linear_model.LogisticRegressionCV()
+        self.discriminator = linear_model.LogisticRegression(C=C_discrim)
 
     def predict_importance_weights(self, X):
         if isinstance(X, pd.DataFrame):

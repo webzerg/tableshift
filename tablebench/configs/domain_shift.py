@@ -141,6 +141,15 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(),
     ),
 
+    "_debug": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "communities_and_crime"},
+        domain_split_varname="state",
+        domain_split_ood_values=[CANDC_STATE_LIST[:30]],
+        grouper=Grouper({"Race": [1, ], "income_level_above_median": [1, ]},
+                        drop=False),
+        preprocessor_config=PreprocessorConfig(),
+    ),
+
     "diabetes_admtype": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "diabetes_readmission"},
         domain_split_varname='admission_type_id',

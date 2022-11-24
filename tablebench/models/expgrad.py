@@ -1,6 +1,9 @@
+import warnings
+
 import fairlearn.reductions
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+import xgboost as xgb
 
 assert fairlearn.__version__.split('.')[1] == '7'
 
@@ -13,8 +16,14 @@ class ExponentiatedGradient(fairlearn.reductions.ExponentiatedGradient):
     fairlearn.ExponentiatedGradient.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, constraints, eps: float = 0.01, eta0: float = 2.,
+                 base_estimator_cls=xgb.XGBClassifier,
+                 **kwargs):
+        estimator = base_estimator_cls(**kwargs)
+        super().__init__(estimator=estimator,
+                         constraints=constraints,
+                         eps=eps,
+                         eta0=eta0)
 
         # The LabelEncoder is used to ensure sensitive features are of
         # numerical type (not string/categorical).
@@ -33,8 +42,13 @@ class ExponentiatedGradient(fairlearn.reductions.ExponentiatedGradient):
         # does not accept categorical/string-type data.
         domains_enc = self.le.fit_transform(d.values)
 
-        super().fit(X.values, y.values, sensitive_features=domains_enc,
-                    **kwargs)
+        with warnings.catch_warnings():
+            # Filter FutureWarnings raised by fairlearn that overwhelm the
+            # console output.
+            warnings.filterwarnings("ignore", category=FutureWarning)
+
+            super().fit(X.values, y.values, sensitive_features=domains_enc,
+                        **kwargs)
 
     def predict(self, X, random_state=None):
         return super().predict(X)
