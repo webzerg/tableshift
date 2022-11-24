@@ -1,3 +1,6 @@
+"""
+Run training/tuning of a single model.
+"""
 import argparse
 from datetime import datetime
 
