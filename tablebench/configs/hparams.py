@@ -14,12 +14,13 @@ _DEFAULT_NN_SEARCH_SPACE = frozendict({
     "weight_decay": tune.quniform(0., 1., 0.1),
 })
 
-_xgb_search_space = {
-    "max_depth": tune.randint(4, 8),
-    "colsample_bytree": tune.uniform(0.5, 1),
-    "colsample_bylevel": tune.uniform(0.5, 1),
+_histgbm_search_space = {
     "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
-    "max_bin": tune.choice([128, 256, 512])
+    "max_leaf_nodes": tune.choice([None, 2, 4, 8, 16, 32, 64]),
+    "l2_regularization": tune.choice(
+        [None, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.]),
+    "max_bins": tune.choice([32, 64, 128, 255]),
+    "min_samples_leaf": tune.choice([1, 2, 4, 8, 16, 32, 64]),
 }
 
 _lightgbm_search_space = {
@@ -37,13 +38,30 @@ _wcs_search_space = {
 
 }
 
+_xgb_search_space = {
+    "max_depth": tune.randint(4, 8),
+    "colsample_bytree": tune.uniform(0.5, 1),
+    "colsample_bylevel": tune.uniform(0.5, 1),
+    "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
+    "max_bin": tune.choice([128, 256, 512])
+}
+
+_expgrad_search_space = {
+    **_xgb_search_space,
+    "eps": tune.loguniform(1e-4, 1e0),
+    "eta0": tune.choice([0.1, 0.2, 1.0, 2.0]),
+}
+
 search_space = frozendict({
-    # TODO(jpgard): update these with params specific to each model.
-    "mlp": _DEFAULT_NN_SEARCH_SPACE,
+    # TODO(jpgard): update _DEFAULT_NN_SEARCH_SPACE models with params
+    #  specific to each model.
+    "expgrad": _expgrad_search_space,
     "ft_transformer": _DEFAULT_NN_SEARCH_SPACE,
-    "lightgbm": _lightgbm_search_space,
-    "resnet": _DEFAULT_NN_SEARCH_SPACE,
     "group_dro": _DEFAULT_NN_SEARCH_SPACE,
-    "xgb": _xgb_search_space,
+    "histgbm": _histgbm_search_space,
+    "lightgbm": _lightgbm_search_space,
+    "mlp": _DEFAULT_NN_SEARCH_SPACE,
+    "resnet": _DEFAULT_NN_SEARCH_SPACE,
     "wcs": _wcs_search_space,
+    "xgb": _xgb_search_space,
 })

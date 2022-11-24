@@ -25,6 +25,7 @@ PYTORCH_MODEL_CLS = {"ft_transformer": FTTransformerModel,
 # TODO(jpgard): set all architectural defaults here
 #  based on [gorishniy2021revisiting] paper.
 _DEFAULT_CONFIGS = frozendict({
+    "expgrad": {"constraints": ErrorRateParity()},
     "ft_transformer": dict(cat_cardinalities=None),
     "group_dro": dict(d_layers=[256, 256],
                       group_weights_step_size=0.05),
@@ -71,12 +72,6 @@ def get_model_config(model: str, dset: TabularDataset) -> dict:
     if is_pytorch_model_name(model):
         config.update({"batch_size": 512})
 
-    if model == "expgrad":
-        assert isinstance(dset.splitter, DomainSplitter)
-        config.update(
-            {"domain_feature_colname": [dset.splitter.domain_split_varname],
-             "estimator": xgb.XGBClassifier(),
-             "constraints": ErrorRateParity()})
     return config
 
 
