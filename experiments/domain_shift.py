@@ -50,27 +50,27 @@ def main(experiment, cache_dir, device: str, debug: bool, no_tune: bool,
             tgt = (tgt,)
         splitter = DomainSplitter(
             val_size=0.01,
+            ood_val_size=0.1,
             id_test_size=1 / 5.,
             domain_split_varname=expt_config.domain_split_varname,
             domain_split_ood_values=tgt,
             domain_split_id_values=src,
             random_state=19542)
 
-        # try:
-        dset = TabularDataset(
-            **expt_config.tabular_dataset_kwargs,
-            config=dataset_config,
-            splitter=splitter,
-            grouper=expt_config.grouper,
-            preprocessor_config=expt_config.preprocessor_config)
-        # except ValueError as ve:
-        #     # Case: split is too small.
-        #     print(f"[WARNING] error initializing dataset for expt {experiment} "
-        #           f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
-        #     continue
+        try:
+            dset = TabularDataset(
+                **expt_config.tabular_dataset_kwargs,
+                config=dataset_config,
+                splitter=splitter,
+                grouper=expt_config.grouper,
+                preprocessor_config=expt_config.preprocessor_config)
+        except ValueError as ve:
+            # Case: split is too small.
+            print(f"[WARNING] error initializing dataset for expt {experiment} "
+                  f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
+            continue
 
-        for model in ("mlp", "histgbm"):
-            # for model in list(PYTORCH_MODEL_CLS) + list(SKLEARN_MODEL_CLS):
+        for model in list(PYTORCH_MODEL_CLS) + list(SKLEARN_MODEL_CLS):
             results = run_tuning_experiment(model=model, dset=dset,
                                             device=device,
                                             tune_config=tune_config)
