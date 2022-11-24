@@ -98,6 +98,7 @@ EXPERIMENT_CONFIGS = {
     "_debug": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.01,
                                 id_test_size=0.2,
+                                ood_val_size=0.25,
                                 random_state=43406,
                                 domain_split_varname="purpose",
                                 # values: car(new), car(used), furniture/equipment
