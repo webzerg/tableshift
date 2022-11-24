@@ -18,7 +18,7 @@ _histgbm_search_space = {
     "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
     "max_leaf_nodes": tune.choice([None, 2, 4, 8, 16, 32, 64]),
     "l2_regularization": tune.choice(
-        [None, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.]),
+        [0., 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.]),
     "max_bins": tune.choice([32, 64, 128, 255]),
     "min_samples_leaf": tune.choice([1, 2, 4, 8, 16, 32, 64]),
 }
