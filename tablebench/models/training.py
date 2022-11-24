@@ -13,6 +13,7 @@ from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.dro import group_dro_loss
 from tablebench.models import is_pytorch_model
 from tablebench.models.expgrad import ExponentiatedGradient
+from tablebench.models.wcs import WeightedCovariateShiftClassifier
 
 PYTORCH_DEFAULTS = frozendict({
     "lr": 0.001,
@@ -77,6 +78,9 @@ def _train_sklearn(estimator, dset: TabularDataset,
     X_tr, y_tr, _, d_tr = dset.get_pandas(split="train")
     if isinstance(estimator, ExponentiatedGradient):
         estimator.fit(X_tr, y_tr, d=d_tr)
+    elif isinstance(estimator, WeightedCovariateShiftClassifier):
+        X_ood_tr, y_ood_tr, _, _ = dset.get_pandas(split="ood_validation")
+        estimator.fit(X_tr, y_tr, X_ood_tr)
     else:
         estimator.fit(X_tr, y_tr)
     print("fitting estimator complete.")

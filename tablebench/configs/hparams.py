@@ -31,6 +31,12 @@ _lightgbm_search_space = {
     "colsample_bytree": tune.uniform(0.5, 1),
 }
 
+_wcs_search_space = {
+    "C_domain": tune.choice([0.001, 0.01, 0.1, 1., 10., 100., 1000.]),
+    "C_discrim": tune.choice([0.001, 0.01, 0.1, 1., 10., 100., 1000.]),
+
+}
+
 search_space = frozendict({
     # TODO(jpgard): update these with params specific to each model.
     "mlp": _DEFAULT_NN_SEARCH_SPACE,
@@ -39,4 +45,5 @@ search_space = frozendict({
     "resnet": _DEFAULT_NN_SEARCH_SPACE,
     "group_dro": _DEFAULT_NN_SEARCH_SPACE,
     "xgb": _xgb_search_space,
+    "wcs": _wcs_search_space,
 })

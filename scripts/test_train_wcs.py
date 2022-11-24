@@ -28,7 +28,7 @@ dset = TabularDataset(experiment,
 
 X_tr, y_tr, _, _ = dset.get_pandas(split="train")
 X_ood_tr, y_ood_tr, _, _ = dset.get_pandas(split="ood_validation")
-estimator = get_estimator("wcs")
+estimator = get_estimator("wcs", C_domain=1., C_discrim=1.)
 estimator.fit(X_tr, y_tr, X_ood_tr)
 
 for split in ("id_test", "ood_test"):

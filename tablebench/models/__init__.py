@@ -125,7 +125,7 @@ def get_estimator(model, d_out=1, **kwargs):
 
     elif model == "wcs":
         # Weighted Covariate Shift classifier.
-        return WeightedCovariateShiftClassifier()
+        return WeightedCovariateShiftClassifier(**kwargs)
     elif model == "xgb":
         return xgb.XGBClassifier(**kwargs)
     else:
