@@ -18,14 +18,24 @@ _xgb_search_space = {
     "max_depth": tune.randint(4, 8),
     "colsample_bytree": tune.uniform(0.5, 1),
     "colsample_bylevel": tune.uniform(0.5, 1),
-    "learninng_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
+    "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
     "max_bin": tune.choice([128, 256, 512])
+}
+
+_lightgbm_search_space = {
+    "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
+    "n_estimators": tune.choice([64, 128, 256, 512, ]),
+    "reg_lambda": tune.choice([0., 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.]),
+    "min_child_samples": tune.choice([1, 2, 4, 8, 16, 32, 64]),
+    "max_depth": tune.choice([-1, 2, 4, 8]),
+    "colsample_bytree": tune.uniform(0.5, 1),
 }
 
 search_space = frozendict({
     # TODO(jpgard): update these with params specific to each model.
     "mlp": _DEFAULT_NN_SEARCH_SPACE,
     "ft_transformer": _DEFAULT_NN_SEARCH_SPACE,
+    "lightgbm": _lightgbm_search_space,
     "resnet": _DEFAULT_NN_SEARCH_SPACE,
     "group_dro": _DEFAULT_NN_SEARCH_SPACE,
     "xgb": _xgb_search_space,

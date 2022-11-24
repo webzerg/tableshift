@@ -10,7 +10,8 @@ from tablebench.models.training import train
 
 
 def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool,
-         no_tune: bool, num_samples: int):
+         no_tune: bool, num_samples: int, tune_metric_name="metric",
+         tune_metric_higher_is_better: bool = True):
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
@@ -38,7 +39,8 @@ def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool,
             # Override the defaults with run_config, if provided.
             config.update(run_config)
         estimator = get_estimator(model, **config)
-        train(estimator, dset, device=device, config=config)
+        train(estimator, dset, device=device, config=config,
+              tune_report_split="ood_test")
 
     if no_tune:
         _train_fn()
@@ -50,7 +52,15 @@ def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool,
             run_config=air.RunConfig(local_dir="./ray-results",
                                      name="test_experiment"))
 
-        tuner.fit()
+        results = tuner.fit()
+
+        best_result = results.get_best_result(
+            tune_metric_name, "max" if tune_metric_higher_is_better else "min")
+
+        print("Best trial config: {}".format(best_result.config))
+        print("Best trial final {}: {}".format(
+            tune_metric_name,
+            best_result.metrics[tune_metric_name]))
 
 
 if __name__ == "__main__":

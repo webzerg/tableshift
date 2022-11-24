@@ -67,7 +67,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             n_epochs=1,
             other_loaders: Optional[
                 Mapping[str, torch.utils.data.DataLoader]] = None,
-            tune_report_split=None) -> dict:
+            tune_report_split: Optional[str] = None) -> dict:
         fit_metrics = defaultdict(list)
 
         if tune_report_split:

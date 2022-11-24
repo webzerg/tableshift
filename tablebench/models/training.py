@@ -35,12 +35,14 @@ def get_optimizer(estimator: SklearnStylePytorchModel,
 
 def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
                    device: str,
-                   config=PYTORCH_DEFAULTS):
+                   config=PYTORCH_DEFAULTS,
+                   tune_report_split: str = None):
     """Helper function to train a pytorch estimator."""
-    optimizer = get_optimizer(estimator, config)
-
     print(f"[DEBUG] config is {config}")
     print(f"[DEBUG] device is {device}")
+    print(f"[DEBUG] tune_report_split is {tune_report_split}")
+
+    optimizer = get_optimizer(estimator, config)
 
     train_loader = dset.get_dataloader("train", config["batch_size"],
                                        device=device)
@@ -62,14 +64,16 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
             optimizer.load_state_dict(optimizer_state)
 
     estimator.to(device)
-    estimator.fit(train_loader, optimizer, loss_fn, n_epochs=config["n_epochs"],
-                  other_loaders=eval_loaders)
+    estimator.fit(train_loader, optimizer, loss_fn,
+                  n_epochs=config["n_epochs"],
+                  other_loaders=eval_loaders,
+                  tune_report_split=tune_report_split)
     return estimator
 
 
-def _train_sklearn(estimator, dset: TabularDataset):
+def _train_sklearn(estimator, dset: TabularDataset,
+                   tune_report_split: str = None):
     """Helper function to train a sklearn-type estimator."""
-    print(f"fitting estimator of type {type(estimator)}")
     X_tr, y_tr, _, d_tr = dset.get_pandas(split="train")
     if isinstance(estimator, ExponentiatedGradient):
         estimator.fit(X_tr, y_tr, d=d_tr)
@@ -77,20 +81,20 @@ def _train_sklearn(estimator, dset: TabularDataset):
         estimator.fit(X_tr, y_tr)
     print("fitting estimator complete.")
 
-    for split in dset.eval_split_names:
-
-        X_te, _, _, _ = dset.get_pandas(split=split)
-
+    if tune_report_split:
+        X_te, _, _, _ = dset.get_pandas(split=tune_report_split)
         y_hat_te = estimator.predict(X_te)
-        metrics = dset.evaluate_predictions(y_hat_te, split=split)
-        print(f"metrics on split {split}:")
-        for k, v in metrics.items():
-            print(f"\t{k:<40}:{v:.3f}")
+        metrics = dset.evaluate_predictions(y_hat_te, split=tune_report_split)
+        session.report({"metric": metrics[f"accuracy_{tune_report_split}"]})
     return estimator
 
 
-def train(estimator: Any, dset: TabularDataset, **kwargs):
+def train(estimator: Any, dset: TabularDataset, tune_report_split: str = None,
+          **kwargs):
+    print(f"fitting estimator of type {type(estimator)}")
     if is_pytorch_model(estimator):
-        return _train_pytorch(estimator, dset, **kwargs)
+        return _train_pytorch(estimator, dset,
+                              tune_report_split=tune_report_split, **kwargs)
     else:
-        return _train_sklearn(estimator, dset)
+        return _train_sklearn(estimator, dset,
+                              tune_report_split=tune_report_split)
