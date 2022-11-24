@@ -189,6 +189,11 @@ class DomainSplitter(Splitter):
         domain_vals = kwargs.pop("domain_labels")
         assert isinstance(domain_vals, pd.Series)
 
+        assert isinstance(self.domain_split_ood_values, tuple) \
+               or isinstance(self.domain_split_ood_values, list), \
+            "domain_split_ood_values must be an iterable type; got type {}".format(
+                type(self.domain_split_ood_values))
+
         def _idx_where_in(x: pd.Series, vals: Sequence[Any],
                           negate=False) -> np.ndarray:
             """Return a vector of the numeric indices i where X[i] in vals.
