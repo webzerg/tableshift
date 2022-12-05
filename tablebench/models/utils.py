@@ -33,10 +33,12 @@ def get_predictions_and_labels(model, loader, as_logits=False) -> Tuple[
 
     for batch in loader:
         batch_x, batch_y, _, _ = unpack_batch(batch)
+        batch_x = batch_x.float()
+        batch_y = batch_y.float()
         # TODO(jpgard): handle categorical features here.
-        prediction.append(apply_model(model, batch_x))
-        label.append(batch_y.squeeze())
-    prediction = torch.cat(prediction).squeeze(1).cpu().numpy()
+        prediction.append(model(batch_x))
+        label.append(batch_y)
+    prediction = torch.cat(prediction).squeeze().cpu().numpy()
     target = torch.cat(label).squeeze().cpu().numpy()
     if not as_logits:
         prediction = scipy.special.expit(prediction)

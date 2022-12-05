@@ -1,5 +1,5 @@
 import argparse
-from typing import Dict, Tuple
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,6 @@ from ray.air.config import ScalingConfig
 from ray import train
 from ray.air import session
 from ray.train.torch import TorchCheckpoint
-import scipy
 import sklearn
 import torch
 
@@ -23,7 +22,7 @@ from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models import get_estimator, get_model_config
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.training import get_optimizer, get_criterion
-from tablebench.models.utils import unpack_batch
+from tablebench.models.utils import unpack_batch, get_predictions_and_labels
 
 
 def make_ray_dataset(dset: TabularDataset, split):
@@ -33,27 +32,6 @@ def make_ray_dataset(dset: TabularDataset, split):
 
     dataset: ray.data.Dataset = ray.data.from_pandas([df])
     return dataset
-
-
-@torch.no_grad()
-def get_predictions_and_labels(model, loader, as_logits=False) -> Tuple[
-    np.ndarray, np.ndarray]:
-    """Get the predictions (as logits, or probabilities) and labels."""
-    prediction = []
-    label = []
-
-    for batch in loader:
-        batch_x, batch_y, _, _ = unpack_batch(batch)
-        batch_x = batch_x.float()
-        batch_y = batch_y.float()
-        # TODO(jpgard): handle categorical features here.
-        prediction.append(model(batch_x))
-        label.append(batch_y)
-    prediction = torch.cat(prediction).squeeze().cpu().numpy()
-    target = torch.cat(label).squeeze().cpu().numpy()
-    if not as_logits:
-        prediction = scipy.special.expit(prediction)
-    return prediction, target
 
 
 def ray_train_epoch(model, optimizer, criterion, train_loader,
