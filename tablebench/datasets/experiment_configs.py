@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from tablebench.core import RandomSplitter, Grouper, PreprocessorConfig, \
     DomainSplitter, FixedSplitter, Splitter
 from tablebench.datasets import BRFSS_YEARS
+from tablebench.datasets import ANES_YEARS
 
 
 @dataclass
@@ -55,9 +56,8 @@ EXPERIMENT_CONFIGS = {
         splitter=DomainSplitter(val_size=0.01, id_test_size=0.2,
                                 random_state=45345,
                                 domain_split_varname="VCF0004",
-                                domain_split_ood_values=[2020],
-                                domain_split_id_values=[2004, 2008, 2012,
-                                                        2016]),
+                                domain_split_ood_values=[ANES_YEARS[-1]],
+                                domain_split_id_values=ANES_YEARS[:-1]),
         # male vs. all others; white non-hispanic vs. others
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
