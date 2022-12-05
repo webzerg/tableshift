@@ -5,8 +5,6 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 
-assert fairlearn.__version__.split('.')[1] == '7'
-
 
 class ExponentiatedGradient(fairlearn.reductions.ExponentiatedGradient):
     """Custom class to allow for scikit-learn-compatible interface.
