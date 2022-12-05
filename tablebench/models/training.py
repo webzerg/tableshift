@@ -34,6 +34,13 @@ def get_optimizer(estimator: SklearnStylePytorchModel,
     return optimizer
 
 
+def get_criterion(estimator):
+    criterion = (group_dro_loss
+                 if isinstance(estimator, GroupDROModel)
+                 else F.binary_cross_entropy_with_logits)
+    return criterion
+
+
 def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
                    device: str,
                    config=PYTORCH_DEFAULTS,
@@ -51,9 +58,7 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
         s: dset.get_dataloader(s, config["batch_size"], device=device) for s in
         dset.eval_split_names}
 
-    loss_fn = (group_dro_loss
-               if isinstance(estimator, GroupDROModel)
-               else F.binary_cross_entropy_with_logits)
+    loss_fn = get_criterion(estimator)
 
     # To restore a checkpoint, use `session.get_checkpoint()`.
     loaded_checkpoint = session.get_checkpoint()
