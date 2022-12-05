@@ -35,7 +35,7 @@ def main(experiment: str, device: str, model: str, cache_dir: str, debug: bool,
             num_samples=num_samples,
             tune_metric_name=tune_metric_name,
             tune_metric_higher_is_better=tune_metric_higher_is_better,
-            report_split="ood_test" if dset.domain_labels else "test")
+            report_split="ood_test" if dset.domain_labels is not None else "test")
     run_tuning_experiment(model=model, dset=dset, device=device,
                           tune_config=tune_config)
 
