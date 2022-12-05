@@ -70,7 +70,8 @@ def get_model_config(model: str, dset: TabularDataset) -> dict:
         config["n_groups"] = dset.n_domains
 
     if is_pytorch_model_name(model):
-        config.update({"batch_size": 512})
+        config.update({"batch_size": 512,
+                       "n_epochs": 1})
 
     return config
 
