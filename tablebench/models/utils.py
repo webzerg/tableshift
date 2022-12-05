@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict
 import numpy as np
 import rtdl
 import scipy
@@ -6,14 +6,21 @@ import sklearn
 import torch
 
 
-def unpack_batch(batch: Tuple[Union[torch.Tensor, None]]) -> Tuple[
+def unpack_batch(batch: Union[Dict, Tuple[Union[torch.Tensor, None]]]) -> Tuple[
     torch.Tensor, torch.Tensor, torch.Tensor, Union[torch.Tensor, None]
 ]:
-    (x_batch, y_batch, g_batch) = batch[:3]
-    if len(batch) == 4:
-        d_batch = batch[3]
+    if isinstance(batch, dict):
+        # Case: dict-formatted batch; these are used for Ray training.
+        x_batch = batch["x"]
+        y_batch = batch["y"]
+        g_batch = batch["g"]
+        d_batch = batch.get("d", None)
+
     else:
-        d_batch = None
+        # Case: tuple of Tensors; these are used for vanilla Pytorch training.
+        (x_batch, y_batch, g_batch) = batch[:3]
+        d_batch = batch[3] if len(batch) == 4 else None
+
     return x_batch, y_batch, g_batch, d_batch
 
 
