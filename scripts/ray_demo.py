@@ -1,5 +1,4 @@
 import argparse
-from functools import partial
 from typing import Dict, Tuple
 
 import numpy as np
@@ -15,17 +14,16 @@ from ray.air.config import ScalingConfig
 from ray import train
 from ray.air import session
 from ray.train.torch import TorchCheckpoint
-import rtdl
 import scipy
 import sklearn
 import torch
-import torch.nn.functional as F
 
 from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models import get_estimator, get_model_config
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.training import get_optimizer, get_criterion
+from tablebench.models.utils import unpack_batch
 
 
 def make_ray_dataset(dset: TabularDataset, split):
@@ -45,7 +43,7 @@ def get_predictions_and_labels(model, loader, as_logits=False) -> Tuple[
     label = []
 
     for batch in loader:
-        batch_x, batch_y = batch["x"], batch["y"]
+        batch_x, batch_y, _, _ = unpack_batch(batch)
         batch_x = batch_x.float()
         batch_y = batch_y.float()
         # TODO(jpgard): handle categorical features here.
@@ -68,7 +66,7 @@ def ray_train_epoch(model, optimizer, criterion, train_loader,
     n_train = 0
     for i, batch in enumerate(train_loader):
         # get the inputs and labels
-        inputs, labels, groups = batch["x"], batch["y"], batch["g"]
+        inputs, labels, groups, _ = unpack_batch(batch)
         inputs = inputs.float()
         labels = labels.float()
 
