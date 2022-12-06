@@ -141,8 +141,8 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
             train_loop_config=default_train_config,
             datasets=datasets,
             scaling_config=scaling_config)
-        # Hyperparameter search space; note that the scaling_config can also be tuned
-        # but is fixed here.
+        # Hyperparameter search space; note that the scaling_config can also
+        # be tuned but is fixed here.
         param_space = {
             # The params will be merged with the ones defined in the TorchTrainer
             "train_loop_config": {
@@ -155,9 +155,11 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
             # Tune the number of distributed workers
             "scaling_config": ScalingConfig(num_workers=2),
 
-            # Note: when num_workers=1, trials seemed to fail with AttributeError
-            # (MLPModel does not have attribute 'module'); not sure why.
-            # "scaling_config": ScalingConfig(num_workers=tune.grid_search([1, 2])),
+            # Note: when num_workers=1, trials seemed to fail with
+            # AttributeError (MLPModel does not have attribute 'module'); not
+            # sure why. "scaling_config": ScalingConfig(
+            # num_workers=tune.grid_search([1, 2])). This might be related to
+            # the wrapped model not having the same type.
         }
     else:
         datasets = {split: make_ray_dataset(dset, split) for split in
@@ -165,9 +167,33 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         trainer = XGBoostTrainer(label_column=str(y_name),
                                  datasets=datasets,
                                  params={"tree_method": "hist",
-                                         "objective": "binary:logistic"},
+                                         "objective": "binary:logistic",
+                                         "eval_metric": "error"},
                                  scaling_config=scaling_config)
-        param_space = search_space[model_name]
+        tune_metric_name = "validation-error"
+        tune_metric_higher_is_better = False
+        # param_space = search_space[model_name]
+        param_space = {
+            # "scaling_config": ScalingConfig(
+            #     num_workers=tune.grid_search([2, 4]),
+            #     resources_per_worker={
+            #         "CPU": tune.grid_search([1, 2]),
+            #     },
+            # ),
+            # You can even grid search various datasets in Tune.
+            # "datasets": {
+            #     "train": tune.grid_search(
+            #         [ds1, ds2]
+            #     ),
+            # },
+            "params": {
+                "objective": "binary:logistic",
+                "tree_method": "approx",
+                "eta": tune.loguniform(1e-4, 1e-1),
+                "subsample": tune.uniform(0.5, 1.0),
+                "max_depth": tune.randint(1, 9),
+            },
+        }
 
     if no_tune:
         # To run just a single training iteration (without tuning)
@@ -190,8 +216,7 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
                 mode=mode,
                 stop_last_trials=True),
             num_samples=num_samples,
-            max_concurrent_trials=max_concurrent_trials),
-    )
+            max_concurrent_trials=max_concurrent_trials))
 
     results = tuner.fit()
 
