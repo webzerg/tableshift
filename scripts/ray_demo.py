@@ -10,6 +10,7 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.hyperopt import HyperOptSearch
 from ray.air.config import RunConfig
 from ray.train.torch import TorchTrainer
+from ray.train.xgboost import XGBoostTrainer
 from ray.air.config import ScalingConfig
 from ray import train
 from ray.air import session
@@ -21,8 +22,10 @@ from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.utils import get_estimator
 from tablebench.models.config import get_model_config
-from tablebench.models.compat import SklearnStylePytorchModel
+from tablebench.models.compat import SklearnStylePytorchModel, \
+    is_pytorch_model_name
 from tablebench.models.training import get_optimizer, train_epoch
+from tablebench.configs.hparams import search_space
 from tablebench.models.torchutils import get_predictions_and_labels
 
 
@@ -84,19 +87,18 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         g = row[G_names].values.astype(float)
         return {"x": x, "y": y, "g": g}
 
-    def _prepare_dataset(split):
+    def _prepare_torch_datasets(split):
         return make_ray_dataset(dset, split).map_batches(_row_to_dict,
                                                          batch_format="pandas")
 
-    datasets = {split: _prepare_dataset(split) for split in dset.splits}
-
     def train_loop_per_worker(config: Dict):
-        """Function to be run by each Trainer.
+        """Function to be run by each TorchTrainer.
 
         Must be defined inside main() because this function can only have a
         single argument, named config, but it also requires the use of the
         model_name command-line flag.
         """
+        # TODO(jpgard): make this work with generic trainer.
         model = get_estimator(model_name, d_in=config["d_in"],
                               d_layers=[config["d_hidden"]] * config[
                                   "num_layers"])
@@ -127,39 +129,51 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
 
     # Get the default configs
     default_train_config = get_model_config(model_name, dset)
+    scaling_config = ScalingConfig(num_workers=2,
+                                   use_gpu=torch.cuda.is_available())
     # Trainer object that will be passed to each worker.
-    trainer = TorchTrainer(
-        train_loop_per_worker=train_loop_per_worker,
-        train_loop_config=default_train_config,
-        datasets=datasets,
-        scaling_config=ScalingConfig(num_workers=2,
-                                     use_gpu=torch.cuda.is_available()),
-    )
+    if is_pytorch_model_name(model_name):
+        datasets = {split: _prepare_torch_datasets(split) for split in
+                    dset.splits}
+
+        trainer = TorchTrainer(
+            train_loop_per_worker=train_loop_per_worker,
+            train_loop_config=default_train_config,
+            datasets=datasets,
+            scaling_config=scaling_config)
+        # Hyperparameter search space; note that the scaling_config can also be tuned
+        # but is fixed here.
+        param_space = {
+            # The params will be merged with the ones defined in the TorchTrainer
+            "train_loop_config": {
+                # This is a parameter that hasn't been set in the TorchTrainer
+                "num_layers": tune.randint(1, 4),
+                "lr": tune.loguniform(1e-4, 1e-1),
+                "weight_decay": tune.loguniform(1e-4, 1e0),
+                "d_hidden": tune.choice([64, 128, 256, 512]),
+            },
+            # Tune the number of distributed workers
+            "scaling_config": ScalingConfig(num_workers=2),
+
+            # Note: when num_workers=1, trials seemed to fail with AttributeError
+            # (MLPModel does not have attribute 'module'); not sure why.
+            # "scaling_config": ScalingConfig(num_workers=tune.grid_search([1, 2])),
+        }
+    else:
+        datasets = {split: make_ray_dataset(dset, split) for split in
+                    dset.splits}
+        trainer = XGBoostTrainer(label_column=str(y_name),
+                                 datasets=datasets,
+                                 params={"tree_method": "hist",
+                                         "objective": "binary:logistic"},
+                                 scaling_config=scaling_config)
+        param_space = search_space[model_name]
 
     if no_tune:
         # To run just a single training iteration (without tuning)
         result = trainer.fit()
         latest_checkpoint = result.checkpoint
         return
-
-    # Hyperparameter search space; note that the scaling_config can also be tuned
-    # but is fixed here.
-    param_space = {
-        # The params will be merged with the ones defined in the TorchTrainer
-        "train_loop_config": {
-            # This is a parameter that hasn't been set in the TorchTrainer
-            "num_layers": tune.randint(1, 4),
-            "lr": tune.loguniform(1e-4, 1e-1),
-            "weight_decay": tune.loguniform(1e-4, 1e0),
-            "d_hidden": tune.choice([64, 128, 256, 512]),
-        },
-        # Tune the number of distributed workers
-        "scaling_config": ScalingConfig(num_workers=2),
-
-        # Note: when num_workers=1, trials seemed to fail with AttributeError
-        # (MLPModel does not have attribute 'module'); not sure why.
-        # "scaling_config": ScalingConfig(num_workers=tune.grid_search([1, 2])),
-    }
 
     # Create Tuner
     mode = "max" if tune_metric_higher_is_better else "min"
