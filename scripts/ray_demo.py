@@ -11,6 +11,7 @@ from ray.tune.search.hyperopt import HyperOptSearch
 from ray.air.config import RunConfig
 from ray.train.torch import TorchTrainer
 from ray.train.xgboost import XGBoostTrainer
+from ray.train.lightgbm import LightGBMTrainer
 from ray.air.config import ScalingConfig
 from ray import train
 from ray.air import session
@@ -161,39 +162,32 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
             # num_workers=tune.grid_search([1, 2])). This might be related to
             # the wrapped model not having the same type.
         }
-    else:
+
+    elif model_name == "xgb":
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
         trainer = XGBoostTrainer(label_column=str(y_name),
                                  datasets=datasets,
                                  params={"tree_method": "hist",
-                                         "objective": "binary:logistic",
+                                         "objective": "binary",
                                          "eval_metric": "error"},
                                  scaling_config=scaling_config)
         tune_metric_name = "validation-error"
         tune_metric_higher_is_better = False
-        # param_space = search_space[model_name]
-        param_space = {
-            # "scaling_config": ScalingConfig(
-            #     num_workers=tune.grid_search([2, 4]),
-            #     resources_per_worker={
-            #         "CPU": tune.grid_search([1, 2]),
-            #     },
-            # ),
-            # You can even grid search various datasets in Tune.
-            # "datasets": {
-            #     "train": tune.grid_search(
-            #         [ds1, ds2]
-            #     ),
-            # },
-            "params": {
-                "objective": "binary:logistic",
-                "tree_method": "approx",
-                "eta": tune.loguniform(1e-4, 1e-1),
-                "subsample": tune.uniform(0.5, 1.0),
-                "max_depth": tune.randint(1, 9),
-            },
-        }
+        param_space = {"params": search_space[model_name]}
+
+    elif model_name == "lightgbm":
+
+        datasets = {split: make_ray_dataset(dset, split) for split in
+                    dset.splits}
+        trainer = LightGBMTrainer(label_column=str(y_name),
+                                  datasets=datasets,
+                                  params={"objective": "binary",
+                                          "metric": "binary_error"},
+                                  scaling_config=ScalingConfig(num_workers=1))
+        param_space = {"params": search_space[model_name]}
+        tune_metric_name = "validation-binary_error"
+        tune_metric_higher_is_better = False
 
     if no_tune:
         # To run just a single training iteration (without tuning)

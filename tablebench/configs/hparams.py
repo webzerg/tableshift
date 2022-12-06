@@ -25,7 +25,7 @@ _histgbm_search_space = {
 
 _lightgbm_search_space = {
     "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
-    "n_estimators": tune.choice([64, 128, 256, 512, ]),
+    "num_iterations": tune.choice([64, 128, 256, 512, ]),
     "reg_lambda": tune.choice([0., 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.]),
     "min_child_samples": tune.choice([1, 2, 4, 8, 16, 32, 64]),
     "max_depth": tune.choice([-1, 2, 4, 8]),
