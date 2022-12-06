@@ -1,7 +1,8 @@
 from tablebench.core import TabularDataset, TabularDatasetConfig
 
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models import get_estimator, get_model_config
+from tablebench.models.utils import get_estimator
+from tablebench.models.config import get_model_config
 
 expt_config = EXPERIMENT_CONFIGS["_debug"]
 

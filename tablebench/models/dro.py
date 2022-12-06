@@ -1,13 +1,11 @@
-import itertools
 from typing import List, Optional, Mapping, Callable, Type
 
-import rtdl
 import torch
 from torch.nn.functional import binary_cross_entropy_with_logits
 
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.rtdl import MLPModel
-from tablebench.models.utils import apply_model, unpack_batch
+from tablebench.models.torchutils import unpack_batch, apply_model
 
 
 # TODO(jpgard): make this a loss object, with n_groups as an attribute.

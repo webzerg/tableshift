@@ -5,7 +5,8 @@ from ray import tune, air
 
 from tablebench.configs.hparams import search_space
 from tablebench.core import TabularDataset
-from tablebench.models import get_model_config, get_estimator
+from tablebench.models.utils import get_estimator
+from tablebench.models.config import get_model_config
 from tablebench.models.training import train
 
 

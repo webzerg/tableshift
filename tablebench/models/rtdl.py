@@ -12,7 +12,7 @@ import scipy
 import torch
 
 from tablebench.models.compat import SklearnStylePytorchModel
-from tablebench.models.utils import apply_model, unpack_batch
+from tablebench.models.training import train_epoch
 
 
 @torch.no_grad()
@@ -30,14 +30,7 @@ class SklearnStyleRTDLModel(SklearnStylePytorchModel):
                         Mapping[str, torch.utils.data.DataLoader]] = None
                     ):
         """Run a single epoch of model training."""
-        for iteration, batch in enumerate(train_loader):
-            x_batch, y_batch, _, _ = unpack_batch(batch)
-            self.train()
-            optimizer.zero_grad()
-            # TODO(jpgard): handle categorical features here.
-            loss = loss_fn(apply_model(self, x_batch).squeeze(1), y_batch)
-            loss.backward()
-            optimizer.step()
+        train_epoch(self, optimizer, loss_fn, train_loader)
 
     def predict_proba(self, X) -> np.ndarray:
         raise

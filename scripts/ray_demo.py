@@ -1,5 +1,5 @@
 import argparse
-from typing import Dict
+from typing import Dict, Any
 
 import numpy as np
 import pandas as pd
@@ -19,10 +19,11 @@ import torch
 
 from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models import get_estimator, get_model_config
+from tablebench.models.utils import get_estimator
+from tablebench.models.config import get_model_config
 from tablebench.models.compat import SklearnStylePytorchModel
-from tablebench.models.training import get_optimizer, get_criterion
-from tablebench.models.utils import unpack_batch, get_predictions_and_labels
+from tablebench.models.training import get_optimizer, train_epoch
+from tablebench.models.torchutils import get_predictions_and_labels
 
 
 def make_ray_dataset(dset: TabularDataset, split):
@@ -34,50 +35,19 @@ def make_ray_dataset(dset: TabularDataset, split):
     return dataset
 
 
-def ray_train_epoch(model, optimizer, criterion, train_loader,
-                    epoch: int) -> float:
-    """Run one epoch of training, and return the training loss."""
-    print(f"starting epoch {epoch}")
-
-    model.train()
-    running_loss = 0.0
-    n_train = 0
-    for i, batch in enumerate(train_loader):
-        # get the inputs and labels
-        inputs, labels, groups, _ = unpack_batch(batch)
-        inputs = inputs.float()
-        labels = labels.float()
-
-        # zero the parameter gradients
-        optimizer.zero_grad()
-
-        # forward + backward + optimize
-        outputs = model(inputs).squeeze()
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-
-        # print statistics
-        running_loss += loss.item()
-        n_train += len(inputs)
-        if i % 2000 == 1999:  # print every 2000 mini-batches
-            print(
-                f"[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}")
-            running_loss = 0.0
-    return running_loss / n_train
-
-
-def ray_evaluate(model, eval_batches) -> dict:
+def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
     """Run evaluation of a model.
 
-    eval_batches should be a dict mapping split names to DataLoaders.
+    splits should be a dict mapping split names to DataLoaders.
     """
     model.eval()
-    prediction, target = get_predictions_and_labels(
-        model, eval_batches["validation"])
-    prediction = np.round(prediction)
-    val_acc = sklearn.metrics.accuracy_score(target, prediction)
-    return dict(validation_accuracy=val_acc)
+    metrics = {}
+    for split in splits:
+        prediction, target = get_predictions_and_labels(model, splits[split])
+        prediction = np.round(prediction)
+        acc = sklearn.metrics.accuracy_score(target, prediction)
+        metrics[f"{split}_accuracy"] = acc
+    return metrics
 
 
 def main(experiment: str, device: str, model_name: str, cache_dir: str,
@@ -114,12 +84,11 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         g = row[G_names].values.astype(float)
         return {"x": x, "y": y, "g": g}
 
-    train_dataset = make_ray_dataset(dset, "train")
-    train_dataset = train_dataset.map_batches(_row_to_dict,
-                                              batch_format="pandas")
+    def _prepare_dataset(split):
+        return make_ray_dataset(dset, split).map_batches(_row_to_dict,
+                                                         batch_format="pandas")
 
-    val_dataset = make_ray_dataset(dset, "validation")
-    val_dataset = val_dataset.map_batches(_row_to_dict, batch_format="pandas")
+    datasets = {split: _prepare_dataset(split) for split in dset.splits}
 
     def train_loop_per_worker(config: Dict):
         """Function to be run by each Trainer.
@@ -134,24 +103,20 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         assert isinstance(model, SklearnStylePytorchModel)
         model = train.torch.prepare_model(model)
 
-        criterion = get_criterion(model)
+        criterion = config["criterion"]
         optimizer = get_optimizer(model, config)
-
-        train_dataset_shard = session.get_dataset_shard("train")
-        val_dataset_shard = session.get_dataset_shard("validation")
 
         # Returns the current torch device; useful for sending to a device.
         # train.torch.get_device()
-        train_dataset_batches = train_dataset_shard.iter_torch_batches(
-            batch_size=config["batch_size"])
+        train_dataset_batches = session.get_dataset_shard(
+            "train").iter_torch_batches(batch_size=config["batch_size"])
         eval_batches = {
-            "validation": val_dataset_shard.iter_torch_batches(
-                batch_size=config["batch_size"]),
-        }
+            split: session.get_dataset_shard(split).iter_torch_batches(
+                batch_size=config["batch_size"]) for split in dset.splits}
+
         for epoch in range(config["n_epochs"]):
-            train_loss = ray_train_epoch(model, optimizer, criterion,
-                                         train_dataset_batches,
-                                         epoch)
+            train_loss = train_epoch(model, optimizer, criterion,
+                                     train_dataset_batches)
             metrics = ray_evaluate(model, eval_batches)
 
             # Log the metrics for this epoch
@@ -166,7 +131,7 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
     trainer = TorchTrainer(
         train_loop_per_worker=train_loop_per_worker,
         train_loop_config=default_train_config,
-        datasets={"train": train_dataset, "validation": val_dataset},
+        datasets=datasets,
         scaling_config=ScalingConfig(num_workers=2,
                                      use_gpu=torch.cuda.is_available()),
     )

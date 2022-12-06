@@ -5,15 +5,12 @@ from frozendict import frozendict
 from ray.air import session
 import rtdl
 import torch
-from torch.nn import functional as F
 
 from tablebench.core import TabularDataset
-from tablebench.models import GroupDROModel
 from tablebench.models.compat import SklearnStylePytorchModel
-from tablebench.models.dro import group_dro_loss
-from tablebench.models import is_pytorch_model
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
+from tablebench.models.torchutils import unpack_batch
 
 PYTORCH_DEFAULTS = frozendict({
     "lr": 0.001,
@@ -34,11 +31,32 @@ def get_optimizer(estimator: SklearnStylePytorchModel,
     return optimizer
 
 
-def get_criterion(estimator):
-    criterion = (group_dro_loss
-                 if isinstance(estimator, GroupDROModel)
-                 else F.binary_cross_entropy_with_logits)
-    return criterion
+def train_epoch(model, optimizer, criterion, train_loader) -> float:
+    """Run one epoch of training, and return the training loss."""
+
+    model.train()
+    running_loss = 0.0
+    n_train = 0
+    for i, batch in enumerate(train_loader):
+        # get the inputs and labels
+        inputs, labels, groups, _ = unpack_batch(batch)
+        inputs = inputs.float()
+        labels = labels.float()
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = model(inputs).squeeze()
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        # print statistics
+        running_loss += loss.item()
+        n_train += len(inputs)
+
+    return running_loss / n_train
 
 
 def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
@@ -58,7 +76,7 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
         s: dset.get_dataloader(s, config["batch_size"], device=device) for s in
         dset.eval_split_names}
 
-    loss_fn = get_criterion(estimator)
+    loss_fn = config["criterion"]
 
     # To restore a checkpoint, use `session.get_checkpoint()`.
     loaded_checkpoint = session.get_checkpoint()
@@ -101,7 +119,12 @@ def _train_sklearn(estimator, dset: TabularDataset,
 def train(estimator: Any, dset: TabularDataset, tune_report_split: str = None,
           **kwargs):
     print(f"fitting estimator of type {type(estimator)}")
-    if is_pytorch_model(estimator):
+    if isinstance(estimator, torch.nn.Module):
+        assert isinstance(
+            estimator,
+            SklearnStylePytorchModel), \
+            f"train() can only be called with SklearnStylePytorchModel; got " \
+            f"type {type(estimator)} "
         return _train_pytorch(estimator, dset,
                               tune_report_split=tune_report_split, **kwargs)
     else:

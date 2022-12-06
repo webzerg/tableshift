@@ -1,15 +1,16 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Optional, Mapping, Union, Callable
+from typing import Optional, Mapping, Union, Callable, Any
 
 import numpy as np
 import os
+
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
 import torch
 from torch import nn
 
-from tablebench.models.utils import evaluate
+from tablebench.models.torchutils import evaluate
 
 
 def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
@@ -94,3 +95,17 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             fit_metrics = append_by_key(from_dict=metrics, to_dict=fit_metrics)
 
         return fit_metrics
+
+
+SKLEARN_MODEL_NAMES = ("expgrad", "histgbm", "lightgbm", "wcs", "xgb")
+PYTORCH_MODEL_NAMES = ("ft_transformer", "group_dro", "mlp", "resnet")
+
+
+def is_pytorch_model_name(model: str) -> bool:
+    """Helper function to determine whether a model name is a pytorch model.
+
+    ISee description of is_pytorch_model() above."""
+    is_sklearn = model in SKLEARN_MODEL_NAMES
+    is_pt = model in PYTORCH_MODEL_NAMES
+    assert is_sklearn or is_pt, f"unknown model name {model}"
+    return is_pt
