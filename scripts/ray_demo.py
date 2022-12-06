@@ -28,11 +28,15 @@ from tablebench.models.compat import SklearnStylePytorchModel, \
 from tablebench.models.training import get_optimizer, train_epoch
 from tablebench.configs.hparams import search_space
 from tablebench.models.torchutils import get_predictions_and_labels
+from tablebench.models.expgrad import ExponentiatedGradientTrainer
 
 
-def make_ray_dataset(dset: TabularDataset, split):
-    X, y, G, _ = dset.get_pandas(split)
-    df = pd.concat([X, y, G], axis=1)
+def make_ray_dataset(dset: TabularDataset, split, keep_domain_labels=False):
+    X, y, G, d = dset.get_pandas(split)
+    if (d is None) or (not keep_domain_labels):
+        df = pd.concat([X, y, G], axis=1)
+    else:
+        df = pd.concat([X, y, G, d], axis=1)
     df = df.loc[:, ~df.columns.duplicated()].copy()
 
     dataset: ray.data.Dataset = ray.data.from_pandas([df])
@@ -63,6 +67,8 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
+        num_samples = 1
+
     expt_config = EXPERIMENT_CONFIGS[experiment]
 
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
@@ -78,6 +84,7 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
 
     X, y, G, _ = dset.get_pandas("train")
     y_name = y.name
+    d_name = dset.domain_label_colname
     G_names = G.columns.tolist()
     X_names = X.columns.tolist()
 
@@ -86,7 +93,10 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         x = row[X_names].values.astype(float)
         y = row[y_name].values.astype(float)
         g = row[G_names].values.astype(float)
-        return {"x": x, "y": y, "g": g}
+        outputs = {"x": x, "y": y, "g": g}
+        if d_name in row:
+            outputs["d"] = row[d_name].values.astype(float)
+        return outputs
 
     def _prepare_torch_datasets(split):
         return make_ray_dataset(dset, split).map_batches(_row_to_dict,
@@ -99,10 +109,9 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         single argument, named config, but it also requires the use of the
         model_name command-line flag.
         """
-        # TODO(jpgard): make this work with generic trainer.
-        model = get_estimator(model_name, d_in=config["d_in"],
-                              d_layers=[config["d_hidden"]] * config[
-                                  "num_layers"])
+        model = get_estimator(
+            model_name, d_in=config["d_in"],
+            d_layers=[config["d_hidden"]] * config["num_layers"])
         assert isinstance(model, SklearnStylePytorchModel)
         model = train.torch.prepare_model(model)
 
@@ -188,6 +197,28 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         param_space = {"params": search_space[model_name]}
         tune_metric_name = "validation-binary_error"
         tune_metric_higher_is_better = False
+
+    elif model_name == "expgrad":
+        # This currently does not run; there isn't a way to scale this
+        # to scale due to need for entire dataset in-memory in
+        # ExponentiatedGradient.
+        import fairlearn.reductions
+        # This trainer should only run for datasets with domain splits.
+        assert dset.domain_label_colname
+        datasets = {split: make_ray_dataset(dset, split, True) for split in
+                    dset.splits}
+        trainer = ExponentiatedGradientTrainer(
+            label_column=str(y_name),
+            domain_column=d_name,
+            feature_columns=X_names,
+            datasets=datasets,
+            params={"constraints": fairlearn.reductions.ErrorRateParity()},
+        )
+
+    else:
+        raise NotImplementedError(f"model {model_name} not implemented.")
+    # TODO(jpgard): finish implementing the remaining model classes here.
+    # see https://docs.ray.io/en/latest/ray-air/package-ref.html#trainer
 
     if no_tune:
         # To run just a single training iteration (without tuning)
