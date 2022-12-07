@@ -119,13 +119,16 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
 
         # Returns the current torch device; useful for sending to a device.
         # train.torch.get_device()
-        train_dataset_batches = session.get_dataset_shard(
-            "train").iter_torch_batches(batch_size=config["batch_size"])
-        eval_batches = {
-            split: session.get_dataset_shard(split).iter_torch_batches(
-                batch_size=config["batch_size"]) for split in dset.splits}
 
         for epoch in range(config["n_epochs"]):
+            print(f"[DEBUG] starting epoch {epoch}")
+
+            train_dataset_batches = session.get_dataset_shard(
+                "train").iter_torch_batches(batch_size=config["batch_size"])
+            eval_batches = {
+                split: session.get_dataset_shard(split).iter_torch_batches(
+                    batch_size=config["batch_size"]) for split in dset.splits}
+
             train_loss = train_epoch(model, optimizer, criterion,
                                      train_dataset_batches)
             metrics = ray_evaluate(model, eval_batches)
