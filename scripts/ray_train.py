@@ -157,9 +157,7 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
             # The params will be merged with the ones defined in the Trainer.
             "train_loop_config": search_space[model_name],
             # Optionally, could tune the number of distributed workers here.
-            "scaling_config": ScalingConfig(num_workers=2),
-
-        }
+            "scaling_config": ScalingConfig(num_workers=2)}
 
     elif model_name == "xgb":
         datasets = {split: make_ray_dataset(dset, split) for split in
