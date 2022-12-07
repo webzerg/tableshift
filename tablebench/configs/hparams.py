@@ -1,18 +1,12 @@
-from frozendict import frozendict
-
 from ray import tune
 
-_DEFAULT_NN_SEARCH_SPACE = frozendict({
+_DEFAULT_NN_SEARCH_SPACE = {
     "d_hidden": tune.choice([64, 128, 256, 512]),
-
-    # Samples a float uniformly between 0.0001 and 0.1, while
-    # sampling in log space and rounding to multiples of 0.00005
     "lr": tune.qloguniform(1e-4, 1e-1, 5e-5),
-
     "n_epochs": tune.randint(1, 3),
     "num_layers": tune.randint(1, 4),
     "weight_decay": tune.quniform(0., 1., 0.1),
-})
+}
 
 _histgbm_search_space = {
     "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
@@ -57,7 +51,7 @@ _group_dro_search_space = {
     "group_weights_step_size": tune.loguniform(1e-4, 1e0),
 }
 
-search_space = frozendict({
+search_space = {
     # TODO(jpgard): update _DEFAULT_NN_SEARCH_SPACE models with params
     #  specific to each model.
     "expgrad": _expgrad_search_space,
@@ -69,4 +63,4 @@ search_space = frozendict({
     "resnet": _DEFAULT_NN_SEARCH_SPACE,
     "wcs": _wcs_search_space,
     "xgb": _xgb_search_space,
-})
+}
