@@ -99,8 +99,9 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         return outputs
 
     def _prepare_torch_datasets(split):
-        return make_ray_dataset(dset, split).map_batches(_row_to_dict,
-                                                         batch_format="pandas")
+        keep_domain_labels = dset.domain_label_colname is not None
+        ds = make_ray_dataset(dset, split, keep_domain_labels)
+        return ds.map_batches(_row_to_dict, batch_format="pandas")
 
     def train_loop_per_worker(config: Dict):
         """Function to be run by each TorchTrainer.
@@ -109,9 +110,7 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         single argument, named config, but it also requires the use of the
         model_name command-line flag.
         """
-        model = get_estimator(
-            model_name, d_in=config["d_in"],
-            d_layers=[config["d_hidden"]] * config["num_layers"])
+        model = get_estimator(model_name, **config)
         assert isinstance(model, SklearnStylePytorchModel)
         model = train.torch.prepare_model(model)
 
@@ -137,7 +136,8 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
                 model.module.state_dict())
             session.report(metrics, checkpoint=checkpoint)
 
-    # Get the default configs
+    # Get the default/fixed configs (these are provided to every Trainer but
+    # can be overwritten if they are also in the param_space).
     default_train_config = get_model_config(model_name, dset)
     scaling_config = ScalingConfig(num_workers=2,
                                    use_gpu=torch.cuda.is_available())
@@ -155,13 +155,7 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         # be tuned but is fixed here.
         param_space = {
             # The params will be merged with the ones defined in the TorchTrainer
-            "train_loop_config": {
-                # This is a parameter that hasn't been set in the TorchTrainer
-                "num_layers": tune.randint(1, 4),
-                "lr": tune.loguniform(1e-4, 1e-1),
-                "weight_decay": tune.loguniform(1e-4, 1e0),
-                "d_hidden": tune.choice([64, 128, 256, 512]),
-            },
+            "train_loop_config": search_space[model_name],
             # Tune the number of distributed workers
             "scaling_config": ScalingConfig(num_workers=2),
 

@@ -11,6 +11,7 @@ from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
 from tablebench.models.torchutils import unpack_batch
+from tablebench.models.losses import DomainLoss, GroupDROLoss
 
 PYTORCH_DEFAULTS = frozendict({
     "lr": 0.001,
@@ -39,7 +40,7 @@ def train_epoch(model, optimizer, criterion, train_loader) -> float:
     n_train = 0
     for i, batch in enumerate(train_loader):
         # get the inputs and labels
-        inputs, labels, groups, _ = unpack_batch(batch)
+        inputs, labels, _, domains = unpack_batch(batch)
         inputs = inputs.float()
         labels = labels.float()
 
@@ -48,7 +49,22 @@ def train_epoch(model, optimizer, criterion, train_loader) -> float:
 
         # forward + backward + optimize
         outputs = model(inputs).squeeze()
-        loss = criterion(outputs, labels)
+        if isinstance(criterion, GroupDROLoss):
+            # Case: loss requires domain labels, plus group weights + step size.
+            domains = domains.float()
+            loss = criterion(
+                outputs, labels, domains,
+                group_weights=model.module.group_weights,
+                group_weights_step_size=model.module.group_weights_step_size)
+
+        elif isinstance(criterion, DomainLoss):
+            # Case: loss requires domain labels.
+            domains = domains.float()
+            loss = criterion(outputs, labels, domains)
+
+        else:
+            # Case: standard loss; only requires targets and predictions.
+            loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 

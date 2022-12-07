@@ -9,7 +9,7 @@ _DEFAULT_NN_SEARCH_SPACE = frozendict({
     # sampling in log space and rounding to multiples of 0.00005
     "lr": tune.qloguniform(1e-4, 1e-1, 5e-5),
 
-    "n_epochs": tune.randint(1, 2),
+    "n_epochs": tune.randint(1, 3),
     "num_layers": tune.randint(1, 4),
     "weight_decay": tune.quniform(0., 1., 0.1),
 })
@@ -52,12 +52,17 @@ _expgrad_search_space = {
     "eta0": tune.choice([0.1, 0.2, 1.0, 2.0]),
 }
 
+_group_dro_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    "group_weights_step_size": tune.loguniform(1e-4, 1e0),
+}
+
 search_space = frozendict({
     # TODO(jpgard): update _DEFAULT_NN_SEARCH_SPACE models with params
     #  specific to each model.
     "expgrad": _expgrad_search_space,
     "ft_transformer": _DEFAULT_NN_SEARCH_SPACE,
-    "group_dro": _DEFAULT_NN_SEARCH_SPACE,
+    "group_dro": _group_dro_search_space,
     "histgbm": _histgbm_search_space,
     "lightgbm": _lightgbm_search_space,
     "mlp": _DEFAULT_NN_SEARCH_SPACE,

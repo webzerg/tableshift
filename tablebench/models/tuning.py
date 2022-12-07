@@ -48,7 +48,7 @@ def run_tuning_experiment(model: str, dset: TabularDataset, device: str,
             config.update(run_config)
         estimator = get_estimator(model, **config)
         train(estimator, dset, device=device, config=config,
-              tune_report_split=tune_config.report_split)
+              tune_report_split=tune_config.report_split if tune_config else None)
 
     if not tune_config:
         # TODO(jpgard): return a metrics dict.

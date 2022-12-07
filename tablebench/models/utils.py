@@ -22,7 +22,7 @@ def get_estimator(model, d_out=1, **kwargs):
     elif model == "group_dro":
         return GroupDROModel(
             d_in=kwargs["d_in"],
-            d_layers=kwargs["d_layers"],
+            d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
             d_out=d_out,
             dropouts=0.,
             activation='ReLU',
@@ -34,7 +34,7 @@ def get_estimator(model, d_out=1, **kwargs):
         return LGBMClassifier(**kwargs)
     elif model == "mlp":
         return MLPModel(d_in=kwargs["d_in"],
-                        d_layers=kwargs["d_layers"],
+                        d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
                         d_out=d_out,
                         dropouts=0.,
                         activation='ReLU',

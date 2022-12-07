@@ -3,7 +3,7 @@ from frozendict import frozendict
 
 from tablebench.core import TabularDataset
 from tablebench.models.compat import is_pytorch_model_name
-from tablebench.models.dro import group_dro_loss, GroupDROModel
+from tablebench.models.losses import GroupDROLoss
 from torch.nn import functional as F
 
 # TODO(jpgard): set all architectural defaults here
@@ -11,9 +11,9 @@ from torch.nn import functional as F
 _DEFAULT_CONFIGS = frozendict({
     "expgrad": {"constraints": ErrorRateParity()},
     "ft_transformer": dict(cat_cardinalities=None),
-    "group_dro": dict(d_layers=[256, 256],
+    "group_dro": dict(num_layers=2, d_hidden=256,
                       group_weights_step_size=0.05),
-    "mlp": dict(d_layers=[256, 256]),
+    "mlp": dict(num_layers=2, d_hidden=256),
     "resnet": dict(),
 })
 
@@ -29,13 +29,15 @@ def get_model_config(model: str, dset: TabularDataset) -> dict:
 
     if model == "group_dro":
         config["n_groups"] = dset.n_domains
-        config["criterion"] = group_dro_loss
+        config["criterion"] = GroupDROLoss(n_groups=dset.n_domains)
 
     else:
         config["criterion"] = F.binary_cross_entropy_with_logits
 
     if is_pytorch_model_name(model):
-        config.update({"batch_size": 512,
+        config.update({"batch_size": 256,
+                       "lr": 0.01,
+                       "weight_decay": 0.01,
                        "n_epochs": 1})
 
     return config
