@@ -51,6 +51,10 @@ _group_dro_search_space = {
     "group_weights_step_size": tune.loguniform(1e-4, 1e0),
 }
 
+_resnet_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+}
+
 search_space = {
     # TODO(jpgard): update _DEFAULT_NN_SEARCH_SPACE models with params
     #  specific to each model.
@@ -60,7 +64,7 @@ search_space = {
     "histgbm": _histgbm_search_space,
     "lightgbm": _lightgbm_search_space,
     "mlp": _DEFAULT_NN_SEARCH_SPACE,
-    "resnet": _DEFAULT_NN_SEARCH_SPACE,
+    "resnet": _resnet_search_space,
     "wcs": _wcs_search_space,
     "xgb": _xgb_search_space,
 }

@@ -26,6 +26,23 @@ def unpack_batch(batch: Union[Dict, Tuple[Union[torch.Tensor, None]]]) -> Tuple[
     return x_batch, y_batch, g_batch, d_batch
 
 
+def apply_model(model: torch.nn.Module, x_num, x_cat=None):
+    if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+        module = model.module
+    else:
+        module = model
+    if isinstance(module, rtdl.FTTransformer):
+        return module(x_num, x_cat)
+    elif isinstance(module, (rtdl.MLP, rtdl.ResNet)):
+        assert x_cat is None
+        return module(x_num)
+    else:
+        raise NotImplementedError(
+            f'[ERROR] Looks like you are using a custom module: {type(module)}.'
+            ' Then you have to implement this branch first.'
+        )
+
+
 @torch.no_grad()
 def get_predictions_and_labels(model, loader, as_logits=False) -> Tuple[
     np.ndarray, np.ndarray]:
@@ -37,8 +54,8 @@ def get_predictions_and_labels(model, loader, as_logits=False) -> Tuple[
         batch_x, batch_y, _, _ = unpack_batch(batch)
         batch_x = batch_x.float()
         batch_y = batch_y.float()
-        # TODO(jpgard): handle categorical features here.
-        prediction.append(model(batch_x))
+        outputs = apply_model(model, batch_x)
+        prediction.append(outputs)
         label.append(batch_y)
     prediction = torch.cat(prediction).squeeze().cpu().numpy()
     target = torch.cat(label).squeeze().cpu().numpy()
@@ -54,16 +71,3 @@ def evaluate(model, loader):
     prediction = np.round(prediction)
     score = sklearn.metrics.accuracy_score(target, prediction)
     return score
-
-
-def apply_model(model: torch.nn.Module, x_num, x_cat=None):
-    if isinstance(model, rtdl.FTTransformer):
-        return model(x_num, x_cat)
-    elif isinstance(model, (rtdl.MLP, rtdl.ResNet)):
-        assert x_cat is None
-        return model(x_num)
-    else:
-        raise NotImplementedError(
-            f'[ERROR] Looks like you are using a custom model: {type(model)}.'
-            ' Then you have to implement this branch first.'
-        )
