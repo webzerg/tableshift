@@ -154,7 +154,7 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         # Hyperparameter search space; note that the scaling_config can also
         # be tuned but is fixed here.
         param_space = {
-            # The params will be merged with the ones defined in the TorchTrainer
+            # The params will be merged with the ones defined in the Trainer.
             "train_loop_config": search_space[model_name],
             # Tune the number of distributed workers
             "scaling_config": ScalingConfig(num_workers=2),
@@ -163,7 +163,9 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
             # AttributeError (MLPModel does not have attribute 'module'); not
             # sure why. "scaling_config": ScalingConfig(
             # num_workers=tune.grid_search([1, 2])). This might be related to
-            # the wrapped model not having the same type.
+            # the wrapped model not having the same type. Only
+            # DistributedDataParallel objects have a .module attribute (maybe
+            # they are not distirbuted when num_workers = 1?).
         }
 
     elif model_name == "xgb":
@@ -211,8 +213,6 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
 
     else:
         raise NotImplementedError(f"model {model_name} not implemented.")
-    # TODO(jpgard): finish implementing the remaining model classes here.
-    # see https://docs.ray.io/en/latest/ray-air/package-ref.html#trainer
 
     if no_tune:
         # To run just a single training iteration (without tuning)
