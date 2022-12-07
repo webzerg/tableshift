@@ -156,16 +156,9 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         param_space = {
             # The params will be merged with the ones defined in the Trainer.
             "train_loop_config": search_space[model_name],
-            # Tune the number of distributed workers
+            # Optionally, could tune the number of distributed workers here.
             "scaling_config": ScalingConfig(num_workers=2),
 
-            # Note: when num_workers=1, trials seemed to fail with
-            # AttributeError (MLPModel does not have attribute 'module'); not
-            # sure why. "scaling_config": ScalingConfig(
-            # num_workers=tune.grid_search([1, 2])). This might be related to
-            # the wrapped model not having the same type. Only
-            # DistributedDataParallel objects have a .module attribute (maybe
-            # they are not distirbuted when num_workers = 1?).
         }
 
     elif model_name == "xgb":
