@@ -58,7 +58,7 @@ def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
     return metrics
 
 
-def main(experiment: str, device: str, model_name: str, cache_dir: str,
+def main(experiment: str, model_name: str, cache_dir: str,
          debug: bool,
          no_tune: bool, num_samples: int,
          tune_metric_name: str = "validation_accuracy",
@@ -161,7 +161,8 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
             # The params will be merged with the ones defined in the Trainer.
             "train_loop_config": search_space[model_name],
             # Optionally, could tune the number of distributed workers here.
-            "scaling_config": ScalingConfig(num_workers=2)}
+            # "scaling_config": ScalingConfig(num_workers=2)
+        }
 
     elif model_name == "xgb":
         datasets = {split: make_ray_dataset(dset, split) for split in
@@ -258,7 +259,6 @@ if __name__ == "__main__":
                         help="Whether to run in debug mode. If True, various "
                              "truncations/simplifications are performed to "
                              "speed up experiment.")
-    parser.add_argument("--device", default="cpu")
     parser.add_argument("--experiment", default="adult",
                         help="Experiment to run. Overridden when debug=True.")
     parser.add_argument("--model_name", default="mlp")
