@@ -1,5 +1,7 @@
 import argparse
 
+import pandas as pd
+
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter
 from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment
@@ -96,6 +98,8 @@ def main(experiment: str, cache_dir: str,
             df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
                       index=False)
             iterates.append(df)
+
+    pd.concat(iterates).to_csv(f"tune_results_{experiment}.csv", index=False)
     return
 
 
