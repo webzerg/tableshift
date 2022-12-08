@@ -23,35 +23,13 @@ from tablebench.models.training import get_optimizer, train_epoch
 from tablebench.configs.hparams import search_space
 from tablebench.models.expgrad import ExponentiatedGradientTrainer
 from tablebench.models.ray_utils import prepare_torch_datasets, ray_evaluate, \
-    get_ray_checkpoint, make_ray_dataset
+    get_ray_checkpoint, make_ray_dataset, TuneConfig
 
 
-def main(experiment: str, model_name: str, cache_dir: str,
-         debug: bool,
-         no_tune: bool, num_samples: int,
-         tune_metric_name: str = "validation_accuracy",
-         tune_metric_higher_is_better: bool = True,
-         max_concurrent_trials=2,
-         num_workers=1,
-         early_stop=True, max_epochs=100):
-    if debug:
-        print("[INFO] running in debug mode.")
-        experiment = "_debug"
-        num_samples = 1
-
-    expt_config = EXPERIMENT_CONFIGS[experiment]
-
-    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
-    tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
-    if "name" not in tabular_dataset_kwargs:
-        tabular_dataset_kwargs["name"] = experiment
-
-    dset = TabularDataset(config=dataset_config,
-                          splitter=expt_config.splitter,
-                          grouper=expt_config.grouper,
-                          preprocessor_config=expt_config.preprocessor_config,
-                          **tabular_dataset_kwargs)
-
+def run_ray_tune_experiment(dset: TabularDataset,
+                            model_name: str,
+                            tune_config: TuneConfig = None,
+                            max_epochs=100):
     def train_loop_per_worker(config: Dict):
         """Function to be run by each TorchTrainer.
 
@@ -66,8 +44,11 @@ def main(experiment: str, model_name: str, cache_dir: str,
         criterion = config["criterion"]
         optimizer = get_optimizer(model, config)
 
-        n_epochs = config["n_epochs"] if not early_stop else max_epochs
+        n_epochs = config["n_epochs"] \
+            if not tune_config.early_stop else max_epochs
+
         device = train.torch.get_device()
+
         for epoch in range(n_epochs):
             print(f"[DEBUG] starting epoch {epoch}")
 
@@ -90,7 +71,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
     # can be overwritten if they are also in the param_space).
     default_train_config = get_default_config(model_name, dset)
     scaling_config = ScalingConfig(
-        num_workers=num_workers,
+        num_workers=tune_config.num_workers,
         use_gpu=torch.cuda.is_available())
 
     # Construct the Trainer object that will be passed to each worker.
@@ -123,8 +104,8 @@ def main(experiment: str, model_name: str, cache_dir: str,
                                  datasets=datasets,
                                  params=params,
                                  scaling_config=scaling_config)
-        tune_metric_name = "validation-error"
-        tune_metric_higher_is_better = False
+        tune_config.tune_metric_name = "validation-error"
+        tune_config.tune_metric_higher_is_better = False
         param_space = {"params": search_space[model_name]}
 
     elif model_name == "lightgbm":
@@ -139,8 +120,8 @@ def main(experiment: str, model_name: str, cache_dir: str,
                                   params=params,
                                   scaling_config=scaling_config)
         param_space = {"params": search_space[model_name]}
-        tune_metric_name = "validation-binary_error"
-        tune_metric_higher_is_better = False
+        tune_config.tune_metric_name = "validation-binary_error"
+        tune_config.tune_metric_higher_is_better = False
 
     elif model_name == "expgrad":
         # This currently does not run; there isn't a way to scale this
@@ -162,7 +143,8 @@ def main(experiment: str, model_name: str, cache_dir: str,
     else:
         raise NotImplementedError(f"model {model_name} not implemented.")
 
-    if no_tune:
+    if tune_config is None:
+        print("[DEBUG] no TuneConfig provided; no tuning will be performed.")
         # To run just a single training iteration (without tuning)
         result = trainer.fit()
         latest_checkpoint = result.checkpoint
@@ -170,14 +152,12 @@ def main(experiment: str, model_name: str, cache_dir: str,
 
     # Create Tuner.
 
-    mode = "max" if tune_metric_higher_is_better else "min"
-
     stopper = tune.stopper.ExperimentPlateauStopper(
-        metric=tune_metric_name,
-        mode=mode,
+        metric=tune_config.tune_metric_name,
+        mode=tune_config.mode,
         # TODO(jpgard): increase patience to 16 as in
         #  https://arxiv.org/pdf/2106.11959.pdf
-        patience=5)
+        patience=5) if tune_config.early_stop else None
 
     tuner = Tuner(
         trainable=trainer,
@@ -186,22 +166,65 @@ def main(experiment: str, model_name: str, cache_dir: str,
                              stop=stopper),
         param_space=param_space,
         tune_config=tune.TuneConfig(
-            search_alg=HyperOptSearch(metric=tune_metric_name, mode=mode),
+            search_alg=HyperOptSearch(metric=tune_config.tune_metric_name,
+                                      mode=tune_config.mode),
             scheduler=ASHAScheduler(
                 time_attr='training_iteration',
-                metric=tune_metric_name,
-                mode=mode,
+                metric=tune_config.tune_metric_name,
+                mode=tune_config.mode,
                 stop_last_trials=True),
-            num_samples=num_samples,
-            max_concurrent_trials=max_concurrent_trials))
+            num_samples=tune_config.num_samples,
+            max_concurrent_trials=tune_config.max_concurrent_trials))
 
     results = tuner.fit()
+
+    return results
+
+
+def main(experiment: str, model_name: str, cache_dir: str,
+         debug: bool,
+         no_tune: bool, num_samples: int,
+         tune_metric_name: str = "validation_accuracy",
+         tune_metric_higher_is_better: bool = True,
+         max_concurrent_trials=2,
+         num_workers=1,
+         early_stop=True):
+
+    if debug:
+        print("[INFO] running in debug mode.")
+        experiment = "_debug"
+        num_samples = 1
+
+    expt_config = EXPERIMENT_CONFIGS[experiment]
+
+    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
+    tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
+    if "name" not in tabular_dataset_kwargs:
+        tabular_dataset_kwargs["name"] = experiment
+
+    dset = TabularDataset(config=dataset_config,
+                          splitter=expt_config.splitter,
+                          grouper=expt_config.grouper,
+                          preprocessor_config=expt_config.preprocessor_config,
+                          **tabular_dataset_kwargs)
+
+    tune_config = TuneConfig(
+        early_stop=early_stop,
+        max_concurrent_trials=max_concurrent_trials,
+        num_workers=num_workers,
+        num_samples=num_samples,
+        tune_metric_name=tune_metric_name,
+        tune_metric_higher_is_better=tune_metric_higher_is_better,
+    ) if not no_tune else None
+
+    results = run_ray_tune_experiment(dset=dset, model_name=model_name,
+                                      tune_config=tune_config)
 
     results_df = results.get_dataframe()
     print(results_df)
     results_df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
                       index=False)
-    return results_df
+    return
 
 
 if __name__ == "__main__":

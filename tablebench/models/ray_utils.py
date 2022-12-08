@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import partial
 from typing import Dict, Any, List
 
@@ -11,6 +12,25 @@ from ray.train.torch import TorchCheckpoint
 
 from tablebench.core import TabularDataset
 from tablebench.models.torchutils import get_predictions_and_labels
+
+
+@dataclass
+class TuneConfig:
+    """Container for various Ray tuning parameters.
+
+    Note that this is different from the Ray TuneConfig class, as it actually
+    contains parameters that are passed to different parts of the ray API
+    such as `ScalingConfig`, which consumes the num_workers."""
+    max_concurrent_trials: int
+    num_workers: int = 1
+    num_samples: int = 1
+    tune_metric_name: str = "metric"
+    tune_metric_higher_is_better: bool = True
+    early_stop: bool = True
+
+    @property
+    def mode(self):
+        return "max" if self.tune_metric_higher_is_better else "min"
 
 
 def make_ray_dataset(dset: TabularDataset, split, keep_domain_labels=False):
