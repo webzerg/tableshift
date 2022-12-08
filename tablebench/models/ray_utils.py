@@ -204,6 +204,11 @@ def run_ray_tune_experiment(dset: TabularDataset,
         params = {"objective": "binary",
                   "metric": "binary_error",
                   "device_type": "gpu" if torch.cuda.is_available() else "cpu"}
+        print("[WARNING] overriding scaling config for LightGBM; GPU not "
+              "currently supported.")
+        scaling_config = ScalingConfig(
+            num_workers=tune_config.num_workers,
+            use_gpu=False)
         trainer = LightGBMTrainer(label_column=dset.target,
                                   datasets=datasets,
                                   params=params,
