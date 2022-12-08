@@ -64,6 +64,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
          tune_metric_name: str = "validation_accuracy",
          tune_metric_higher_is_better: bool = True,
          max_concurrent_trials=2,
+         num_workers=1,
          early_stop=True, max_epochs=100):
     if debug:
         print("[INFO] running in debug mode.")
@@ -143,8 +144,8 @@ def main(experiment: str, model_name: str, cache_dir: str,
     # Get the default/fixed configs (these are provided to every Trainer but
     # can be overwritten if they are also in the param_space).
     default_train_config = get_default_config(model_name, dset)
-    scaling_config = ScalingConfig(num_workers=2,
-                                   use_gpu=torch.cuda.is_available())
+    scaling_config = ScalingConfig(
+        num_workers=num_workers, use_gpu=torch.cuda.is_available())
     # Trainer object that will be passed to each worker.
     if is_pytorch_model_name(model_name):
         datasets = {split: _prepare_torch_datasets(split) for split in
@@ -185,7 +186,8 @@ def main(experiment: str, model_name: str, cache_dir: str,
                                   datasets=datasets,
                                   params={"objective": "binary",
                                           "metric": "binary_error"},
-                                  scaling_config=ScalingConfig(num_workers=1))
+                                  scaling_config=ScalingConfig(
+                                      num_workers=num_workers))
         param_space = {"params": search_space[model_name]}
         tune_metric_name = "validation-binary_error"
         tune_metric_higher_is_better = False
