@@ -8,6 +8,16 @@ import sklearn
 import torch
 
 
+def get_module_attr(model, attr):
+    """Get an attribute from (possibly-distributed) module."""
+    if hasattr(model, "module"):
+        # Case: it is a distributed module; first access model attr explicitly.
+        return getattr(model.module, attr)
+    else:
+        # Case: standard module; fetch the attr.
+        return getattr(model, attr)
+
+
 def unpack_batch(batch: Union[Dict, Tuple[Union[torch.Tensor, None]]]) -> Tuple[
     torch.Tensor, torch.Tensor, torch.Tensor, Union[torch.Tensor, None]
 ]:
@@ -44,7 +54,8 @@ def apply_model(model: torch.nn.Module, x_num, x_cat=None):
 
 
 @torch.no_grad()
-def get_predictions_and_labels(model, loader, device, as_logits=False) -> Tuple[np.ndarray, np.ndarray]:
+def get_predictions_and_labels(model, loader, device, as_logits=False) -> Tuple[
+    np.ndarray, np.ndarray]:
     """Get the predictions (as logits, or probabilities) and labels."""
     prediction = []
     label = []
