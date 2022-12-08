@@ -135,7 +135,7 @@ EXPERIMENT_CONFIGS = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
-    "nhanes": ExperimentConfig(
+    "nhanes_cholesterol": ExperimentConfig(
         splitter=RandomSplitter(test_size=0.5, val_size=0.25,
                                 random_state=29746),
         # Race (non. hispanic white vs. all others; male vs. all others)
