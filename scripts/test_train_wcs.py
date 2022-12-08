@@ -2,7 +2,7 @@ from tablebench.core import TabularDataset, TabularDatasetConfig, \
     DomainSplitter, Grouper, PreprocessorConfig
 
 from tablebench.datasets.experiment_configs import ExperimentConfig
-from tablebench.models import get_estimator
+from tablebench.models.utils import get_estimator
 
 experiment = "mooc"
 expt_config = ExperimentConfig(

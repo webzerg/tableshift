@@ -5,9 +5,9 @@ import argparse
 from datetime import datetime
 
 import pandas as pd
-from tablebench.models import PYTORCH_MODEL_CLS, SKLEARN_MODEL_CLS
+from tablebench.models.compat import SKLEARN_MODEL_NAMES, PYTORCH_MODEL_NAMES
 from tablebench.models.tuning import TuneConfig, run_tuning_experiment
-from tablebench.models.utils import get_predictions_and_labels
+from tablebench.models.torchutils import get_predictions_and_labels
 
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core import DomainSplitter, TabularDataset, \
@@ -70,7 +70,7 @@ def main(experiment, cache_dir, device: str, debug: bool, no_tune: bool,
                   f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
             continue
 
-        for model in list(PYTORCH_MODEL_CLS) + list(SKLEARN_MODEL_CLS):
+        for model in list(PYTORCH_MODEL_NAMES) + list(SKLEARN_MODEL_NAMES):
             results = run_tuning_experiment(model=model, dset=dset,
                                             device=device,
                                             tune_config=tune_config)

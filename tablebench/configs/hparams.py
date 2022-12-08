@@ -1,18 +1,13 @@
-from frozendict import frozendict
-
 from ray import tune
 
-_DEFAULT_NN_SEARCH_SPACE = frozendict({
-    "d_hidden": tune.choice([64, 128, 256, 512]),
-
-    # Samples a float uniformly between 0.0001 and 0.1, while
-    # sampling in log space and rounding to multiples of 0.00005
-    "lr": tune.qloguniform(1e-4, 1e-1, 5e-5),
-
-    "n_epochs": tune.randint(1, 2),
-    "num_layers": tune.randint(1, 4),
+_DEFAULT_NN_SEARCH_SPACE = {
+    "d_hidden": tune.choice([64, 128, 256, 512, 1024]),
+    "lr": tune.loguniform(1e-5, 1e-1),
+    "n_epochs": tune.randint(2, 4),
+    "num_layers": tune.randint(1, 8),
+    "dropouts": tune.uniform(0., 0.5),
     "weight_decay": tune.quniform(0., 1., 0.1),
-})
+}
 
 _histgbm_search_space = {
     "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
@@ -25,7 +20,7 @@ _histgbm_search_space = {
 
 _lightgbm_search_space = {
     "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
-    "n_estimators": tune.choice([64, 128, 256, 512, ]),
+    "num_iterations": tune.choice([64, 128, 256, 512, ]),
     "reg_lambda": tune.choice([0., 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.]),
     "min_child_samples": tune.choice([1, 2, 4, 8, 16, 32, 64]),
     "max_depth": tune.choice([-1, 2, 4, 8]),
@@ -52,16 +47,37 @@ _expgrad_search_space = {
     "eta0": tune.choice([0.1, 0.2, 1.0, 2.0]),
 }
 
-search_space = frozendict({
-    # TODO(jpgard): update _DEFAULT_NN_SEARCH_SPACE models with params
-    #  specific to each model.
+_group_dro_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    "group_weights_step_size": tune.loguniform(1e-4, 1e0),
+}
+
+_resnet_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    "n_blocks": tune.randint(1, 8),  # TODO(jpgard): possibly expand to 16.
+    # TODO(jpgard): use d_main and d_hidden via a hidden_factor; see
+    #  https://arxiv.org/pdf/2106.11959.pdf Table 14.
+    "d_main": tune.choice([64, 128, 256, 512, 1024]),
+    "dropout_first": tune.uniform(0., 0.5),  # after first linear layer
+    "dropout_second": tune.uniform(0., 0.5),  # after second/hidden linear layer
+}
+
+_ft_transformer_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    "n_blocks": tune.randint(1, 4),
+    # TODO(jpgard): tune the remaining parameters here; it is hard to parse
+    #  how values from https://arxiv.org/pdf/2106.11959.pdf Table 13 map to
+    #  ft-transformer params.
+}
+
+search_space = {
     "expgrad": _expgrad_search_space,
-    "ft_transformer": _DEFAULT_NN_SEARCH_SPACE,
-    "group_dro": _DEFAULT_NN_SEARCH_SPACE,
+    "ft_transformer": _ft_transformer_search_space,
+    "group_dro": _group_dro_search_space,
     "histgbm": _histgbm_search_space,
     "lightgbm": _lightgbm_search_space,
     "mlp": _DEFAULT_NN_SEARCH_SPACE,
-    "resnet": _DEFAULT_NN_SEARCH_SPACE,
+    "resnet": _resnet_search_space,
     "wcs": _wcs_search_space,
     "xgb": _xgb_search_space,
-})
+}
