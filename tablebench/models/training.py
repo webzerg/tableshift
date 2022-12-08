@@ -60,7 +60,8 @@ def train_epoch(model, optimizer, criterion, train_loader,
             loss = criterion(
                 outputs, labels, domains,
                 group_weights=group_weights,
-                group_weights_step_size=group_weights_step_size)
+                group_weights_step_size=group_weights_step_size,
+                device=device)
 
         elif isinstance(criterion, DomainLoss):
             # Case: loss requires domain labels.
