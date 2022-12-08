@@ -43,6 +43,13 @@ def make_ray_dataset(dset: TabularDataset, split, keep_domain_labels=False):
     return dataset
 
 
+def get_ray_checkpoint(model):
+    if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+        return TorchCheckpoint.from_state_dict(model.module.state_dict())
+    else:
+        return TorchCheckpoint.from_state_dict(model.state_dict())
+
+
 def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
     """Run evaluation of a model.
 
@@ -137,15 +144,15 @@ def main(experiment: str, model_name: str, cache_dir: str,
 
             # Log the metrics for this epoch
             metrics.update(dict(train_loss=train_loss))
-            checkpoint = TorchCheckpoint.from_state_dict(
-                model.module.state_dict())
+            checkpoint = get_ray_checkpoint(model)
             session.report(metrics, checkpoint=checkpoint)
 
     # Get the default/fixed configs (these are provided to every Trainer but
     # can be overwritten if they are also in the param_space).
     default_train_config = get_default_config(model_name, dset)
     scaling_config = ScalingConfig(
-        num_workers=num_workers, use_gpu=torch.cuda.is_available())
+        num_workers=num_workers,
+        use_gpu=torch.cuda.is_available())
     # Trainer object that will be passed to each worker.
     if is_pytorch_model_name(model_name):
         datasets = {split: _prepare_torch_datasets(split) for split in
