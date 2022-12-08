@@ -115,11 +115,13 @@ def main(experiment: str, model_name: str, cache_dir: str,
     elif model_name == "xgb":
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
+        params = {
+            "tree_method": "gpu_hist" if torch.cuda.is_available() else "hist",
+            "objective": "binary:logistic",
+            "eval_metric": "error"}
         trainer = XGBoostTrainer(label_column=dset.target,
                                  datasets=datasets,
-                                 params={"tree_method": "hist",
-                                         "objective": "binary:logistic",
-                                         "eval_metric": "error"},
+                                 params=params,
                                  scaling_config=scaling_config)
         tune_metric_name = "validation-error"
         tune_metric_higher_is_better = False
