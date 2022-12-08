@@ -9,16 +9,24 @@ from torch.nn import functional as F
 # TODO(jpgard): set all architectural defaults here
 #  based on [gorishniy2021revisiting] paper.
 _DEFAULT_CONFIGS = frozendict({
-    "expgrad": {"constraints": ErrorRateParity()},
-    "ft_transformer": dict(cat_cardinalities=None),
-    "group_dro": dict(num_layers=2, d_hidden=256,
-                      group_weights_step_size=0.05),
-    "mlp": dict(num_layers=2, d_hidden=256),
-    "resnet": {"n_blocks": 2,
-               "dropout_first": 0.2,
-               "dropout_second": 0.,
-               "d_main": 128,
-               "d_hidden": 256},
+    "expgrad":
+        {"constraints": ErrorRateParity()},
+    "ft_transformer":
+        {"cat_cardinalities": None,
+         "n_blocks": 1},
+    "group_dro":
+        {"num_layers": 2,
+         "d_hidden": 256,
+         "group_weights_step_size": 0.05},
+    "mlp":
+        {"num_layers": 2,
+         "d_hidden": 256},
+    "resnet":
+        {"n_blocks": 2,
+         "dropout_first": 0.2,
+         "dropout_second": 0.,
+         "d_main": 128,
+         "d_hidden": 256},
 
 })
 

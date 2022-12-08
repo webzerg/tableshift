@@ -15,6 +15,7 @@ def get_estimator(model, d_out=1, **kwargs):
         tconfig = FTTransformerModel.get_default_transformer_config()
         tconfig["last_layer_query_idx"] = [-1]
         tconfig["d_out"] = 1
+        tconfig["n_blocks"] = kwargs["n_blocks"]
         return FTTransformerModel._make(
             n_num_features=kwargs["n_num_features"],
             cat_cardinalities=kwargs["cat_cardinalities"],

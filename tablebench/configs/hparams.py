@@ -62,11 +62,17 @@ _resnet_search_space = {
     "dropout_second": tune.uniform(0., 0.5),  # after second/hidden linear layer
 }
 
+_ft_transformer_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    "n_blocks": tune.randint(1, 4),
+    # TODO(jpgard): tune the remaining parameters here; it is hard to parse
+    #  how values from https://arxiv.org/pdf/2106.11959.pdf Table 13 map to
+    #  ft-transformer params.
+}
+
 search_space = {
-    # TODO(jpgard): update _DEFAULT_NN_SEARCH_SPACE models with params
-    #  specific to each model.
     "expgrad": _expgrad_search_space,
-    "ft_transformer": _DEFAULT_NN_SEARCH_SPACE,
+    "ft_transformer": _ft_transformer_search_space,
     "group_dro": _group_dro_search_space,
     "histgbm": _histgbm_search_space,
     "lightgbm": _lightgbm_search_space,
