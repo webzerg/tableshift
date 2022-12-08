@@ -1,9 +1,5 @@
 import argparse
-from typing import Dict, Any
-
-import numpy as np
-import pandas as pd
-import ray
+from typing import Dict
 from ray import tune
 from ray.tune import Tuner
 from ray.tune.schedulers import ASHAScheduler
@@ -15,8 +11,6 @@ from ray.train.lightgbm import LightGBMTrainer
 from ray.air.config import ScalingConfig
 from ray import train
 from ray.air import session
-from ray.train.torch import TorchCheckpoint
-import sklearn
 import torch
 
 from tablebench.core import TabularDataset, TabularDatasetConfig
@@ -27,44 +21,9 @@ from tablebench.models.compat import SklearnStylePytorchModel, \
     is_pytorch_model_name
 from tablebench.models.training import get_optimizer, train_epoch
 from tablebench.configs.hparams import search_space
-from tablebench.models.torchutils import get_predictions_and_labels
 from tablebench.models.expgrad import ExponentiatedGradientTrainer
-
-
-def make_ray_dataset(dset: TabularDataset, split, keep_domain_labels=False):
-    X, y, G, d = dset.get_pandas(split)
-    if (d is None) or (not keep_domain_labels):
-        df = pd.concat([X, y, G], axis=1)
-    else:
-        df = pd.concat([X, y, G, d], axis=1)
-    df = df.loc[:, ~df.columns.duplicated()].copy()
-
-    dataset: ray.data.Dataset = ray.data.from_pandas([df])
-    return dataset
-
-
-def get_ray_checkpoint(model):
-    if isinstance(model, torch.nn.parallel.DistributedDataParallel):
-        return TorchCheckpoint.from_state_dict(model.module.state_dict())
-    else:
-        return TorchCheckpoint.from_state_dict(model.state_dict())
-
-
-def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
-    """Run evaluation of a model.
-
-    splits should be a dict mapping split names to DataLoaders.
-    """
-    device = train.torch.get_device()
-    model.eval()
-    metrics = {}
-    for split in splits:
-        prediction, target = get_predictions_and_labels(model, splits[split],
-                                                        device=device)
-        prediction = np.round(prediction)
-        acc = sklearn.metrics.accuracy_score(target, prediction)
-        metrics[f"{split}_accuracy"] = acc
-    return metrics
+from tablebench.models.ray_utils import prepare_torch_datasets, ray_evaluate, \
+    get_ray_checkpoint, make_ray_dataset
 
 
 def main(experiment: str, model_name: str, cache_dir: str,
@@ -92,27 +51,6 @@ def main(experiment: str, model_name: str, cache_dir: str,
                           grouper=expt_config.grouper,
                           preprocessor_config=expt_config.preprocessor_config,
                           **tabular_dataset_kwargs)
-
-    X, y, G, _ = dset.get_pandas("train")
-    y_name = y.name
-    d_name = dset.domain_label_colname
-    G_names = G.columns.tolist()
-    X_names = X.columns.tolist()
-
-    def _row_to_dict(row) -> Dict:
-        """Convert ray PandasRow to a dict of numpy arrays."""
-        x = row[X_names].values.astype(float)
-        y = row[y_name].values.astype(float)
-        g = row[G_names].values.astype(float)
-        outputs = {"x": x, "y": y, "g": g}
-        if d_name in row:
-            outputs["d"] = row[d_name].values.astype(float)
-        return outputs
-
-    def _prepare_torch_datasets(split):
-        keep_domain_labels = dset.domain_label_colname is not None
-        ds = make_ray_dataset(dset, split, keep_domain_labels)
-        return ds.map_batches(_row_to_dict, batch_format="pandas")
 
     def train_loop_per_worker(config: Dict):
         """Function to be run by each TorchTrainer.
@@ -154,9 +92,10 @@ def main(experiment: str, model_name: str, cache_dir: str,
     scaling_config = ScalingConfig(
         num_workers=num_workers,
         use_gpu=torch.cuda.is_available())
-    # Trainer object that will be passed to each worker.
+
+    # Construct the Trainer object that will be passed to each worker.
     if is_pytorch_model_name(model_name):
-        datasets = {split: _prepare_torch_datasets(split) for split in
+        datasets = {split: prepare_torch_datasets(split, dset) for split in
                     dset.splits}
 
         trainer = TorchTrainer(
@@ -176,7 +115,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
     elif model_name == "xgb":
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
-        trainer = XGBoostTrainer(label_column=str(y_name),
+        trainer = XGBoostTrainer(label_column=dset.target,
                                  datasets=datasets,
                                  params={"tree_method": "hist",
                                          "objective": "binary",
@@ -190,7 +129,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
 
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
-        trainer = LightGBMTrainer(label_column=str(y_name),
+        trainer = LightGBMTrainer(label_column=dset.target,
                                   datasets=datasets,
                                   params={"objective": "binary",
                                           "metric": "binary_error"},
@@ -210,9 +149,9 @@ def main(experiment: str, model_name: str, cache_dir: str,
         datasets = {split: make_ray_dataset(dset, split, True) for split in
                     dset.splits}
         trainer = ExponentiatedGradientTrainer(
-            label_column=str(y_name),
-            domain_column=d_name,
-            feature_columns=X_names,
+            label_column=dset.target,
+            domain_column=dset.domain_label_colname,
+            feature_columns=dset.feature_names,
             datasets=datasets,
             params={"constraints": fairlearn.reductions.ErrorRateParity()},
         )

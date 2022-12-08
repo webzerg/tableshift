@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, List
 
 import numpy as np
 import pandas as pd
@@ -56,12 +56,33 @@ class TabularDataset(ABC):
         return self.task_config.feature_list.names
 
     @property
-    def predictors(self):
+    def predictors(self) -> List[str]:
+        """The list of feature names in the FeatureList.
+
+        Note that these do *not* necessarily correspond to the names in X,
+        the data provided after preprocessing."""
         return self.task_config.feature_list.predictors
 
     @property
-    def target(self):
+    def target(self) -> str:
+        """The name of the target feature."""
         return self.task_config.feature_list.target
+
+    @property
+    def feature_names(self):
+        """The names of the preprocessed features.
+
+        These correspond to the columns of the `X` DataFrame returned by
+        TabularDataset.get_pandas(), and include the prefixes appended by the
+        preprocessor (i.e. `onehot__`, etc.)."""
+        assert isinstance(self.data, pd.DataFrame), \
+            "feature_names can only be used once the data is initialized and " \
+            "preprocessed. "
+        return self.data.columns
+
+    @property
+    def group_feature_names(self) -> List[str]:
+        return self.grouper.features
 
     @property
     def X_shape(self):
