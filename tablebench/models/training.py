@@ -54,11 +54,13 @@ def train_epoch(model, optimizer, criterion, train_loader,
         if isinstance(criterion, GroupDROLoss):
             # Case: loss requires domain labels, plus group weights + step size.
             domains = domains.float().to(device)
+            group_weights = get_module_attr(model, "group_weights").to(device)
+            group_weights_step_size = get_module_attr(
+                model, "group_weights_step_size").to(device)
             loss = criterion(
                 outputs, labels, domains,
-                group_weights=get_module_attr(model, "group_weights"),
-                group_weights_step_size=get_module_attr(
-                    model, "group_weights_step_size"))
+                group_weights=group_weights,
+                group_weights_step_size=group_weights_step_size)
 
         elif isinstance(criterion, DomainLoss):
             # Case: loss requires domain labels.
