@@ -133,8 +133,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
                                   datasets=datasets,
                                   params={"objective": "binary",
                                           "metric": "binary_error"},
-                                  scaling_config=ScalingConfig(
-                                      num_workers=num_workers))
+                                  scaling_config=scaling_config)
         param_space = {"params": search_space[model_name]}
         tune_metric_name = "validation-binary_error"
         tune_metric_higher_is_better = False
