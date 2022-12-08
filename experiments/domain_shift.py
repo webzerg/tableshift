@@ -86,16 +86,12 @@ def main(experiment: str, cache_dir: str,
             df["task"] = expt_config.tabular_dataset_kwargs["name"],
             df["domain_split_varname"] = expt_config.domain_split_varname
             df["domain_split_ood_values"] = str(tgt)
-            df["tune_metric_name"] = tune_config.tune_metric_name
 
             print(df)
-            best_result = results.get_best_result(
-                tune_config.tune_metric_name, tune_config.mode)
+            best_result = results.get_best_result()
 
             print("Best trial config: {}".format(best_result.config))
-            best_metric = best_result.metrics[tune_config.tune_metric_name]
-            print("Best trial final {}: {}".format(tune_config.tune_metric_name,
-                                                   best_metric))
+            print("Best trial result: {}".format(best_result))
 
             df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
                       index=False)
