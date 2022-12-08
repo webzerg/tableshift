@@ -44,16 +44,15 @@ def apply_model(model: torch.nn.Module, x_num, x_cat=None):
 
 
 @torch.no_grad()
-def get_predictions_and_labels(model, loader, as_logits=False) -> Tuple[
-    np.ndarray, np.ndarray]:
+def get_predictions_and_labels(model, loader, device, as_logits=False) -> Tuple[np.ndarray, np.ndarray]:
     """Get the predictions (as logits, or probabilities) and labels."""
     prediction = []
     label = []
 
     for batch in loader:
         batch_x, batch_y, _, _ = unpack_batch(batch)
-        batch_x = batch_x.float()
-        batch_y = batch_y.float()
+        batch_x = batch_x.float().to(device)
+        batch_y = batch_y.float().to(device)
         outputs = apply_model(model, batch_x)
         prediction.append(outputs)
         label.append(batch_y)
@@ -65,7 +64,7 @@ def get_predictions_and_labels(model, loader, as_logits=False) -> Tuple[
 
 
 @torch.no_grad()
-def evaluate(model, loader):
+def evaluate(model, loader, device):
     model.eval()
     prediction, target = get_predictions_and_labels(model, loader)
     prediction = np.round(prediction)

@@ -48,10 +48,12 @@ def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
 
     splits should be a dict mapping split names to DataLoaders.
     """
+    device = train.torch.get_device()
     model.eval()
     metrics = {}
     for split in splits:
-        prediction, target = get_predictions_and_labels(model, splits[split])
+        prediction, target = get_predictions_and_labels(model, splits[split],
+                                                        device=device)
         prediction = np.round(prediction)
         acc = sklearn.metrics.accuracy_score(target, prediction)
         metrics[f"{split}_accuracy"] = acc
@@ -119,9 +121,8 @@ def main(experiment: str, model_name: str, cache_dir: str,
         criterion = config["criterion"]
         optimizer = get_optimizer(model, config)
 
-        # Returns the current torch device; useful for sending to a device.
-        # train.torch.get_device()
         n_epochs = config["n_epochs"] if not early_stop else max_epochs
+        device = train.torch.get_device()
         for epoch in range(max_epochs):
             print(f"[DEBUG] starting epoch {epoch}")
 
@@ -132,7 +133,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
                     batch_size=config["batch_size"]) for split in dset.splits}
 
             train_loss = train_epoch(model, optimizer, criterion,
-                                     train_dataset_batches)
+                                     train_dataset_batches, device=device)
             metrics = ray_evaluate(model, eval_batches)
 
             # Log the metrics for this epoch
