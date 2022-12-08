@@ -24,8 +24,8 @@ def get_estimator(model, d_out=1, **kwargs):
             d_in=kwargs["d_in"],
             d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
             d_out=d_out,
-            dropouts=0.,
-            activation='ReLU',
+            dropouts=kwargs["dropouts"],
+            activation=kwargs["activation"],
             group_weights_step_size=kwargs["group_weights_step_size"],
             n_groups=kwargs["n_groups"])
     elif model == "histgbm":
@@ -36,19 +36,19 @@ def get_estimator(model, d_out=1, **kwargs):
         return MLPModel(d_in=kwargs["d_in"],
                         d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
                         d_out=d_out,
-                        dropouts=0.,
-                        activation='ReLU',
+                        dropouts=kwargs["dropouts"],
+                        activation=kwargs["activation"],
                         )
     elif model == "resnet":
         return ResNetModel(
             d_in=kwargs["d_in"],
-            n_blocks=2,
-            d_main=128,
-            d_hidden=256,
-            dropout_first=0.2,
-            dropout_second=0.0,
+            n_blocks=kwargs["n_blocks"],
+            d_main=kwargs["d_main"],
+            d_hidden=kwargs["d_hidden"],
+            dropout_first=kwargs["dropout_first"],
+            dropout_second=kwargs["dropout_second"],
             normalization='BatchNorm1d',
-            activation='ReLU',
+            activation=kwargs["activation"],
             d_out=d_out)
 
     elif model == "wcs":

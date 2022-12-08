@@ -22,7 +22,7 @@ import torch
 from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.utils import get_estimator
-from tablebench.models.config import get_model_config
+from tablebench.models.config import get_default_config
 from tablebench.models.compat import SklearnStylePytorchModel, \
     is_pytorch_model_name
 from tablebench.models.training import get_optimizer, train_epoch
@@ -141,7 +141,7 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
 
     # Get the default/fixed configs (these are provided to every Trainer but
     # can be overwritten if they are also in the param_space).
-    default_train_config = get_model_config(model_name, dset)
+    default_train_config = get_default_config(model_name, dset)
     scaling_config = ScalingConfig(num_workers=2,
                                    use_gpu=torch.cuda.is_available())
     # Trainer object that will be passed to each worker.

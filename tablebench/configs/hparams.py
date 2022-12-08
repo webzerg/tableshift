@@ -1,10 +1,11 @@
 from ray import tune
 
 _DEFAULT_NN_SEARCH_SPACE = {
-    "d_hidden": tune.choice([64, 128, 256, 512]),
-    "lr": tune.qloguniform(1e-4, 1e-1, 5e-5),
+    "d_hidden": tune.choice([64, 128, 256, 512, 1024]),
+    "lr": tune.loguniform(1e-5, 1e-1),
     "n_epochs": tune.randint(2, 4),
-    "num_layers": tune.randint(1, 4),
+    "num_layers": tune.randint(1, 8),
+    "dropouts": tune.uniform(0., 0.5),
     "weight_decay": tune.quniform(0., 1., 0.1),
 }
 
@@ -53,6 +54,12 @@ _group_dro_search_space = {
 
 _resnet_search_space = {
     **_DEFAULT_NN_SEARCH_SPACE,
+    "n_blocks": tune.randint(1, 8),  # TODO(jpgard): possibly expand to 16.
+    # TODO(jpgard): use d_main and d_hidden via a hidden_factor; see
+    #  https://arxiv.org/pdf/2106.11959.pdf Table 14.
+    "d_main": tune.choice([64, 128, 256, 512, 1024]),
+    "dropout_first": tune.uniform(0., 0.5),  # after first linear layer
+    "dropout_second": tune.uniform(0., 0.5),  # after second/hidden linear layer
 }
 
 search_space = {

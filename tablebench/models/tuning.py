@@ -6,7 +6,7 @@ from ray import tune, air
 from tablebench.configs.hparams import search_space
 from tablebench.core import TabularDataset
 from tablebench.models.utils import get_estimator
-from tablebench.models.config import get_model_config
+from tablebench.models.config import get_default_config
 from tablebench.models.training import train
 
 
@@ -42,7 +42,7 @@ def run_tuning_experiment(model: str, dset: TabularDataset, device: str,
     def _train_fn(run_config=None, checkpoint_dir=None):
         del checkpoint_dir
         # Get the default configs
-        config = get_model_config(model, dset)
+        config = get_default_config(model, dset)
         if run_config:
             # Override the defaults with run_config, if provided.
             config.update(run_config)

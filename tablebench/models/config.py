@@ -14,16 +14,22 @@ _DEFAULT_CONFIGS = frozendict({
     "group_dro": dict(num_layers=2, d_hidden=256,
                       group_weights_step_size=0.05),
     "mlp": dict(num_layers=2, d_hidden=256),
-    "resnet": dict(),
+    "resnet": {"n_blocks": 2,
+               "dropout_first": 0.2,
+               "dropout_second": 0.,
+               "d_main": 128,
+               "d_hidden": 256},
+
 })
 
 
-def get_model_config(model: str, dset: TabularDataset) -> dict:
+def get_default_config(model: str, dset: TabularDataset) -> dict:
     """Get a default config for a model by name."""
     config = _DEFAULT_CONFIGS.get(model, {})
 
     if is_pytorch_model_name(model) and model != "ft_transformer":
-        config.update({"d_in": dset.X_shape[1]})
+        config.update({"d_in": dset.X_shape[1],
+                       "activation": "ReLU"})
     elif is_pytorch_model_name(model):
         config.update({"n_num_features": dset.X_shape[1]})
 
