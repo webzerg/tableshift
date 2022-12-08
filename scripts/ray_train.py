@@ -233,6 +233,11 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
 
     results = tuner.fit()
 
+    results_df = results.get_dataframe()
+    print(results_df)
+    results_df.to_csv(f"tune_results_{model_name}.csv", index=False)
+    return results_df
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
