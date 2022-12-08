@@ -118,7 +118,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
         trainer = XGBoostTrainer(label_column=dset.target,
                                  datasets=datasets,
                                  params={"tree_method": "hist",
-                                         "objective": "binary",
+                                         "objective": "binary:logistic",
                                          "eval_metric": "error"},
                                  scaling_config=scaling_config)
         tune_metric_name = "validation-error"
