@@ -99,7 +99,9 @@ def main(experiment: str, cache_dir: str,
                       index=False)
             iterates.append(df)
 
-    pd.concat(iterates).to_csv(f"tune_results_{experiment}.csv", index=False)
+    fp = f"tune_results_{experiment}.csv"
+    print(f"[INFO] writing results to {fp}")
+    pd.concat(iterates).to_csv(fp, index=False)
     return
 
 
