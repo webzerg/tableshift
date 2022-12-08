@@ -257,7 +257,8 @@ def main(experiment: str, model_name: str, cache_dir: str,
 
     results_df = results.get_dataframe()
     print(results_df)
-    results_df.to_csv(f"tune_results_{model_name}.csv", index=False)
+    results_df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
+                      index=False)
     return results_df
 
 
