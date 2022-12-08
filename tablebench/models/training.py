@@ -32,7 +32,8 @@ def get_optimizer(estimator: SklearnStylePytorchModel,
     return optimizer
 
 
-def train_epoch(model, optimizer, criterion, train_loader) -> float:
+def train_epoch(model, optimizer, criterion, train_loader,
+                device) -> float:
     """Run one epoch of training, and return the training loss."""
 
     model.train()
@@ -41,8 +42,8 @@ def train_epoch(model, optimizer, criterion, train_loader) -> float:
     for i, batch in enumerate(train_loader):
         # get the inputs and labels
         inputs, labels, _, domains = unpack_batch(batch)
-        inputs = inputs.float()
-        labels = labels.float()
+        inputs = inputs.float().to(device)
+        labels = labels.float().to(device)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -51,7 +52,7 @@ def train_epoch(model, optimizer, criterion, train_loader) -> float:
         outputs = apply_model(model, inputs).squeeze()
         if isinstance(criterion, GroupDROLoss):
             # Case: loss requires domain labels, plus group weights + step size.
-            domains = domains.float()
+            domains = domains.float().to(device)
             loss = criterion(
                 outputs, labels, domains,
                 group_weights=model.module.group_weights,
