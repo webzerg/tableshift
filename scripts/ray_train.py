@@ -68,7 +68,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
 
         n_epochs = config["n_epochs"] if not early_stop else max_epochs
         device = train.torch.get_device()
-        for epoch in range(max_epochs):
+        for epoch in range(n_epochs):
             print(f"[DEBUG] starting epoch {epoch}")
 
             train_dataset_batches = session.get_dataset_shard(
