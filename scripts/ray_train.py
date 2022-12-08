@@ -129,10 +129,12 @@ def main(experiment: str, model_name: str, cache_dir: str,
 
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
+        params = {"objective": "binary",
+                  "metric": "binary_error",
+                  "device_type": "gpu" if torch.cuda.is_available() else "cpu"}
         trainer = LightGBMTrainer(label_column=dset.target,
                                   datasets=datasets,
-                                  params={"objective": "binary",
-                                          "metric": "binary_error"},
+                                  params=params,
                                   scaling_config=scaling_config)
         param_space = {"params": search_space[model_name]}
         tune_metric_name = "validation-binary_error"
