@@ -63,7 +63,8 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
          no_tune: bool, num_samples: int,
          tune_metric_name: str = "validation_accuracy",
          tune_metric_higher_is_better: bool = True,
-         max_concurrent_trials=2):
+         max_concurrent_trials=2,
+         early_stop=True, max_epochs=100):
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
@@ -119,8 +120,8 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
 
         # Returns the current torch device; useful for sending to a device.
         # train.torch.get_device()
-
-        for epoch in range(config["n_epochs"]):
+        n_epochs = config["n_epochs"] if not early_stop else max_epochs
+        for epoch in range(max_epochs):
             print(f"[DEBUG] starting epoch {epoch}")
 
             train_dataset_batches = session.get_dataset_shard(
@@ -214,12 +215,22 @@ def main(experiment: str, device: str, model_name: str, cache_dir: str,
         latest_checkpoint = result.checkpoint
         return
 
-    # Create Tuner
+    # Create Tuner.
+
     mode = "max" if tune_metric_higher_is_better else "min"
+
+    stopper = tune.stopper.ExperimentPlateauStopper(
+        metric=tune_metric_name,
+        mode=mode,
+        # TODO(jpgard): increase patience to 16 as in
+        #  https://arxiv.org/pdf/2106.11959.pdf
+        patience=5)
+
     tuner = Tuner(
         trainable=trainer,
         run_config=RunConfig(name="test_tuner_notebook",
-                             local_dir="ray-results"),
+                             local_dir="ray-results",
+                             stop=stopper),
         param_space=param_space,
         tune_config=tune.TuneConfig(
             search_alg=HyperOptSearch(metric=tune_metric_name, mode=mode),
