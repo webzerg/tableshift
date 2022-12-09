@@ -213,11 +213,14 @@ domain_shift_experiment_configs = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
 
+    # ANES: train on 4-year sliding windows e.g. (1948, 1952, 1954, 1956),
+    # (1952, 1954, 1956, 1960), and predict on the final 4-year window
+    # (2008, 2012, 2016, 2020).
     "anes_year": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "anes"},
         domain_split_varname="VCF0004",
-        domain_split_ood_values=ANES_YEARS[4:],
-        domain_split_id_values=list(sliding_window(ANES_YEARS, 4)),
+        domain_split_ood_values=ANES_YEARS[-4:],
+        domain_split_id_values=list(sliding_window(ANES_YEARS, 4)[-1]),
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
