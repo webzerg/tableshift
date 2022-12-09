@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from functools import partial
+import os
 from typing import Dict, Any, List
 
 import fairlearn.reductions
@@ -119,6 +120,7 @@ def run_ray_tune_experiment(dset: TabularDataset,
     This defines the trainers, tuner, and other associated objects, runs the
     tuning experiment, and returns the ray ResultGrid object.
     """
+
     def train_loop_per_worker(config: Dict):
         """Function to be run by each TorchTrainer.
 
@@ -159,9 +161,6 @@ def run_ray_tune_experiment(dset: TabularDataset,
     # Get the default/fixed configs (these are provided to every Trainer but
     # can be overwritten if they are also in the param_space).
     default_train_config = get_default_config(model_name, dset)
-    scaling_config = ScalingConfig(
-        num_workers=tune_config.num_workers,
-        use_gpu=torch.cuda.is_available())
 
     # Construct the Trainer object that will be passed to each worker.
     if is_pytorch_model_name(model_name):
@@ -172,7 +171,9 @@ def run_ray_tune_experiment(dset: TabularDataset,
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=default_train_config,
             datasets=datasets,
-            scaling_config=scaling_config)
+            scaling_config=ScalingConfig(
+                num_workers=tune_config.num_workers,
+                use_gpu=torch.cuda.is_available()))
         # Hyperparameter search space; note that the scaling_config can also
         # be tuned but is fixed here.
         param_space = {
@@ -192,23 +193,24 @@ def run_ray_tune_experiment(dset: TabularDataset,
         trainer = XGBoostTrainer(label_column=dset.target,
                                  datasets=datasets,
                                  params=params,
-                                 scaling_config=scaling_config)
+                                 scaling_config=ScalingConfig(
+                                     num_workers=tune_config.num_workers,
+                                     use_gpu=torch.cuda.is_available()))
         tune_config.tune_metric_name = "validation-error"
         tune_config.tune_metric_higher_is_better = False
         param_space = {"params": search_space[model_name]}
 
     elif model_name == "lightgbm":
-
+        print("[WARNING] overriding scaling config for LightGBM; GPU not "
+              "currently supported.")
+        scaling_config = ScalingConfig(
+            num_workers=max(os.cpu_count() - 1, tune_config.num_workers),
+            use_gpu=False)
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
         params = {"objective": "binary",
                   "metric": "binary_error",
                   "device_type": "gpu" if torch.cuda.is_available() else "cpu"}
-        print("[WARNING] overriding scaling config for LightGBM; GPU not "
-              "currently supported.")
-        scaling_config = ScalingConfig(
-            num_workers=tune_config.num_workers,
-            use_gpu=False)
         trainer = LightGBMTrainer(label_column=dset.target,
                                   datasets=datasets,
                                   params=params,
