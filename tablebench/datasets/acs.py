@@ -60,6 +60,12 @@ ACS_SHARED_FEATURES = FeatureList(features=[
     more years of college credit, no degree 20 .Associate's degree 21 
     .Bachelor's degree 22 .Master's degree 23 .Professional degree beyond a 
     bachelor's degree 24 .Doctorate degree"""),
+    Feature('DIVISION', cat_dtype, """Division code based on 2010 Census 
+    definitions 0 .Puerto Rico 1 .New England (Northeast region) 2 .Middle 
+    Atlantic (Northeast region) 3 .East North Central (Midwest region) 4 
+    .West North Central (Midwest region) 5 .South Atlantic (South region) 6 
+    .East South Central (South region) 7 .West South Central (South Region) 8 
+    .Mountain (West region) 9 .Pacific (West region)"""),
     Feature('ACS_YEAR', int, 'Derived feature for ACS year.')],
     documentation="https://www2.census.gov/programs-surveys/acs/tech_docs"
                   "/pums/data_dict/PUMS_Data_Dictionary_2019.pdf"
