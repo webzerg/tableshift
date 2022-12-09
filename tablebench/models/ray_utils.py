@@ -186,16 +186,18 @@ def run_ray_tune_experiment(dset: TabularDataset,
     elif model_name == "xgb":
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
+        scaling_config = ScalingConfig(
+            num_workers=tune_config.num_workers,
+            use_gpu=False)
         params = {
-            "tree_method": "gpu_hist" if torch.cuda.is_available() else "hist",
+            # Note: tree_method must be gpu_hist if using GPU.
+            "tree_method": "hist",
             "objective": "binary:logistic",
             "eval_metric": "error"}
         trainer = XGBoostTrainer(label_column=dset.target,
                                  datasets=datasets,
                                  params=params,
-                                 scaling_config=ScalingConfig(
-                                     num_workers=tune_config.num_workers,
-                                     use_gpu=torch.cuda.is_available()))
+                                 scaling_config=scaling_config)
         tune_config.tune_metric_name = "validation-error"
         tune_config.tune_metric_higher_is_better = False
         param_space = {"params": search_space[model_name]}
@@ -204,13 +206,14 @@ def run_ray_tune_experiment(dset: TabularDataset,
         print("[WARNING] overriding scaling config for LightGBM; GPU not "
               "currently supported.")
         scaling_config = ScalingConfig(
-            num_workers=max(os.cpu_count() - 1, tune_config.num_workers),
+            num_workers=tune_config.num_workers,
             use_gpu=False)
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
         params = {"objective": "binary",
                   "metric": "binary_error",
-                  "device_type": "gpu" if torch.cuda.is_available() else "cpu"}
+                  # Note: device_type must be 'gpu' if using GPU.
+                  "device_type": "cpu"}
         trainer = LightGBMTrainer(label_column=dset.target,
                                   datasets=datasets,
                                   params=params,
