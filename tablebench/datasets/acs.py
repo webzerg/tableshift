@@ -60,8 +60,10 @@ ACS_SHARED_FEATURES = FeatureList(features=[
     more years of college credit, no degree 20 .Associate's degree 21 
     .Bachelor's degree 22 .Master's degree 23 .Professional degree beyond a 
     bachelor's degree 24 .Doctorate degree"""),
-    Feature('ACS_YEAR', int, 'Derived feature for ACS year.'),
-])
+    Feature('ACS_YEAR', int, 'Derived feature for ACS year.')],
+    documentation="https://www2.census.gov/programs-surveys/acs/tech_docs"
+                  "/pums/data_dict/PUMS_Data_Dictionary_2019.pdf"
+)
 
 ACS_INCOME_FEATURES = FeatureList([
     Feature('COW', cat_dtype, """Class of worker."""),
@@ -196,8 +198,10 @@ ACS_UNEMPLOYMENT_FEATURES = FeatureList(features=[
     Feature('CIT', cat_dtype, """Citizenship status 1 .Born in the U.S. 2 
     .Born in Puerto Rico, Guam, the U.S. Virgin Islands, or the .Northern 
     Marianas 3 .Born abroad of American parent(s) 4 .U.S. citizen by 
-    naturalization 5 .Not a citizen of the U.S.""")
-])
+    naturalization 5 .Not a citizen of the U.S.""")],
+    documentation="https://www2.census.gov/programs-surveys/acs/tech_docs"
+                  "/pums/data_dict/PUMS_Data_Dictionary_2019.pdf"
+)
 
 ACS_FOODSTAMPS_FEATURES = FeatureList(features=[
     Feature('FS', int, """Yearly food stamp/Supplemental Nutrition Assistance 
@@ -247,9 +251,10 @@ ACS_FOODSTAMPS_FEATURES = FeatureList(features=[
     Feature('DEYE', cat_dtype, "Vision difficulty 1 .Yes 2 .No"),
     Feature('DREM', cat_dtype, """Cognitive difficulty b .N/A (Less than 5 
     years old) 1 .Yes 2 .No"""),
-    Feature('PUBCOV', cat_dtype, """Public health coverage recode"""),
-
-])
+    Feature('PUBCOV', cat_dtype, """Public health coverage recode""")],
+    documentation="https://www2.census.gov/programs-surveys/acs/tech_docs"
+                  "/pums/data_dict/PUMS_Data_Dictionary_2019.pdf"
+)
 
 
 def map_categorical_features(df, feature_mapping):
