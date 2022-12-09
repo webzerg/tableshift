@@ -21,6 +21,9 @@ ANES_YEARS = [1948, 1952, 1954, 1956, 1958, 1960, 1962, 1964, 1966, 1968, 1970,
               1972, 1974, 1976, 1978, 1980, 1982, 1984, 1986, 1988, 1990, 1992,
               1994, 1996, 1998, 2000, 2002, 2004, 2008, 2012, 2016, 2020]
 
+# U.S. Census Regions; see 'VCF0112' feature below.
+ANES_REGIONS = ['MISSING', '1.0', '2.0', '4.0', '3.0']
+
 # This is a very preliminary feature list. We should probably
 # try to find a good reference/principled heuristics for selecting these.
 # I generally tried to select a few from each category, with an emphasis on

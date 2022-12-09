@@ -3,7 +3,8 @@ from typing import Sequence, Optional, Any
 from tablebench.core import Grouper, PreprocessorConfig
 from tablebench.core.utils import sliding_window
 from tablebench.datasets import ACS_STATE_LIST, ACS_YEARS, BRFSS_STATE_LIST, \
-    BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS
+    BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS, \
+    ANES_REGIONS
 
 
 @dataclass
@@ -209,6 +210,14 @@ domain_shift_experiment_configs = {
         tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
         domain_split_varname="VCF0901b",
         domain_split_ood_values=ANES_STATES,
+        grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
+                        drop=False),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
+
+    "anes_region": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
+        domain_split_varname='VCF0112',
+        domain_split_ood_values=ANES_REGIONS,
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
