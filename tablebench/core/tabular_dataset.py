@@ -182,14 +182,22 @@ class TabularDataset(ABC):
         assert split in self.splits.keys(), \
             f"split {split} not in {list(self.splits.keys())}"
 
-    def _get_split_data(self, split) -> Tuple[
-        DataFrame, Series, DataFrame, Optional[Series]]:
+    def _get_split_idxs(self, split):
         self._check_split(split)
         idxs = self.splits[split]
-        X = self._df.iloc[idxs][self.feature_names]
-        y = self._df.iloc[idxs][self.target]
-        G = self._df.iloc[idxs][self.group_feature_names]
-        d = self.domain_labels.iloc[idxs][self.domain_label_colname] \
+        return idxs
+
+    def _get_split_df(self, split):
+        idxs = self._get_split_idxs(split)
+        return self._df.iloc[idxs]
+
+    def _get_split_xygd(self, split) -> Tuple[
+        DataFrame, Series, DataFrame, Optional[Series]]:
+        df = self._get_split_df(split)
+        X = df[self.feature_names]
+        y = df[self.target]
+        G = df[self.group_feature_names]
+        d = df[self.domain_label_colname] \
             if self.domain_label_colname is not None else None
         return X, y, G, d
 
@@ -200,12 +208,12 @@ class TabularDataset(ABC):
         # TODO(jpgard): consider naming these outputs, or creating
         #  a DataClass object to "hold" them. This will allow for easy access of
         #  e.g. numeric vs. categorical features, where this is needed.
-        return self._get_split_data(split)
+        return self._get_split_xygd(split)
 
     def get_dataloader(self, split, batch_size=2048, device='cpu',
                        shuffle=True) -> torch.utils.data.DataLoader:
         """Fetch a dataloader yielding (X, y, G, d) tuples."""
-        data = self._get_split_data(split)
+        data = self._get_split_xygd(split)
         if self.domain_labels is None:
             # Drop the empty domain labels.
             data = data[:-1]
@@ -272,8 +280,7 @@ class TabularDataset(ABC):
             print(f"[INFO] caching task {self.name} to {outdir}")
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
-            X, y, G, d = self.get_pandas(split)
-            df = pd.concat([X, y, G, d], axis=1)
+            df = self._get_split_df(split)
             df.to_parquet(outdir)
             schema = df.dtypes.reset_index().to_dict()
             with open(os.path.join(outdir, "schema.json"), "w") as f:
