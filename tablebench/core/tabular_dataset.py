@@ -186,11 +186,11 @@ class TabularDataset(ABC):
         DataFrame, Series, DataFrame, Optional[Series]]:
         self._check_split(split)
         idxs = self.splits[split]
-        X = self.data.iloc[idxs]
-        y = self.labels.iloc[idxs]
-        G = self.groups.iloc[idxs]
-        d = self.domain_labels.iloc[
-            idxs] if self.domain_labels is not None else None
+        X = self._df.iloc[idxs][self.feature_names]
+        y = self._df.iloc[idxs][self.target]
+        G = self._df.iloc[idxs][self.group_feature_names]
+        d = self.domain_labels.iloc[idxs][self.domain_label_colname] \
+            if self.domain_label_colname is not None else None
         return X, y, G, d
 
     def get_pandas(self, split) -> Tuple[
