@@ -2,8 +2,7 @@ from dataclasses import dataclass
 
 from tablebench.core import RandomSplitter, Grouper, PreprocessorConfig, \
     DomainSplitter, FixedSplitter, Splitter
-from tablebench.datasets import BRFSS_YEARS
-from tablebench.datasets import ANES_YEARS
+from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS
 
 
 @dataclass
@@ -26,12 +25,12 @@ EXPERIMENT_CONFIGS = {
         splitter=DomainSplitter(val_size=0.01, random_state=956523,
                                 id_test_size=0.5,
                                 domain_split_varname="ACS_YEAR",
-                                domain_split_ood_values=[2018],
-                                domain_split_id_values=[2017]),
+                                domain_split_ood_values=[ACS_YEARS[-1]],
+                                domain_split_id_values=ACS_YEARS[:-1]),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"acs_task": "acsfoodstamps",
-                                "years": (2017, 2018)}),
+        tabular_dataset_kwargs={"acs_task": "acsincome",
+                                "years": ACS_YEARS}),
 
     "acspubcov": ExperimentConfig(
         splitter=RandomSplitter(test_size=0.5, val_size=0.25,
