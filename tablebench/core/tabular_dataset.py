@@ -1,5 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
+import json
+import os
 from typing import Optional, Tuple, Union, List
 
 import numpy as np
@@ -43,10 +45,8 @@ class TabularDataset(ABC):
             **kwargs)
 
         # Placeholders for data/labels/groups and split indices.
-        self.data = None
-        self.labels = None
-        self.groups = None
-        self.domain_labels = None
+        self._df: pd.DataFrame = None  # holds all the data
+
         self.splits = None  # dict mapping {split_name: list of idxs in split}
 
         self._initialize_data()
@@ -62,27 +62,6 @@ class TabularDataset(ABC):
         Note that these do *not* necessarily correspond to the names in X,
         the data provided after preprocessing."""
         return self.task_config.feature_list.predictors
-
-    @property
-    def target(self) -> str:
-        """The name of the target feature."""
-        return self.task_config.feature_list.target
-
-    @property
-    def feature_names(self):
-        """The names of the preprocessed features.
-
-        These correspond to the columns of the `X` DataFrame returned by
-        TabularDataset.get_pandas(), and include the prefixes appended by the
-        preprocessor (i.e. `onehot__`, etc.)."""
-        assert isinstance(self.data, pd.DataFrame), \
-            "feature_names can only be used once the data is initialized and " \
-            "preprocessed. "
-        return self.data.columns
-
-    @property
-    def group_feature_names(self) -> List[str]:
-        return self.grouper.features
 
     @property
     def X_shape(self):
@@ -105,26 +84,19 @@ class TabularDataset(ABC):
             self.splitter, DomainSplitter) else ("id_test", "ood_test")
         return eval_splits
 
-    @property
-    def domain_label_colname(self) -> Union[str, None]:
-        """Return the name of the domain split column, if one exists."""
-        if isinstance(self.splitter, DomainSplitter):
-            return self.splitter.domain_split_varname
-        else:
-            return None
-
-    def _check_data(self, X: pd.DataFrame, y: pd.Series,
-                    g: Union[pd.DataFrame, pd.Series],
-                    d: pd.Series):
+    def _check_data(self):
         """Helper function to check data after all preprocessing/splitting."""
-        if not pd.api.types.is_numeric_dtype(y):
-            print(f"[WARNING] y is of type {y.dtype}; non-numeric types "
-                  f"are not accepted by all estimators (e.g. xgb.XGBClassifier")
+        if not pd.api.types.is_numeric_dtype(self._df[self.target]):
+            print(f"[WARNING] y is of type {self._df[self.target].dtype}; "
+                  f"non-numeric types are not accepted by all estimators ("
+                  f"e.g. xgb.XGBClassifier")
         if self.domain_label_colname:
-            assert self.domain_label_colname not in X.columns
+            assert self.domain_label_colname not in self._df[
+                self.feature_names].columns
 
         if self.grouper.drop:
-            for c in self.grouper.features: assert c not in X.columns
+            for c in self.grouper.features: assert c not in self._df[
+                self.feature_names].columns
         return
 
     def _initialize_data(self):
@@ -136,65 +108,58 @@ class TabularDataset(ABC):
         data = self.grouper.transform(data)
         data = self._generate_splits(data)
         data = self._process_post_split(data)
+        self._df = data
 
-        X, y, G, d = self._X_y_G_d_split(data)
-        self._check_data(X, y, G, d)
-        self.data = X
-        self.labels = y
-        self.groups = G
-        self.domain_labels = d
-        del data
+        self._init_feature_names(data)
+        self._check_data()
+
         return
 
-    def _X_y_G_d_split(self, data, default_targets_dtype=int) -> \
-            Tuple[pd.DataFrame, pd.Series,
-                  pd.DataFrame, Union[pd.Series, None]]:
-        """Fetch the (data, labels, groups, domain_labels) arrays."""
+    def _init_feature_names(self, data):
+        """Set the (data, labels, groups, domain_labels) feature names."""
+        target = self.task_config.feature_list.target
         data_features = set([x for x in data.columns
                              if x not in self.grouper.features
-                             and x != self.target])
+                             and x != target])
         if not self.grouper.drop:
             # Retain the group variables as features.
             for x in self.grouper.features: data_features.add(x)
 
-        if self.domain_label_colname:
-            # Case: a domain split is used; store domain labels.
-            d = data.loc[:, self.domain_label_colname]
-
-            # Check type since following lines assume a splitter of this type.
-            assert isinstance(self.splitter, DomainSplitter)
+        if isinstance(self.splitter, DomainSplitter):
+            domain_split_varname = self.splitter.domain_split_varname
 
             if self.splitter.drop_domain_split_col and \
-                    (self.splitter.domain_split_varname in data_features):
+                    (domain_split_varname in data_features):
                 # Retain the domain split variable as feature in X.
-                data_features.remove(self.splitter.domain_split_varname)
+                data_features.remove(domain_split_varname)
         else:
             # Case: domain split is not used; no domain labels exist.
-            d = None
+            domain_split_varname = None
 
-        data_features = list(data_features)
+        self.feature_names = list(data_features)
+        self.target = target
+        self.group_feature_names = self.grouper.features
+        self.domain_label_colname = domain_split_varname
 
-        X = data.loc[:, data_features]
-        y = data.loc[:, self.target]
-        G = data.loc[:, self.grouper.features]
-
-        if y.dtype == "O":
-            y = y.astype(default_targets_dtype)
-
-        return X, y, G, d
+        return
 
     def _generate_splits(self, data):
         """Call the splitter to generate splits for the dataset."""
         assert self.splits is None, "attempted to overwrite existing splits."
 
-        X, y, G, d = self._X_y_G_d_split(data)
-        self.splits = self.splitter(data=X, labels=y, groups=G,
-                                    domain_labels=d)
+        self._init_feature_names(data)
+        self.splits = self.splitter(
+            data=data[self.feature_names],
+            labels=data[self.target],
+            groups=data[self.group_feature_names],
+            domain_labels=data[self.domain_label_colname] \
+                if self.domain_label_colname else None)
         if "Split" in data.columns:
             data.drop(columns=["Split"], inplace=True)
         return data
 
-    def _process_post_split(self, data) -> pd.DataFrame:
+    def _process_post_split(self, data,
+                            default_targets_dtype=int) -> pd.DataFrame:
         """Dataset-specific postprocessing function.
 
         Conducts any processing required **after** splitting (e.g.
@@ -206,6 +171,10 @@ class TabularDataset(ABC):
             self.splits["train"],
             domain_label_colname=self.domain_label_colname,
             passthrough_columns=passthrough_columns)
+        if data[self.task_config.feature_list.target].dtype == "O":
+            data[self.task_config.feature_list.target] = data[
+                self.task_config.feature_list.target].astype(
+                default_targets_dtype)
         return data
 
     def _check_split(self, split):
@@ -296,3 +265,16 @@ class TabularDataset(ABC):
         metrics["subgroup_majority_overall_acc_" + split] = sm_overall_acc
         metrics["subgroup_majority_worstgroup_acc_" + split] = sm_wg_acc
         return metrics
+
+    def to_parquet(self):
+        for split in self.splits:
+            outdir = os.path.join(self.config.cache_dir, self.name, split)
+            print(f"[INFO] caching task {self.name} to {outdir}")
+            if not os.path.exists(outdir):
+                os.makedirs(outdir)
+            X, y, G, d = self.get_pandas(split)
+            df = pd.concat([X, y, G, d], axis=1)
+            df.to_parquet(outdir)
+            schema = df.dtypes.reset_index().to_dict()
+            with open(os.path.join(outdir, "schema.json"), "w") as f:
+                f.write(json.dumps(schema))
