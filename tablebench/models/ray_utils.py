@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union
 
 import fairlearn.reductions
 import numpy as np
@@ -19,7 +19,7 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.hyperopt import HyperOptSearch
 
 from tablebench.configs.hparams import search_space
-from tablebench.core import TabularDataset
+from tablebench.core import TabularDataset, CachedDataset
 from tablebench.models.compat import SklearnStylePytorchModel, \
     is_pytorch_model_name
 from tablebench.models.config import get_default_config
@@ -96,10 +96,13 @@ def _row_to_dict(row, X_names: List[str], y_name: str, G_names: List[str],
     return outputs
 
 
-def prepare_torch_datasets(split, dset: TabularDataset):
+def prepare_torch_datasets(split, dset: Union[TabularDataset, CachedDataset]):
     keep_domain_labels = dset.domain_label_colname is not None
-    ds = make_ray_dataset(dset, split, keep_domain_labels)
 
+    if isinstance(dset, TabularDataset):
+        ds = make_ray_dataset(dset, split, keep_domain_labels)
+    elif isinstance(dset, CachedDataset):
+        ds = dset.get_ray(split)
     y_name = dset.target
     d_name = dset.domain_label_colname
     G_names = dset.group_feature_names
@@ -111,7 +114,7 @@ def prepare_torch_datasets(split, dset: TabularDataset):
     return ds.map_batches(_map_fn, batch_format="pandas")
 
 
-def run_ray_tune_experiment(dset: TabularDataset,
+def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                             model_name: str,
                             tune_config: TuneConfig = None,
                             max_epochs=100):

@@ -1,13 +1,17 @@
 from abc import ABC
 from dataclasses import dataclass
+import glob
 import json
+import math
 import os
+import pickle
 from typing import Optional, Tuple, Union, List
 
 import numpy as np
 import pandas as pd
-import torch
 from pandas import DataFrame, Series
+import ray.data
+import torch
 from torch.utils.data.dataloader import default_collate
 
 from .splitter import Splitter, DomainSplitter
@@ -66,7 +70,7 @@ class TabularDataset(ABC):
     @property
     def X_shape(self):
         """Shape of the data matrix for training."""
-        return self.data.shape
+        return [None, len(self.feature_names)]
 
     @property
     def n_domains(self) -> int:
@@ -274,14 +278,66 @@ class TabularDataset(ABC):
         metrics["subgroup_majority_worstgroup_acc_" + split] = sm_wg_acc
         return metrics
 
-    def to_parquet(self):
+    def to_sharded(self, rows_per_shard=8192):
+        base_dir = os.path.join(self.config.cache_dir, self.name)
         for split in self.splits:
-            outdir = os.path.join(self.config.cache_dir, self.name, split)
+            outdir = os.path.join(base_dir, split)
             print(f"[INFO] caching task {self.name} to {outdir}")
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
             df = self._get_split_df(split)
-            df.to_parquet(outdir)
-            schema = df.dtypes.reset_index().to_dict()
-            with open(os.path.join(outdir, "schema.json"), "w") as f:
-                f.write(json.dumps(schema))
+
+            num_shards = math.ceil(len(df) / rows_per_shard)
+            for i in range(num_shards):
+                fp = os.path.join(outdir, f"{split}_{i:05d}.csv")
+                df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard].to_csv(fp)
+
+        # write metadata
+        schema = self._df.dtypes.to_dict()
+        with open(os.path.join(base_dir, "schema.pickle"), "wb") as f:
+            pickle.dump(schema, f)
+
+        ds_info = {
+            'target': self.target,
+            'domain_label_colname': self.domain_label_colname,
+            'group_feature_names': self.group_feature_names,
+            'feature_names': self.feature_names,
+            'X_shape': self.X_shape,
+            'splits': list(self.splits.keys())
+        }
+        with open(os.path.join(base_dir, "info.json"), "w") as f:
+            f.write(json.dumps(ds_info))
+
+
+class CachedDataset:
+    def __init__(self, cache_dir: str, name: str):
+        self.cache_dir = cache_dir
+        self.name = name
+        self.target = None
+        self.domain_label_colname = None
+        self.group_feature_names = None
+        self.feature_names = None
+        self.X_shape = None
+        self.splits:List=None
+
+        self._load_from_cache()
+
+    def _load_from_cache(self):
+        base_dir = os.path.join(self.cache_dir, self.name)
+        print(f"[INFO] loading from {base_dir}")
+        with open(os.path.join(base_dir, "info.json"), "r") as f:
+            ds_info = json.loads(f.read())
+
+        for k, v in ds_info.items():
+            setattr(self, k, v)
+
+        with open(os.path.join(base_dir, "schema.pickle"), "rb") as f:
+            schema = pickle.load(f)
+
+    def get_ray(self, split):
+        dir = os.path.join(self.cache_dir, self.name, split)
+        fileglob = os.path.join(dir, "*.csv")
+        files = glob.glob(fileglob)
+        assert len(files), f"no files detected for split {split} " \
+                           f"matching {fileglob}"
+        return ray.data.read_csv(files)

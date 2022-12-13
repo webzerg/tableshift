@@ -1,6 +1,6 @@
 import argparse
 
-from tablebench.core import TabularDataset, TabularDatasetConfig
+from tablebench.core import CachedDataset
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment
 
@@ -19,18 +19,19 @@ def main(experiment: str, model_name: str, cache_dir: str,
         experiment = "_debug"
         num_samples = 1
 
-    expt_config = EXPERIMENT_CONFIGS[experiment]
+    # expt_config = EXPERIMENT_CONFIGS[experiment]
+    dset = CachedDataset(cache_dir=cache_dir, name=experiment)
 
-    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
-    tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
-    if "name" not in tabular_dataset_kwargs:
-        tabular_dataset_kwargs["name"] = experiment
-
-    dset = TabularDataset(config=dataset_config,
-                          splitter=expt_config.splitter,
-                          grouper=expt_config.grouper,
-                          preprocessor_config=expt_config.preprocessor_config,
-                          **tabular_dataset_kwargs)
+    # dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
+    # tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
+    # if "name" not in tabular_dataset_kwargs:
+    #     tabular_dataset_kwargs["name"] = experiment
+    #
+    # dset = TabularDataset(config=dataset_config,
+    #                       splitter=expt_config.splitter,
+    #                       grouper=expt_config.grouper,
+    #                       preprocessor_config=expt_config.preprocessor_config,
+    #                       **tabular_dataset_kwargs)
 
     tune_config = TuneConfig(
         early_stop=early_stop,

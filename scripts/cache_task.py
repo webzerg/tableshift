@@ -18,8 +18,8 @@ def main(cache_dir, experiment):
                           grouper=expt_config.grouper,
                           preprocessor_config=expt_config.preprocessor_config,
                           **tabular_dataset_kwargs)
-    import ipdb;ipdb.set_trace()
-    dset.to_parquet()
+
+    dset.to_sharded()
 
 
 if __name__ == "__main__":
