@@ -13,7 +13,8 @@ import pandas as pd
 
 from tablebench.core import utils
 from tablebench.datasets.acs import ACS_STATE_LIST, preprocess_acs, \
-    get_feature_mapping, get_acs_data_source, ACS_TASK_CONFIGS, acs_data_to_df
+    get_acs_data_source, ACS_TASK_CONFIGS, acs_data_to_df
+from tablebench.datasets.acs_feature_mappings import get_feature_mapping
 from tablebench.datasets.adult import ADULT_RESOURCES, ADULT_FEATURE_NAMES, \
     preprocess_adult
 from tablebench.datasets.anes import preprocess_anes
@@ -198,6 +199,7 @@ class BRFSSDataSource(DataSource):
     See also https://www.cdc.gov/brfss/about/brfss_faq.htm , "What are the
     components of the BRFSS questionnaire?"
     """
+
     def __init__(self, preprocess_fn=preprocess_brfss_diabetes,
                  years=(2021,), **kwargs):
         self.years = years
