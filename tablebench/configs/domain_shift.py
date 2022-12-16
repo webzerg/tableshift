@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Sequence, Optional, Any, Iterator
+from typing import Sequence, Optional, Any, Iterator, Tuple
 from tablebench.core import Grouper, PreprocessorConfig, DomainSplitter
 from tablebench.core.utils import sliding_window
 from tablebench.datasets import ACS_STATE_LIST, ACS_YEARS, BRFSS_STATE_LIST, \
@@ -8,6 +8,15 @@ from tablebench.datasets import ACS_STATE_LIST, ACS_YEARS, BRFSS_STATE_LIST, \
 from tablebench.datasets.experiment_configs import ExperimentConfig
 
 DEFAULT_RANDOM_STATE = 264738
+
+
+def _to_nested(ary: Sequence[Any]) -> Sequence[Sequence[Any]]:
+    """Create a nested tuple from a sequence.
+
+    This reformats lists e.g. where each element in the list is the only desired
+    out-of-domain value in an experiment.
+    """
+    return tuple([x] for x in ary)
 
 
 @dataclass
@@ -56,7 +65,7 @@ domain_shift_experiment_configs = {
         tabular_dataset_kwargs={"name": "acsfoodstamps",
                                 "acs_task": "acsfoodstamps"},
         domain_split_varname="ST",
-        domain_split_ood_values=ACS_STATE_LIST,
+        domain_split_ood_values=_to_nested(ACS_STATE_LIST),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
@@ -76,7 +85,7 @@ domain_shift_experiment_configs = {
         tabular_dataset_kwargs={"name": "acsincome",
                                 "acs_task": "acsincome"},
         domain_split_varname="ST",
-        domain_split_ood_values=ACS_STATE_LIST,
+        domain_split_ood_values=_to_nested(ACS_STATE_LIST),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
@@ -96,7 +105,7 @@ domain_shift_experiment_configs = {
         tabular_dataset_kwargs={"name": "acspubcov",
                                 "acs_task": "acspubcov"},
         domain_split_varname="ST",
-        domain_split_ood_values=ACS_STATE_LIST,
+        domain_split_ood_values=_to_nested(ACS_STATE_LIST),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
@@ -116,7 +125,7 @@ domain_shift_experiment_configs = {
         tabular_dataset_kwargs={"name": "acsunemployment",
                                 "acs_task": "acsunemployment"},
         domain_split_varname="ST",
-        domain_split_ood_values=ACS_STATE_LIST,
+        domain_split_ood_values=_to_nested(ACS_STATE_LIST),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
@@ -135,7 +144,7 @@ domain_shift_experiment_configs = {
     "brfss_diabetes_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "brfss_diabetes"},
         domain_split_varname="STATE",
-        domain_split_ood_values=BRFSS_STATE_LIST,
+        domain_split_ood_values=_to_nested(BRFSS_STATE_LIST),
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
@@ -151,7 +160,7 @@ domain_shift_experiment_configs = {
     "brfss_blood_pressure_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "brfss_blood_pressure"},
         domain_split_varname="STATE",
-        domain_split_ood_values=BRFSS_STATE_LIST,
+        domain_split_ood_values=_to_nested(BRFSS_STATE_LIST),
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
@@ -169,7 +178,7 @@ domain_shift_experiment_configs = {
     "candc_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "communities_and_crime"},
         domain_split_varname="state",
-        domain_split_ood_values=CANDC_STATE_LIST,
+        domain_split_ood_values=_to_nested(CANDC_STATE_LIST),
         grouper=Grouper({"Race": [1, ], "income_level_above_median": [1, ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(),
@@ -187,7 +196,7 @@ domain_shift_experiment_configs = {
     "diabetes_admtype": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "diabetes_readmission"},
         domain_split_varname='admission_type_id',
-        domain_split_ood_values=[1, 2, 3, 4, 5, 6, 7, 8],
+        domain_split_ood_values=_to_nested([1, 2, 3, 4, 5, 6, 7, 8]),
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(),
@@ -242,7 +251,7 @@ domain_shift_experiment_configs = {
     "anes_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
         domain_split_varname="VCF0901b",
-        domain_split_ood_values=ANES_STATES,
+        domain_split_ood_values=_to_nested(ANES_STATES),
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
@@ -250,7 +259,7 @@ domain_shift_experiment_configs = {
     "anes_region": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
         domain_split_varname='VCF0112',
-        domain_split_ood_values=ANES_REGIONS,
+        domain_split_ood_values=_to_nested(ANES_REGIONS),
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
