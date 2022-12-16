@@ -445,7 +445,7 @@ class PhysioNetDataSource(DataSource):
                   "take several minutes.")
             # download the training data
             cmd = "wget -r -N -c -np https://physionet.org/files/challenge" \
-                  "-2019/1.0.0/training/"
+                  f"-2019/1.0.0/training/ -P={self.cache_dir}"
             utils.run_in_subproces(cmd)
         return
 
