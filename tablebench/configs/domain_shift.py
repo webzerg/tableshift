@@ -81,6 +81,14 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
+"acsincome_region": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acsincome",
+                                "acs_task": "acsincome"},
+        domain_split_varname="DIVISION",
+        domain_split_ood_values="DIVISION",
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig()),
+
     "acsincome_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsincome",
                                 "acs_task": "acsincome"},
@@ -242,7 +250,7 @@ domain_shift_experiment_configs = {
     "physionet_set": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "physionet"},
         domain_split_varname="set",
-        domain_split_ood_values=["a", "b"],
+        domain_split_ood_values=_to_nested(["a", "b"]),
         grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")
