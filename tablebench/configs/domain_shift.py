@@ -1,20 +1,53 @@
 from dataclasses import dataclass
-from typing import Sequence, Optional, Any
-from tablebench.core import Grouper, PreprocessorConfig
+from typing import Sequence, Optional, Any, Iterator
+from tablebench.core import Grouper, PreprocessorConfig, DomainSplitter
 from tablebench.core.utils import sliding_window
 from tablebench.datasets import ACS_STATE_LIST, ACS_YEARS, BRFSS_STATE_LIST, \
     BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS, \
     ANES_REGIONS
+from tablebench.datasets.experiment_configs import ExperimentConfig
+
+DEFAULT_RANDOM_STATE = 264738
 
 
 @dataclass
 class DomainShiftExperimentConfig:
+    """Class to hold parameters for a domain shift experiment.
+
+    This class defines a *set* of experiments, where the distribution split changes
+    over experiments but all other factors (preprocessing, grouping, etc.) stay fixed.
+
+    This class is used e.g. to identify which of a set of candidate domain splits has the
+    biggest domain gap.
+    """
     tabular_dataset_kwargs: dict
     domain_split_varname: str
     domain_split_ood_values: Sequence[Any]
     grouper: Grouper
     preprocessor_config: PreprocessorConfig
     domain_split_id_values: Optional[Sequence[Any]] = None
+
+    def as_experiment_config_iterator(
+            self, val_size=0.1, ood_val_size=0.1, id_test_size=0.1, random_state=DEFAULT_RANDOM_STATE
+    ) -> Iterator[ExperimentConfig]:
+        for i, tgt in enumerate(self.domain_split_ood_values):
+            if self.domain_split_id_values is not None:
+                src = self.domain_split_id_values[i]
+            else:
+                src = None
+            if not isinstance(tgt, tuple) and not isinstance(tgt, list):
+                tgt = (tgt,)
+            splitter = DomainSplitter(
+                val_size=val_size,
+                ood_val_size=ood_val_size,
+                id_test_size=id_test_size,
+                domain_split_varname=self.domain_split_varname,
+                domain_split_ood_values=tgt,
+                domain_split_id_values=src,
+                random_state=random_state)
+            yield ExperimentConfig(splitter=splitter, grouper=self.grouper,
+                                   preprocessor_config=self.preprocessor_config,
+                                   tabular_dataset_kwargs=self.tabular_dataset_kwargs)
 
 
 # Set of fixed domain shift experiments.
@@ -229,7 +262,7 @@ domain_shift_experiment_configs = {
         tabular_dataset_kwargs={"name": "anes"},
         domain_split_varname="VCF0004",
         domain_split_ood_values=ANES_YEARS[-4:],
-        domain_split_id_values=list(sliding_window(ANES_YEARS, 4)[-1]),
+        domain_split_id_values=list(sliding_window(ANES_YEARS, 4))[-1],
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins")),

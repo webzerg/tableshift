@@ -4,7 +4,7 @@ import pandas as pd
 
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter
-from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment
+from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment, fetch_postprocessed_results_df
 
 
 def main(experiment: str, cache_dir: str,
@@ -16,7 +16,14 @@ def main(experiment: str, cache_dir: str,
          max_concurrent_trials=2,
          num_workers=1,
          early_stop=True):
-    models = ("mlp", "resnet", "ft_transformer", "group_dro", "xgb", "lightgbm")
+    # Use baseline models only.
+    models = (
+        "mlp",
+        "resnet",
+        "ft_transformer",
+        # "group_dro",
+        "xgb",
+        "lightgbm")
 
     if debug:
         print("[INFO] running in debug mode.")
@@ -27,15 +34,15 @@ def main(experiment: str, cache_dir: str,
     # experimental iterate.
     iterates = []
 
-    expt_config = domain_shift_experiment_configs[experiment]
+    domain_shift_expt_config = domain_shift_experiment_configs[experiment]
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
 
-    ood_values = expt_config.domain_split_ood_values
+    ood_values = domain_shift_expt_config.domain_split_ood_values
     if debug:
         # Just test the first ood split values.
         ood_values = [ood_values[0]]
 
-    tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
+    tabular_dataset_kwargs = domain_shift_expt_config.tabular_dataset_kwargs
     if "name" not in tabular_dataset_kwargs:
         tabular_dataset_kwargs["name"] = experiment
 
@@ -48,45 +55,39 @@ def main(experiment: str, cache_dir: str,
         tune_metric_higher_is_better=tune_metric_higher_is_better,
     ) if not no_tune else None
 
-    for i, tgt in enumerate(ood_values):
-
-        if expt_config.domain_split_id_values is not None:
-            src = expt_config.domain_split_id_values[i]
+    for expt_config in domain_shift_expt_config.as_experiment_config_iterator():
+    # for i, tgt in enumerate(ood_values):
+        assert isinstance(expt_config.splitter, DomainSplitter)
+        if expt_config.splitter.domain_split_id_values is not None:
+            src = expt_config.splitter.domain_split_id_values[i]
         else:
             src = None
 
+        tgt = expt_config.splitter.domain_split_ood_values
         if not isinstance(tgt, tuple) and not isinstance(tgt, list):
             tgt = (tgt,)
-        splitter = DomainSplitter(
-            val_size=0.1,
-            ood_val_size=0.1,
-            id_test_size=0.1,
-            domain_split_varname=expt_config.domain_split_varname,
-            domain_split_ood_values=tgt,
-            domain_split_id_values=src,
-            random_state=19542)
 
         try:
             dset = TabularDataset(
                 **expt_config.tabular_dataset_kwargs,
                 config=dataset_config,
-                splitter=splitter,
+                splitter=expt_config.splitter,
                 grouper=expt_config.grouper,
                 preprocessor_config=expt_config.preprocessor_config)
         except ValueError as ve:
             # Case: split is too small.
             print(f"[WARNING] error initializing dataset for expt {experiment} "
-                  f"with {expt_config.domain_split_varname} == {tgt}: {ve}")
+                  f"with {expt_config.splitter.domain_split_varname} == {tgt}: {ve}")
             continue
 
         for model_name in models:
             results = run_ray_tune_experiment(dset=dset, model_name=model_name,
-                                              tune_config=tune_config)
+                                              tune_config=tune_config, debug=debug)
 
-            df = results.get_dataframe()
+            df = fetch_postprocessed_results_df(results)
             df["estimator"] = model_name
             df["task"] = expt_config.tabular_dataset_kwargs["name"],
-            df["domain_split_varname"] = expt_config.domain_split_varname
+            df["domain_split_varname"] = expt_config.splitter.domain_split_varname
             df["domain_split_ood_values"] = str(tgt)
 
             print(df)

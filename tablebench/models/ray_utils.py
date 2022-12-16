@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import partial
-import os
+import re
 from typing import Dict, Any, List, Union
 
 import fairlearn.reductions
@@ -117,7 +117,7 @@ def prepare_torch_datasets(split, dset: Union[TabularDataset, CachedDataset]):
 def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                             model_name: str,
                             tune_config: TuneConfig = None,
-                            max_epochs=100):
+                            max_epochs=100, debug=False):
     """Rune a ray tuning experiment.
 
     This defines the trainers, tuner, and other associated objects, runs the
@@ -140,6 +140,11 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
         n_epochs = config["n_epochs"] \
             if not tune_config.early_stop else max_epochs
+
+        if debug:
+            # In debug mode,  train only for 2 epochs (2, not 1, so that we can ensure DataLoaders are
+            # iterating properly).
+            n_epochs = 2
 
         device = train.torch.get_device()
 
@@ -281,3 +286,21 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     results = tuner.fit()
 
     return results
+
+
+def fetch_postprocessed_results_df(results: ray.tune.ResultGrid) -> pd.DataFrame:
+    """Fetch a DataFrame and clean up the names of columns so they align across models.
+
+    This function accounts for the fact that some Trainers in ray produce results that have the right
+    metrics, but with names that don't align to our custom trainers, or they provide error when accuracy
+    is desired.
+    """
+    df = results.get_dataframe()
+    for c in df.columns:
+        if "error" in c:
+            # Replace 'error' columns with 'accuracy' columns.
+            # LightGBM uses "{SPLIT}-binary-error"; xgb uses "{SPLIT}-error"
+            new_colname = re.sub("-\\w*_error$", "_accuracy", c)
+            df[new_colname] = 1. - df[c]
+            df.drop(columns=[c], inplace=True)
+    return df

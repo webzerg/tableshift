@@ -42,7 +42,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
     ) if not no_tune else None
 
     results = run_ray_tune_experiment(dset=dset, model_name=model_name,
-                                      tune_config=tune_config)
+                                      tune_config=tune_config, debug=debug)
 
     results_df = results.get_dataframe()
     print(results_df)
