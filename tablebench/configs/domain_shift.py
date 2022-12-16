@@ -270,7 +270,8 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested(ANES_STATES),
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None)),
 
     "anes_region": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
@@ -278,7 +279,8 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested(ANES_REGIONS),
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None)),
 
     # ANES: test on (2016) or (2020); train on all years prior.
     "anes_year": DomainShiftExperimentConfig(
@@ -288,5 +290,6 @@ domain_shift_experiment_configs = {
         domain_split_id_values=[ANES_YEARS[:-2], ANES_YEARS[:-1]],
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins")),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None)),
 }

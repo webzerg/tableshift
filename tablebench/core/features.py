@@ -259,7 +259,7 @@ class PreprocessorConfig:
         return transformed
 
     def _dropna(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Apply the specified hanling of NA values.
+        """Apply the specified handling of NA values.
 
         If "rows", drop any rows containing NA values. If "columns", drop
         any columns containing NA values. If None, do not alter data.
