@@ -54,7 +54,7 @@ if __name__ == "__main__":
                         help="Directory to cache raw data files to.")
     parser.add_argument("--domain_shift_experiment", "-d",
                         help="Experiment to run. Overridden when debug=True."
-                             "Example value: 'diabetes_admtype'.")
+                             "Example value: 'physionet_set'.")
     parser.add_argument("--experiment",
                         help="Experiment to run. Overridden when debug=True."
                              "Example value: 'adult'.")
