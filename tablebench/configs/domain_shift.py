@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Sequence, Optional, Any, Iterator, Tuple
 from tablebench.core import Grouper, PreprocessorConfig, DomainSplitter
 from tablebench.core.utils import sliding_window
-from tablebench.datasets import ACS_STATE_LIST, ACS_YEARS, BRFSS_STATE_LIST, \
+from tablebench.datasets import ACS_REGIONS, ACS_STATE_LIST, ACS_YEARS, BRFSS_STATE_LIST, \
     BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS, \
     ANES_REGIONS
 from tablebench.datasets.experiment_configs import ExperimentConfig
@@ -61,6 +61,14 @@ class DomainShiftExperimentConfig:
 
 # Set of fixed domain shift experiments.
 domain_shift_experiment_configs = {
+    "acsfoodstamps_region": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acsfoodstamps",
+                                "acs_task": "acsfoodstamps"},
+        domain_split_varname="DIVISION",
+        domain_split_ood_values=_to_nested(ACS_REGIONS),
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig()),
+
     "acsfoodstamps_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsfoodstamps",
                                 "acs_task": "acsfoodstamps"},
@@ -81,11 +89,11 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-"acsincome_region": DomainShiftExperimentConfig(
+    "acsincome_region": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsincome",
                                 "acs_task": "acsincome"},
         domain_split_varname="DIVISION",
-        domain_split_ood_values="DIVISION",
+        domain_split_ood_values=_to_nested(ACS_REGIONS),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
