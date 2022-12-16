@@ -168,6 +168,8 @@ class PreprocessorConfig:
     # containing na values; if None do not do anything for missing values.
     dropna: Union[str, None] = "rows"
 
+
+
     def _get_categorical_transforms(self, data: pd.DataFrame,
                                     categorical_columns: List[str],
                                     passthrough_columns: List[str]):

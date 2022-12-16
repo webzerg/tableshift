@@ -32,7 +32,7 @@ class TabularDataset(ABC):
     def __init__(self, name: str, config: TabularDatasetConfig,
                  splitter: Splitter,
                  preprocessor_config: PreprocessorConfig,
-                 grouper: Optional[Grouper],
+                 grouper: Optional[Grouper], initialize_data=True,
                  **kwargs):
         self.name = name
         self.config = config
@@ -52,8 +52,8 @@ class TabularDataset(ABC):
         self._df: pd.DataFrame = None  # holds all the data
 
         self.splits = None  # dict mapping {split_name: list of idxs in split}
-
-        self._initialize_data()
+        if initialize_data:
+            self._initialize_data()
 
     @property
     def features(self):
@@ -278,11 +278,34 @@ class TabularDataset(ABC):
         metrics["subgroup_majority_worstgroup_acc_" + split] = sm_wg_acc
         return metrics
 
+    def is_cached(self) -> bool:
+        uid = self._get_uid()
+        base_dir = os.path.join(self.config.cache_dir, uid)
+        if os.path.exists(os.path.join(base_dir, "info.json")):
+            return True
+        else:
+            return False
+
+    def _get_uid(self, replace_chars="*/:'$!") -> str:
+        uid = self.name
+        if isinstance(self.splitter, DomainSplitter):
+            attrs = {'domain_split_varname': self.splitter.domain_split_varname,
+                     'domain_split_ood_value': ''.join(str(x) for x in self.splitter.domain_split_ood_values)}
+            if self.splitter.domain_split_id_values:
+                attrs['domain_split_id_values'] = ''.join(str(x) for x in self.splitter.domain_split_id_values)
+            uid += ''.join(f'{k}_{v}' for k, v in attrs.items())
+        # if any slashes exist, replace with periods.
+        for char in replace_chars:
+            uid = uid.replace(char, '.')
+        return uid
+
     def to_sharded(self, rows_per_shard=8192):
-        base_dir = os.path.join(self.config.cache_dir, self.name)
+        uid = self._get_uid()
+
+        base_dir = os.path.join(self.config.cache_dir, uid)
         for split in self.splits:
             outdir = os.path.join(base_dir, split)
-            print(f"[INFO] caching task {self.name} to {outdir}")
+            print(f"[INFO] caching task {uid} to {outdir}")
             if not os.path.exists(outdir):
                 os.makedirs(outdir)
             df = self._get_split_df(split)
@@ -318,7 +341,7 @@ class CachedDataset:
         self.group_feature_names = None
         self.feature_names = None
         self.X_shape = None
-        self.splits:List=None
+        self.splits: List = None
 
         self._load_from_cache()
 
