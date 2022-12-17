@@ -320,6 +320,8 @@ class TabularDataset(ABC):
             f.write(json.dumps(ds_info))
 
 
+# TODO(jpgard): CachedDataset and TabularDataset should inherit from a shared
+#  parent Dataset class.
 class CachedDataset:
     def __init__(self, cache_dir: str, name: str, uid: str):
         self.cache_dir = cache_dir
@@ -337,6 +339,13 @@ class CachedDataset:
     @property
     def base_dir(self):
         return os.path.join(self.cache_dir, self.uid)
+
+    def is_cached(self) -> bool:
+        base_dir = os.path.join(self.cache_dir, self.uid)
+        if os.path.exists(os.path.join(base_dir, "info.json")):
+            return True
+        else:
+            return False
 
     def _load_info_from_cache(self):
         print(f"[INFO] loading from {self.base_dir}")
