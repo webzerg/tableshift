@@ -47,12 +47,12 @@ def main(experiment: str, cache_dir: str,
          time_budget_hrs: float = None):
     # Use baseline models only.
     models = (
-        # "mlp",
-        # "resnet",
-        # "ft_transformer",
+        "mlp",
+        "resnet",
+        "ft_transformer",
         # # "group_dro",
         "xgb",
-        # "lightgbm"
+        "lightgbm"
     )
 
     if debug:
@@ -144,7 +144,8 @@ if __name__ == "__main__":
                         help="Experiment to run. Overridden when debug=True.")
     parser.add_argument("--num_samples", type=int, default=1,
                         help="Number of hparam samples to take in tuning "
-                             "sweep.")
+                             "sweep. Set to -1 and set time_budget_hrs to allow for"
+                             "unlimited runs within the specified time budget.")
     parser.add_argument("--time_budget_hrs", type=float, default=None,
                         help="Time budget for each model tuning run, in hours. Fractional hours are ok."
                              "If this is set, num_samples has no effect.")
