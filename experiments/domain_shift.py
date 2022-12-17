@@ -117,7 +117,8 @@ def main(experiment: str, cache_dir: str,
             df["domain_split_ood_values"] = str(tgt)
 
             print(df)
-            best_result = results.get_best_result()
+            best_result = results.get_best_result(metric=tune_config.tune_metric_name,
+                                                  mode=tune_config.mode)
 
             print("Best trial config: {}".format(best_result.config))
             print("Best trial result: {}".format(best_result))
