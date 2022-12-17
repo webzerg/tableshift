@@ -42,22 +42,26 @@ class TuneConfig:
     tune_metric_name: str = "metric"
     tune_metric_higher_is_better: bool = True
     early_stop: bool = True
+    time_budget_hrs: float = None
 
     @property
     def mode(self):
         return "max" if self.tune_metric_higher_is_better else "min"
 
 
-def make_ray_dataset(dset: TabularDataset, split, keep_domain_labels=False):
-    X, y, G, d = dset.get_pandas(split)
-    if (d is None) or (not keep_domain_labels):
-        df = pd.concat([X, y, G], axis=1)
+def make_ray_dataset(dset: Union[TabularDataset, CachedDataset], split, keep_domain_labels=False):
+    if isinstance(dset, CachedDataset):
+        return dset.get_ray(split)
     else:
-        df = pd.concat([X, y, G, d], axis=1)
-    df = df.loc[:, ~df.columns.duplicated()].copy()
+        X, y, G, d = dset.get_pandas(split)
+        if (d is None) or (not keep_domain_labels):
+            df = pd.concat([X, y, G], axis=1)
+        else:
+            df = pd.concat([X, y, G, d], axis=1)
+        df = df.loc[:, ~df.columns.duplicated()].copy()
 
-    dataset: ray.data.Dataset = ray.data.from_pandas([df])
-    return dataset
+        dataset: ray.data.Dataset = ray.data.from_pandas([df])
+        return dataset
 
 
 def get_ray_checkpoint(model):
@@ -282,6 +286,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 mode=tune_config.mode,
                 stop_last_trials=True),
             num_samples=tune_config.num_samples,
+            time_budget_s=tune_config.time_budget_hrs * 3600 if tune_config.time_budget_hrs else None,
             max_concurrent_trials=tune_config.max_concurrent_trials))
 
     results = tuner.fit()

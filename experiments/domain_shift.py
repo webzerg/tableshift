@@ -43,15 +43,16 @@ def main(experiment: str, cache_dir: str,
          max_concurrent_trials=2,
          num_workers=1,
          early_stop=True,
-         use_cached: bool = False):
+         use_cached: bool = False,
+         time_budget_hrs: float = None):
     # Use baseline models only.
     models = (
-        "mlp",
-        "resnet",
-        "ft_transformer",
-        # "group_dro",
+        # "mlp",
+        # "resnet",
+        # "ft_transformer",
+        # # "group_dro",
         "xgb",
-        "lightgbm"
+        # "lightgbm"
     )
 
     if debug:
@@ -82,6 +83,7 @@ def main(experiment: str, cache_dir: str,
         num_samples=num_samples,
         tune_metric_name=tune_metric_name,
         tune_metric_higher_is_better=tune_metric_higher_is_better,
+        time_budget_hrs=time_budget_hrs,
     ) if not no_tune else None
 
     for expt_config in domain_shift_expt_config.as_experiment_config_iterator():
@@ -143,6 +145,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_samples", type=int, default=1,
                         help="Number of hparam samples to take in tuning "
                              "sweep.")
+    parser.add_argument("--time_budget_hrs", type=float, default=None,
+                        help="Time budget for each model tuning run, in hours. Fractional hours are ok."
+                             "If this is set, num_samples has no effect.")
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
