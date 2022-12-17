@@ -107,12 +107,11 @@ def main(experiment: str, cache_dir: str,
             continue
 
         for model_name in models:
-            results = run_ray_tune_experiment(dset=dset, model_name=model_name,
-                                              tune_config=tune_config, debug=debug)
+            results = run_ray_tune_experiment(dset=dset, model_name=model_name, tune_config=tune_config, debug=debug)
 
             df = fetch_postprocessed_results_df(results)
             df["estimator"] = model_name
-            df["task"] = str(dset.name),
+            # df["task"] = str(dset.name),
             df["domain_split_varname"] = expt_config.splitter.domain_split_varname
             df["domain_split_ood_values"] = str(tgt)
 
