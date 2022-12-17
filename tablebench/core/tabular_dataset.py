@@ -332,13 +332,13 @@ class CachedDataset:
         self.X_shape = None
         self.splits: List = None
 
-        self._load_from_cache()
+        self._load_info_from_cache()
 
     @property
     def base_dir(self):
         return os.path.join(self.cache_dir, self.uid)
 
-    def _load_from_cache(self):
+    def _load_info_from_cache(self):
         print(f"[INFO] loading from {self.base_dir}")
         with open(os.path.join(self.base_dir, "info.json"), "r") as f:
             ds_info = json.loads(f.read())
