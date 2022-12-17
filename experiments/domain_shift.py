@@ -99,6 +99,11 @@ def main(experiment: str, cache_dir: str,
         dset = get_dataset(expt_config=expt_config,
                            dataset_config=dataset_config, use_cached=use_cached)
 
+        if use_cached and not dset.is_cached():
+            print(f"[INFO] skipping dataset {dset.name}; not cached. This may not be a problem and be due to an "
+                  f"invalid domain split (i.e. a domain split with only one target label).")
+            continue
+
         for model_name in models:
             results = run_ray_tune_experiment(dset=dset, model_name=model_name,
                                               tune_config=tune_config, debug=debug)
