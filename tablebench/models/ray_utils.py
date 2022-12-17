@@ -153,7 +153,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         device = train.torch.get_device()
 
         for epoch in range(n_epochs):
-            print(f"[DEBUG] starting epoch {epoch}")
+            print(f"[DEBUG] starting epoch {epoch} with model {model_name}")
 
             train_dataset_batches = session.get_dataset_shard(
                 "train").iter_torch_batches(batch_size=config["batch_size"])

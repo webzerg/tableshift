@@ -112,7 +112,7 @@ def main(experiment: str, cache_dir: str,
 
             df = fetch_postprocessed_results_df(results)
             df["estimator"] = model_name
-            df["task"] = expt_config.tabular_dataset_kwargs["name"],
+            df["task"] = str(dset.get("name")),
             df["domain_split_varname"] = expt_config.splitter.domain_split_varname
             df["domain_split_ood_values"] = str(tgt)
 
