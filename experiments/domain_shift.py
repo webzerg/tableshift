@@ -118,8 +118,6 @@ def main(experiment: str, cache_dir: str,
             df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
                       index=False)
             iterates.append(df)
-            break
-        break
 
     fp = f"tune_results_{experiment}.csv"
     print(f"[INFO] writing results to {fp}")
