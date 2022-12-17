@@ -19,6 +19,7 @@ from .grouper import Grouper
 from .tasks import get_task_config
 from .features import PreprocessorConfig
 from .metrics import metrics_by_group
+from .utils import make_uid
 
 
 @dataclass
@@ -279,28 +280,15 @@ class TabularDataset(ABC):
         return metrics
 
     def is_cached(self) -> bool:
-        uid = self._get_uid()
+        uid = make_uid(self.name, self.splitter)
         base_dir = os.path.join(self.config.cache_dir, uid)
         if os.path.exists(os.path.join(base_dir, "info.json")):
             return True
         else:
             return False
 
-    def _get_uid(self, replace_chars="*/:'$!") -> str:
-        uid = self.name
-        if isinstance(self.splitter, DomainSplitter):
-            attrs = {'domain_split_varname': self.splitter.domain_split_varname,
-                     'domain_split_ood_value': ''.join(str(x) for x in self.splitter.domain_split_ood_values)}
-            if self.splitter.domain_split_id_values:
-                attrs['domain_split_id_values'] = ''.join(str(x) for x in self.splitter.domain_split_id_values)
-            uid += ''.join(f'{k}_{v}' for k, v in attrs.items())
-        # if any slashes exist, replace with periods.
-        for char in replace_chars:
-            uid = uid.replace(char, '.')
-        return uid
-
     def to_sharded(self, rows_per_shard=8192):
-        uid = self._get_uid()
+        uid = make_uid(self.name, self.splitter)
 
         base_dir = os.path.join(self.config.cache_dir, uid)
         for split in self.splits:
@@ -333,8 +321,9 @@ class TabularDataset(ABC):
 
 
 class CachedDataset:
-    def __init__(self, cache_dir: str, name: str):
+    def __init__(self, cache_dir: str, name: str, uid: str):
         self.cache_dir = cache_dir
+        self.uid = uid
         self.name = name
         self.target = None
         self.domain_label_colname = None
@@ -345,20 +334,23 @@ class CachedDataset:
 
         self._load_from_cache()
 
+    @property
+    def base_dir(self):
+        return os.path.join(self.cache_dir, self.uid)
+
     def _load_from_cache(self):
-        base_dir = os.path.join(self.cache_dir, self.name)
-        print(f"[INFO] loading from {base_dir}")
-        with open(os.path.join(base_dir, "info.json"), "r") as f:
+        print(f"[INFO] loading from {self.base_dir}")
+        with open(os.path.join(self.base_dir, "info.json"), "r") as f:
             ds_info = json.loads(f.read())
 
         for k, v in ds_info.items():
             setattr(self, k, v)
 
-        with open(os.path.join(base_dir, "schema.pickle"), "rb") as f:
+        with open(os.path.join(self.base_dir, "schema.pickle"), "rb") as f:
             schema = pickle.load(f)
 
     def get_ray(self, split):
-        dir = os.path.join(self.cache_dir, self.name, split)
+        dir = os.path.join(self.base_dir, split)
         fileglob = os.path.join(dir, "*.csv")
         files = glob.glob(fileglob)
         assert len(files), f"no files detected for split {split} " \

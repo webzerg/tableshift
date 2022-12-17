@@ -3,9 +3,10 @@ import argparse
 from tablebench.core import CachedDataset
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment
+from tablebench.core.utils import make_uid
 
 
-def main(experiment: str, model_name: str, cache_dir: str,
+def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          debug: bool,
          no_tune: bool, num_samples: int,
          tune_metric_name: str = "validation_accuracy",
@@ -13,14 +14,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
          max_concurrent_trials=2,
          num_workers=1,
          early_stop=True):
-
-    if debug:
-        print("[INFO] running in debug mode.")
-        experiment = "_debug"
-        num_samples = 1
-
-    # expt_config = EXPERIMENT_CONFIGS[experiment]
-    dset = CachedDataset(cache_dir=cache_dir, name=experiment)
+    dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
 
     # dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
     # tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
@@ -60,7 +54,7 @@ if __name__ == "__main__":
                         help="Whether to run in debug mode. If True, various "
                              "truncations/simplifications are performed to "
                              "speed up experiment.")
-    parser.add_argument("--experiment", default="adult",
+    parser.add_argument("--experiment", default="diabetes_readmission",
                         help="Experiment to run. Overridden when debug=True.")
     parser.add_argument("--model_name", default="mlp")
     parser.add_argument("--num_samples", type=int, default=1,
@@ -69,5 +63,9 @@ if __name__ == "__main__":
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
+    parser.add_argument("--uid",
+                        default="diabetes_readmissiondomain_split_varname_admission_type_iddomain_split_ood_value_1",
+                        help="UID for experiment to run. Overridden when debug=True.")
+
     args = parser.parse_args()
     main(**vars(args))

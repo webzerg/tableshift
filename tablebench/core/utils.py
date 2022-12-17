@@ -6,8 +6,9 @@ import subprocess
 import urllib.parse
 
 import pandas as pd
-
 import xport.v56
+
+from .splitter import Splitter, DomainSplitter
 
 
 def initialize_dir(dir: str):
@@ -76,3 +77,18 @@ def sliding_window(iterable, n):
     for x in it:
         window.append(x)
         yield tuple(window)
+
+
+def make_uid(name: str, splitter: Splitter, replace_chars="*/:'$!") -> str:
+    """Make a unique identifier for an experiment."""
+    uid = name
+    if isinstance(splitter, DomainSplitter):
+        attrs = {'domain_split_varname': splitter.domain_split_varname,
+                 'domain_split_ood_value': ''.join(str(x) for x in splitter.domain_split_ood_values)}
+        if splitter.domain_split_id_values:
+            attrs['domain_split_id_values'] = ''.join(str(x) for x in splitter.domain_split_id_values)
+        uid += ''.join(f'{k}_{v}' for k, v in attrs.items())
+    # if any slashes exist, replace with periods.
+    for char in replace_chars:
+        uid = uid.replace(char, '.')
+    return uid

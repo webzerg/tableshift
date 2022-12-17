@@ -1,10 +1,37 @@
 import argparse
+from typing import Union
 
 import pandas as pd
 
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
-from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter
+from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter, CachedDataset
 from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment, fetch_postprocessed_results_df
+from tablebench.datasets.experiment_configs import ExperimentConfig
+from tablebench.core.utils import make_uid
+
+
+def get_dataset(expt_config: ExperimentConfig, dataset_config: TabularDatasetConfig,
+                use_cached: bool) -> Union[TabularDataset, CachedDataset]:
+    name = expt_config.tabular_dataset_kwargs["name"]
+    if use_cached:
+        uid = make_uid(name, expt_config.splitter)
+        print(f"[INFO] using cached dataset for uid {uid} at {dataset_config.cache_dir}")
+        dset = CachedDataset(cache_dir=dataset_config.cache_dir, name=name, uid=uid)
+        return dset
+    else:
+        try:
+            dset = TabularDataset(
+                **expt_config.tabular_dataset_kwargs,
+                config=dataset_config,
+                splitter=expt_config.splitter,
+                grouper=expt_config.grouper,
+                preprocessor_config=expt_config.preprocessor_config)
+            return dset
+        except ValueError as ve:
+            # Case: split is too small.
+            print(f"[WARNING] error initializing dataset for expt {name} "
+                  f"with {expt_config.splitter.domain_split_varname} == {tgt}: {ve}")
+            return None
 
 
 def main(experiment: str, cache_dir: str,
@@ -15,7 +42,8 @@ def main(experiment: str, cache_dir: str,
          tune_metric_higher_is_better: bool = True,
          max_concurrent_trials=2,
          num_workers=1,
-         early_stop=True):
+         early_stop=True,
+         use_cached: bool = False):
     # Use baseline models only.
     models = (
         "mlp",
@@ -23,7 +51,8 @@ def main(experiment: str, cache_dir: str,
         "ft_transformer",
         # "group_dro",
         "xgb",
-        "lightgbm")
+        "lightgbm"
+    )
 
     if debug:
         print("[INFO] running in debug mode.")
@@ -56,7 +85,7 @@ def main(experiment: str, cache_dir: str,
     ) if not no_tune else None
 
     for expt_config in domain_shift_expt_config.as_experiment_config_iterator():
-    # for i, tgt in enumerate(ood_values):
+
         assert isinstance(expt_config.splitter, DomainSplitter)
         if expt_config.splitter.domain_split_id_values is not None:
             src = expt_config.splitter.domain_split_id_values[i]
@@ -67,18 +96,8 @@ def main(experiment: str, cache_dir: str,
         if not isinstance(tgt, tuple) and not isinstance(tgt, list):
             tgt = (tgt,)
 
-        try:
-            dset = TabularDataset(
-                **expt_config.tabular_dataset_kwargs,
-                config=dataset_config,
-                splitter=expt_config.splitter,
-                grouper=expt_config.grouper,
-                preprocessor_config=expt_config.preprocessor_config)
-        except ValueError as ve:
-            # Case: split is too small.
-            print(f"[WARNING] error initializing dataset for expt {experiment} "
-                  f"with {expt_config.splitter.domain_split_varname} == {tgt}: {ve}")
-            continue
+        dset = get_dataset(expt_config=expt_config,
+                           dataset_config=dataset_config, use_cached=use_cached)
 
         for model_name in models:
             results = run_ray_tune_experiment(dset=dset, model_name=model_name,
@@ -99,6 +118,8 @@ def main(experiment: str, cache_dir: str,
             df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
                       index=False)
             iterates.append(df)
+            break
+        break
 
     fp = f"tune_results_{experiment}.csv"
     print(f"[INFO] writing results to {fp}")
@@ -122,5 +143,8 @@ if __name__ == "__main__":
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
+    parser.add_argument("--use_cached", action="store_true", default=False,
+                        help="Whether to use cached data. If set to True,"
+                             "and cached data does not exist, the job will fail.")
     args = parser.parse_args()
     main(**vars(args))
