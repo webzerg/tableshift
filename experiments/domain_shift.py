@@ -101,6 +101,8 @@ def main(experiment: str, cache_dir: str,
         dset = get_dataset(expt_config=expt_config,
                            dataset_config=dataset_config, use_cached=use_cached)
 
+        uid = make_uid(experiment, expt_config.splitter)
+
         if use_cached and not dset.is_cached():
             print(f"[INFO] skipping dataset {dset.name}; not cached. This may not be a problem and be due to an "
                   f"invalid domain split (i.e. a domain split with only one target label).")
@@ -116,14 +118,14 @@ def main(experiment: str, cache_dir: str,
             df["domain_split_ood_values"] = str(tgt)
 
             print(df)
-            best_result = results.get_best_result(metric=tune_config.tune_metric_name,
-                                                  mode=tune_config.mode)
+            try:  # We don't want the script to fail just if .get_best_result() fails.
+                best_result = results.get_best_result()
+                print("Best trial config: {}".format(best_result.config))
+                print("Best trial result: {}".format(best_result))
+            except:
+                pass
 
-            print("Best trial config: {}".format(best_result.config))
-            print("Best trial result: {}".format(best_result))
-
-            df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
-                      index=False)
+            df.to_csv(f"tune_results_{uid}_{model_name}.csv", index=False)
             iterates.append(df)
 
     fp = f"tune_results_{experiment}.csv"
