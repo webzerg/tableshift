@@ -247,7 +247,7 @@ class PreprocessorConfig:
         """Postprocess the result of a ColumnTransformer."""
         transformed.columns = [c.replace("remainder__", "")
                                for c in transformed.columns]
-        transformed.columns = [re.sub("[\\[\\].<>]", "", c) for c in
+        transformed.columns = [re.sub("[\\[\\].<>/,]", "", c) for c in
                                transformed.columns]
 
         transformed = _transformed_columns_to_numeric(transformed, "onehot_")
