@@ -11,7 +11,7 @@
 #SBATCH --chdir=/gscratch/efml/jpgard/tableshift
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=jpgard@cs.washington.edu
-#SBATCH --job_name="run_tune_expt_${EXPERIMENT}"
+#SBATCH --job_name=run_tune_expt_${EXPERIMENT}
 
 date;hostname;id;pwd
 
