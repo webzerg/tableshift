@@ -6,6 +6,13 @@ import glob
 import os
 import re
 import pandas as pd
+import json
+import copy
+ILLEGAL_CHARS_REGEX = '[\\[\\]{}.:<>/,"]'
+
+
+def sub_illegal_chars(s: str) -> str:
+    return re.sub(ILLEGAL_CHARS_REGEX, "", s)
 
 
 def main(cache_dir, experiment, domain_split_varname, index_colname='Unnamed: 0'):
@@ -22,9 +29,22 @@ def main(cache_dir, experiment, domain_split_varname, index_colname='Unnamed: 0'
                     for cache_file in cache_files:
                         print(f"[INFO] processing file {cache_file}")
                         df = pd.read_csv(cache_file)
-                        df.columns = [re.sub('[\\[\\]{}.:<>/,"]', "", c) for c in df.columns]
+                        df.columns = [sub_illegal_chars(c) for c in df.columns]
                         print(f"[INFO] writing back to {cache_file}")
                         df.to_csv(cache_file, index=False)
+
+                # update info.json
+                info_fp = os.path.join(dir, "info.json")
+                print(f"[INFO] updating info.json")
+                with open(info_fp, "r") as f:
+                    ds_info = copy.deepcopy(json.loads(f.read()))
+                ds_info['target'] = sub_illegal_chars(ds_info['target'])
+                ds_info['domain_label_colname'] = sub_illegal_chars(ds_info['domain_label_colname'])
+                ds_info['group_feature_names'] = [sub_illegal_chars(c) for c in ds_info['group_feature_names']]
+                ds_info['feature_names'] = [sub_illegal_chars(c) for c in ds_info['feature_names']]
+                with open(info_fp, "w") as f:
+                    f.write(json.dumps(ds_info))
+
     return
 
 
