@@ -22,7 +22,7 @@ def main(cache_dir, experiment, domain_split_varname, index_colname='Unnamed: 0'
                     for cache_file in cache_files:
                         print(f"[INFO] processing file {cache_file}")
                         df = pd.read_csv(cache_file)
-                        df.columns = [re.sub("[\\[\\].<>/,]", "", c) for c in df.columns]
+                        df.columns = [re.sub('[\\[\\]{}.:<>/,"]', "", c) for c in df.columns]
                         print(f"[INFO] writing back to {cache_file}")
                         df.to_csv(cache_file, index=False)
     return
