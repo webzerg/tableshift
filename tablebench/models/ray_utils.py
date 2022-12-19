@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 import re
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Union, Tuple
 
 import fairlearn.reductions
 import numpy as np
@@ -29,6 +29,26 @@ from tablebench.models.training import get_optimizer, train_epoch
 from tablebench.models.utils import get_estimator
 
 
+def accuracy_metric_name_and_mode_for_model(model_name: str, split="validation") -> Tuple[str, str]:
+    """Helper function to fetch the name for an accuracy-related metric for each model.
+
+    This is necessary because some Ray Trainer types do not allow for custom naming of the metrics, and
+    so we may need to minimize error <-> maximize accuracy depending on the trainer type.
+    """
+    if model_name == "xgb":
+        metric_name = f"{split}-error"
+        mode = "min"
+    elif model_name == "lightgbm":
+        metric_name = f"{split}-binary_error"
+        mode = "min"
+    elif is_pytorch_model_name(model_name):
+        metric_name = f"{split}_accuracy"
+        mode = "max"
+    else:
+        raise NotImplementedError(f"cannot find accuracy metric name for model {model_name}")
+    return metric_name, mode
+
+
 @dataclass
 class TuneConfig:
     """Container for various Ray tuning parameters.
@@ -37,16 +57,12 @@ class TuneConfig:
     contains parameters that are passed to different parts of the ray API
     such as `ScalingConfig`, which consumes the num_workers."""
     max_concurrent_trials: int
+    mode: str
     num_workers: int = 1
     num_samples: int = 1
     tune_metric_name: str = "metric"
-    tune_metric_higher_is_better: bool = True
     early_stop: bool = True
     time_budget_hrs: float = None
-
-    @property
-    def mode(self):
-        return "max" if self.tune_metric_higher_is_better else "min"
 
 
 def make_ray_dataset(dset: Union[TabularDataset, CachedDataset], split, keep_domain_labels=False):
@@ -210,8 +226,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                                  datasets=datasets,
                                  params=params,
                                  scaling_config=scaling_config)
-        tune_config.tune_metric_name = "validation-error"
-        tune_config.tune_metric_higher_is_better = False
         param_space = {"params": search_space[model_name]}
 
     elif model_name == "lightgbm":
@@ -231,8 +245,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                                   params=params,
                                   scaling_config=scaling_config)
         param_space = {"params": search_space[model_name]}
-        tune_config.tune_metric_name = "validation-binary_error"
-        tune_config.tune_metric_higher_is_better = False
 
     elif model_name == "expgrad":
         # This currently does not run; there isn't a way to scale this

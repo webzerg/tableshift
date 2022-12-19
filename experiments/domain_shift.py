@@ -5,7 +5,8 @@ import pandas as pd
 
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter, CachedDataset
-from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment, fetch_postprocessed_results_df
+from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment, fetch_postprocessed_results_df, \
+    accuracy_metric_name_and_mode_for_model
 from tablebench.datasets.experiment_configs import ExperimentConfig
 from tablebench.core.utils import make_uid
 
@@ -38,8 +39,7 @@ def main(experiment: str, cache_dir: str,
          debug: bool,
          no_tune: bool,
          num_samples: int,
-         tune_metric_name: str = "validation_accuracy",
-         tune_metric_higher_is_better: bool = True,
+         tune_split: str = "validation",
          max_concurrent_trials=2,
          num_workers=1,
          early_stop=True,
@@ -76,16 +76,6 @@ def main(experiment: str, cache_dir: str,
     if "name" not in tabular_dataset_kwargs:
         tabular_dataset_kwargs["name"] = experiment
 
-    tune_config = TuneConfig(
-        early_stop=early_stop,
-        max_concurrent_trials=max_concurrent_trials,
-        num_workers=num_workers,
-        num_samples=num_samples,
-        tune_metric_name=tune_metric_name,
-        tune_metric_higher_is_better=tune_metric_higher_is_better,
-        time_budget_hrs=time_budget_hrs,
-    ) if not no_tune else None
-
     for expt_config in domain_shift_expt_config.as_experiment_config_iterator():
 
         assert isinstance(expt_config.splitter, DomainSplitter)
@@ -112,6 +102,18 @@ def main(experiment: str, cache_dir: str,
             print('#' * 100)
             print(f'training model {model_name} for experiment uid {uid}')
             print('#' * 100)
+
+            metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
+            tune_config = TuneConfig(
+                early_stop=early_stop,
+                max_concurrent_trials=max_concurrent_trials,
+                num_workers=num_workers,
+                num_samples=num_samples,
+                tune_metric_name=metric_name,
+                mode=mode,
+                time_budget_hrs=time_budget_hrs,
+            ) if not no_tune else None
+
             results = run_ray_tune_experiment(dset=dset, model_name=model_name, tune_config=tune_config, debug=debug)
 
             df = fetch_postprocessed_results_df(results)
