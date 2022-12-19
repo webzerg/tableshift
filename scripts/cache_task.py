@@ -9,8 +9,7 @@ from tablebench.core.utils import make_uid
 def _cache_experiment(expt_config: ExperimentConfig, cache_dir, overwrite: bool):
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
     tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
-    if "name" not in tabular_dataset_kwargs:
-        tabular_dataset_kwargs["name"] = experiment
+    assert "name" in tabular_dataset_kwargs
 
     dset = TabularDataset(config=dataset_config,
                           splitter=expt_config.splitter,
@@ -19,7 +18,7 @@ def _cache_experiment(expt_config: ExperimentConfig, cache_dir, overwrite: bool)
                           initialize_data=False,
                           **tabular_dataset_kwargs)
     if dset.is_cached() and (not overwrite):
-        uid = make_uid(experiment, expt_config.splitter)
+        uid = make_uid(tabular_dataset_kwargs["name"], expt_config.splitter)
         print(f"dataset with uid {uid} is already cached; skipping")
 
     else:
