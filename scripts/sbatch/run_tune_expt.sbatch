@@ -1,5 +1,5 @@
 #!/bin/bash
-# usage: sbatch scripts/sbatch/run_tune_expt.sbatch --export=EXPERIMENT='mooc_course'
+# usage: sbatch --export=EXPERIMENT='mooc_course' scripts/sbatch/run_tune_expt.sbatch
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=6
@@ -31,4 +31,5 @@ which python
 python experiments/domain_shift.py \
   --experiment $EXPERIMENT \
   --use_cached \
-  --time_budget_hrs 1
+  --time_budget_hrs 1 \
+  --num_samples 100
