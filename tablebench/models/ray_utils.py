@@ -177,8 +177,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     # Construct the Trainer object that will be passed to each worker.
     if is_pytorch_model_name(model_name):
 
-        datasets = {split: prepare_torch_datasets(split, dset) for split in
-                    dset.splits}
+        datasets = {split: prepare_torch_datasets(split, dset) for split in dset.splits}
 
         trainer = TorchTrainer(
             train_loop_per_worker=train_loop_per_worker,
