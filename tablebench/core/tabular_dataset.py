@@ -301,7 +301,7 @@ class TabularDataset(ABC):
             num_shards = math.ceil(len(df) / rows_per_shard)
             for i in range(num_shards):
                 fp = os.path.join(outdir, f"{split}_{i:05d}.csv")
-                df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard].to_csv(fp)
+                df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard].to_csv(fp, index=False)
 
         # write metadata
         schema = self._df.dtypes.to_dict()
