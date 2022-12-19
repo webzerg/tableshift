@@ -1,9 +1,7 @@
 import argparse
 
 from tablebench.core import CachedDataset
-from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment
-from tablebench.core.utils import make_uid
 
 
 def main(experiment: str, uid: str, model_name: str, cache_dir: str,
@@ -43,6 +41,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
     print(results_df)
     results_df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
                       index=False)
+    print(results.get_best_result())
     return
 
 
