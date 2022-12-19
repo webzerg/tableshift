@@ -4,7 +4,7 @@ import argparse
 from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS, ExperimentConfig
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
-
+from tablebench.core.utils import make_uid
 
 def _cache_experiment(expt_config: ExperimentConfig, cache_dir, overwrite: bool):
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
@@ -19,7 +19,8 @@ def _cache_experiment(expt_config: ExperimentConfig, cache_dir, overwrite: bool)
                           initialize_data=False,
                           **tabular_dataset_kwargs)
     if dset.is_cached() and (not overwrite):
-        print(f"dataset with uid {dset._get_uid()} is already cached; skipping")
+        uid = make_uid(experiment, expt_config.splitter)
+        print(f"dataset with uid {uid} is already cached; skipping")
 
     else:
         dset._initialize_data()
