@@ -109,6 +109,9 @@ def main(experiment: str, cache_dir: str,
             continue
 
         for model_name in models:
+            print('#' * 50)
+            print(f'training model {model_name} for experiment uid {uid}')
+            print('#' * 50)
             results = run_ray_tune_experiment(dset=dset, model_name=model_name, tune_config=tune_config, debug=debug)
 
             df = fetch_postprocessed_results_df(results)
