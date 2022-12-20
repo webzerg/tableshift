@@ -276,7 +276,7 @@ class PreprocessorConfig:
             data.dropna(axis=1, inplace=True)
         print(f"[DEBUG] dropped {start_len - len(data)} rows "
               f"containing missing values "
-              f"({(start_len - len(data)) / start_len}% of data).")
+              f"({(start_len - len(data)) * 100 / start_len}% of data).")
         return data.reset_index(drop=True)
 
     def _check_inputs(self, data):
