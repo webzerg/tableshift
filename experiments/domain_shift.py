@@ -80,7 +80,7 @@ def main(experiment: str, cache_dir: str,
 
         assert isinstance(expt_config.splitter, DomainSplitter)
         if expt_config.splitter.domain_split_id_values is not None:
-            src = expt_config.splitter.domain_split_id_values[i]
+            src = expt_config.splitter.domain_split_id_values
         else:
             src = None
 
@@ -121,6 +121,8 @@ def main(experiment: str, cache_dir: str,
             # df["task"] = str(dset.name),
             df["domain_split_varname"] = expt_config.splitter.domain_split_varname
             df["domain_split_ood_values"] = str(tgt)
+            if src is not None:
+                df["domain_split_id_values"] = str(tgt)
 
             print(df)
             try:  # We don't want the script to fail just if .get_best_result() fails.
