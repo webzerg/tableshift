@@ -3,6 +3,7 @@ import os
 from typing import Union
 
 import pandas as pd
+import torch
 
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter, CachedDataset
@@ -61,6 +62,8 @@ def main(experiment: str, cache_dir: str,
         print("[INFO] running in debug mode.")
         experiment = "_debug"
         num_samples = 1
+
+    print(f"DEBUG torch.cuda.is_available(): {torch.cuda.is_available()}")
 
     expt_results_dir = os.path.join(results_dir, experiment)
     if not os.path.exists(expt_results_dir):
