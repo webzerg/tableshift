@@ -364,4 +364,4 @@ class CachedDataset:
         files = glob.glob(fileglob)
         assert len(files), f"no files detected for split {split} " \
                            f"matching {fileglob}"
-        return ray.data.read_csv(files)
+        return ray.data.read_csv(files, meta_provider=ray.data.datasource.FastFileMetadataProvider())
