@@ -358,10 +358,12 @@ class CachedDataset:
         with open(os.path.join(self.base_dir, "schema.pickle"), "rb") as f:
             schema = pickle.load(f)
 
-    def get_ray(self, split):
+    def get_ray(self, split, num_partitions=64):
         dir = os.path.join(self.base_dir, split)
         fileglob = os.path.join(dir, "*.csv")
         files = glob.glob(fileglob)
         assert len(files), f"no files detected for split {split} " \
                            f"matching {fileglob}"
-        return ray.data.read_csv(files, meta_provider=ray.data.datasource.FastFileMetadataProvider())
+        return ray.data\
+            .read_csv( files, meta_provider=ray.data.datasource.FastFileMetadataProvider() )\
+            .repartition(num_partitions)

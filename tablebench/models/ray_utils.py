@@ -202,7 +202,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             datasets=datasets,
             scaling_config=ScalingConfig(
                 num_workers=tune_config.num_workers,
-                resources_per_worker={"GPU": 0.25} if use_gpu else None,
+                resources_per_worker={"GPU": 0.5} if use_gpu else None,
                 use_gpu=use_gpu))
         # Hyperparameter search space; note that the scaling_config can also
         # be tuned but is fixed here.
