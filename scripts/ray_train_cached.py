@@ -1,38 +1,27 @@
 import argparse
 
 from tablebench.core import CachedDataset
-from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment
+from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment, accuracy_metric_name_and_mode_for_model, \
+    fetch_postprocessed_results_df
 
 
 def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          debug: bool,
          no_tune: bool, num_samples: int,
-         tune_metric_name: str = "validation_accuracy",
-         tune_metric_higher_is_better: bool = True,
          max_concurrent_trials=2,
          num_workers=1,
          early_stop=True):
     dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
 
-    # dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
-    # tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
-    # if "name" not in tabular_dataset_kwargs:
-    #     tabular_dataset_kwargs["name"] = experiment
-    #
-    # dset = TabularDataset(config=dataset_config,
-    #                       splitter=expt_config.splitter,
-    #                       grouper=expt_config.grouper,
-    #                       preprocessor_config=expt_config.preprocessor_config,
-    #                       **tabular_dataset_kwargs)
+    metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
 
     tune_config = TuneConfig(
         early_stop=early_stop,
         max_concurrent_trials=max_concurrent_trials,
         num_workers=num_workers,
         num_samples=num_samples,
-        tune_metric_name=tune_metric_name,
-        tune_metric_higher_is_better=tune_metric_higher_is_better,
-    ) if not no_tune else None
+        tune_metric_name=metric_name,
+        mode=mode) if not no_tune else None
 
     results = run_ray_tune_experiment(dset=dset, model_name=model_name,
                                       tune_config=tune_config, debug=debug)
@@ -42,6 +31,9 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
     results_df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
                       index=False)
     print(results.get_best_result())
+    # call fetc_posprocessed() just to match the full training loop
+    df = fetch_postprocessed_results_df(results)
+    print(df)
     return
 
 
