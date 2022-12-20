@@ -162,7 +162,7 @@ if __name__ == "__main__":
                         help="Number of hparam samples to take in tuning "
                              "sweep. Set to -1 and set time_budget_hrs to allow for"
                              "unlimited runs within the specified time budget.")
-    parser.add_argument("--results_dir", default="./",
+    parser.add_argument("--results_dir", default="./domain_shift_results",
                         help="where to write results. CSVs will be written to "
                              "experiment-specific subdirectories within this "
                              "directory.")
