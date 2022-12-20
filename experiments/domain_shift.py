@@ -145,9 +145,10 @@ def main(experiment: str, cache_dir: str,
             df.to_csv(os.path.join(expt_results_dir, f"tune_results_{uid}_{model_name}.csv"), index=False)
             iterates.append(df)
 
-    fp = os.path.join(expt_results_dir, f"tune_results_{experiment}.csv")
+    fp = os.path.join(expt_results_dir, f"tune_results_{experiment}_full.csv")
     print(f"[INFO] writing results to {fp}")
     pd.concat(iterates).to_csv(fp, index=False)
+    print(f"[INFO] completed domain shift experiment {experiment}!")
     return
 
 
