@@ -251,7 +251,8 @@ domain_shift_experiment_configs = {
                                 range(len(NHANES_YEARS) - 1)],
         grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins"),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None),
 
     ),
 
@@ -261,7 +262,8 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested(["a", "b"]),
         grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins")
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None)
     ),
 
     "anes_st": DomainShiftExperimentConfig(
