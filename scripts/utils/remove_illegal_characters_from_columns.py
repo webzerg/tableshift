@@ -52,6 +52,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache_dir", default="./tmp", type=str)
     parser.add_argument("--experiment", type=str, required=True)
-    parser.add_argument("--domain_split_varname", type=str, required=True)
+    parser.add_argument("--domain_split_varname", "-d", type=str, required=True)
     args = parser.parse_args()
     main(**vars(args))
