@@ -132,7 +132,7 @@ def main(experiment: str, cache_dir: str,
             df["domain_split_varname"] = expt_config.splitter.domain_split_varname
             df["domain_split_ood_values"] = str(tgt)
             if src is not None:
-                df["domain_split_id_values"] = str(tgt)
+                df["domain_split_id_values"] = str(src)
 
             print(df)
             try:  # We don't want the script to fail just if .get_best_result() fails.
