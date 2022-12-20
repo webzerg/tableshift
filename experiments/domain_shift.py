@@ -1,4 +1,5 @@
 import argparse
+import os
 from typing import Union
 
 import pandas as pd
@@ -39,6 +40,7 @@ def main(experiment: str, cache_dir: str,
          debug: bool,
          no_tune: bool,
          num_samples: int,
+         results_dir:str,
          tune_split: str = "validation",
          max_concurrent_trials=2,
          num_workers=1,
@@ -59,6 +61,11 @@ def main(experiment: str, cache_dir: str,
         print("[INFO] running in debug mode.")
         experiment = "_debug"
         num_samples = 1
+
+    expt_results_dir = os.path.join(results_dir, experiment)
+    if not os.path.exists(expt_results_dir):
+        os.makedirs(expt_results_dir)
+
 
     # List of dictionaries containing metrics and metadata for each
     # experimental iterate.
@@ -132,10 +139,10 @@ def main(experiment: str, cache_dir: str,
             except:
                 pass
 
-            df.to_csv(f"tune_results_{uid}_{model_name}.csv", index=False)
+            df.to_csv(os.path.join(expt_results_dir, f"tune_results_{uid}_{model_name}.csv"), index=False)
             iterates.append(df)
 
-    fp = f"tune_results_{experiment}.csv"
+    fp = os.path.join(expt_results_dir, f"tune_results_{experiment}.csv")
     print(f"[INFO] writing results to {fp}")
     pd.concat(iterates).to_csv(fp, index=False)
     return
@@ -155,6 +162,10 @@ if __name__ == "__main__":
                         help="Number of hparam samples to take in tuning "
                              "sweep. Set to -1 and set time_budget_hrs to allow for"
                              "unlimited runs within the specified time budget.")
+    parser.add_argument("--results_dir", default="./",
+                        help="where to write results. CSVs will be written to "
+                             "experiment-specific subdirectories within this "
+                             "directory.")
     parser.add_argument("--time_budget_hrs", type=float, default=None,
                         help="Time budget for each model tuning run, in hours. Fractional hours are ok."
                              "If this is set, num_samples has no effect.")
