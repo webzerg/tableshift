@@ -195,13 +195,15 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
         datasets = {split: prepare_torch_datasets(split, dset) for split in dset.splits}
 
+        use_gpu = torch.cuda.is_available()
         trainer = TorchTrainer(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=default_train_config,
             datasets=datasets,
             scaling_config=ScalingConfig(
                 num_workers=tune_config.num_workers,
-                use_gpu=torch.cuda.is_available()))
+                resources_per_worker={"GPU": 0.5} if use_gpu else None,
+                use_gpu=use_gpu))
         # Hyperparameter search space; note that the scaling_config can also
         # be tuned but is fixed here.
         param_space = {
@@ -317,7 +319,7 @@ def fetch_postprocessed_results_df(results: ray.tune.ResultGrid) -> pd.DataFrame
         if "error" in c:
             # Replace 'error' columns with 'accuracy' columns.
             # LightGBM uses "{SPLIT}-binary-error"; xgb uses "{SPLIT}-error"
-            new_colname = re.sub("-\\w*_error$", "_accuracy", c)
+            new_colname = re.sub("-\\w*_*error$", "_accuracy", c)
             df[new_colname] = 1. - df[c]
             df.drop(columns=[c], inplace=True)
     return df
