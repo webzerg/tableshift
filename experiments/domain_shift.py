@@ -41,7 +41,7 @@ def main(experiment: str, cache_dir: str,
          debug: bool,
          no_tune: bool,
          num_samples: int,
-         results_dir:str,
+         results_dir: str,
          tune_split: str = "validation",
          max_concurrent_trials=2,
          num_workers=1,
@@ -68,7 +68,6 @@ def main(experiment: str, cache_dir: str,
     expt_results_dir = os.path.join(results_dir, experiment)
     if not os.path.exists(expt_results_dir):
         os.makedirs(expt_results_dir)
-
 
     # List of dictionaries containing metrics and metadata for each
     # experimental iterate.
@@ -98,8 +97,18 @@ def main(experiment: str, cache_dir: str,
         if not isinstance(tgt, tuple) and not isinstance(tgt, list):
             tgt = (tgt,)
 
-        dset = get_dataset(expt_config=expt_config,
-                           dataset_config=dataset_config, use_cached=use_cached)
+        try:
+            dset = get_dataset(expt_config=expt_config,
+                               dataset_config=dataset_config,
+                               use_cached=use_cached)
+        except Exception as e:
+            # This exception is raised e.g. when one or more of the target domains
+            # is not cached, for example if it does not contain multiple labels
+            # or there was another exception during caching; we gracefully skip it.
+            print(f"[WARNING] Exception fetching dataset with src={src}, tgt={tgt}: {e}; "
+                  f"this is probably due to one or more OOD values that were excluded"
+                  f"from the cache due to data issues. Skipping.")
+            continue
 
         uid = make_uid(experiment, expt_config.splitter)
 
