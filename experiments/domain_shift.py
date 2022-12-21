@@ -42,6 +42,7 @@ def main(experiment: str, cache_dir: str,
          no_tune: bool,
          num_samples: int,
          results_dir: str,
+         search_alg: str,
          tune_split: str = "validation",
          max_concurrent_trials=2,
          num_workers=1,
@@ -62,6 +63,7 @@ def main(experiment: str, cache_dir: str,
         print("[INFO] running in debug mode.")
         experiment = "_debug"
         num_samples = 1
+        models = ("mlp", "xgb")
 
     print(f"DEBUG torch.cuda.is_available(): {torch.cuda.is_available()}")
 
@@ -131,6 +133,7 @@ def main(experiment: str, cache_dir: str,
                 tune_metric_name=metric_name,
                 mode=mode,
                 time_budget_hrs=time_budget_hrs,
+                search_alg=search_alg,
             ) if not no_tune else None
 
             results = run_ray_tune_experiment(dset=dset, model_name=model_name, tune_config=tune_config, debug=debug)
@@ -179,6 +182,8 @@ if __name__ == "__main__":
                         help="where to write results. CSVs will be written to "
                              "experiment-specific subdirectories within this "
                              "directory.")
+    parser.add_argument("--search_alg", default="hyperopt", choices=["hyperopt", "random"],
+                        help="Ray search alg to use for hyperparameter tuning.")
     parser.add_argument("--time_budget_hrs", type=float, default=None,
                         help="Time budget for each model tuning run, in hours. Fractional hours are ok."
                              "If this is set, num_samples has no effect.")

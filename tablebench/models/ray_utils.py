@@ -63,6 +63,15 @@ class RayExperimentConfig:
     tune_metric_name: str = "metric"
     early_stop: bool = True
     time_budget_hrs: float = None
+    search_alg: str = "hyperopt"
+
+    def get_search_alg(self):
+        print(f"[INFO] instantiating search alg of type {self.search_alg}")
+        if self.search_alg == "hyperopt":
+            return HyperOptSearch(metric=self.tune_metric_name,
+                                  mode=self.mode)
+        elif self.search_alg == "random":
+            return tune.search.basic_variant.BasicVariantGenerator()
 
 
 def make_ray_dataset(dset: Union[TabularDataset, CachedDataset], split, keep_domain_labels=False):
@@ -291,8 +300,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                              stop=stopper),
         param_space=param_space,
         tune_config=tune.TuneConfig(
-            search_alg=HyperOptSearch(metric=tune_config.tune_metric_name,
-                                      mode=tune_config.mode),
+            search_alg=tune_config.get_search_alg(),
             scheduler=ASHAScheduler(
                 time_attr='training_iteration',
                 metric=tune_config.tune_metric_name,
