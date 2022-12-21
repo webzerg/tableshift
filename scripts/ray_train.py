@@ -2,7 +2,7 @@ import argparse
 
 from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment
+from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment
 
 
 def main(experiment: str, model_name: str, cache_dir: str,
@@ -32,7 +32,7 @@ def main(experiment: str, model_name: str, cache_dir: str,
                           preprocessor_config=expt_config.preprocessor_config,
                           **tabular_dataset_kwargs)
 
-    tune_config = TuneConfig(
+    tune_config = RayExperimentConfig(
         early_stop=early_stop,
         max_concurrent_trials=max_concurrent_trials,
         num_workers=num_workers,

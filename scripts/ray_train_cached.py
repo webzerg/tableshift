@@ -1,7 +1,7 @@
 import argparse
 
 from tablebench.core import CachedDataset
-from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment, accuracy_metric_name_and_mode_for_model, \
+from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment, accuracy_metric_name_and_mode_for_model, \
     fetch_postprocessed_results_df
 
 
@@ -15,7 +15,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
 
     metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
 
-    tune_config = TuneConfig(
+    tune_config = RayExperimentConfig(
         early_stop=early_stop,
         max_concurrent_trials=max_concurrent_trials,
         num_workers=num_workers,

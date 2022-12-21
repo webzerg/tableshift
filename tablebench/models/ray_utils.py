@@ -50,7 +50,7 @@ def accuracy_metric_name_and_mode_for_model(model_name: str, split="validation")
 
 
 @dataclass
-class TuneConfig:
+class RayExperimentConfig:
     """Container for various Ray tuning parameters.
 
     Note that this is different from the Ray TuneConfig class, as it actually
@@ -136,7 +136,7 @@ def prepare_torch_datasets(split, dset: Union[TabularDataset, CachedDataset]):
 
 def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                             model_name: str,
-                            tune_config: TuneConfig = None,
+                            tune_config: RayExperimentConfig = None,
                             max_epochs=100, debug=False):
     """Rune a ray tuning experiment.
 

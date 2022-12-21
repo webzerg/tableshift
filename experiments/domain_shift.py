@@ -7,7 +7,7 @@ import torch
 
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter, CachedDataset
-from tablebench.models.ray_utils import TuneConfig, run_ray_tune_experiment, fetch_postprocessed_results_df, \
+from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment, fetch_postprocessed_results_df, \
     accuracy_metric_name_and_mode_for_model
 from tablebench.datasets.experiment_configs import ExperimentConfig
 from tablebench.core.utils import make_uid
@@ -123,7 +123,7 @@ def main(experiment: str, cache_dir: str,
             print('#' * 100)
 
             metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
-            tune_config = TuneConfig(
+            tune_config = RayExperimentConfig(
                 early_stop=early_stop,
                 max_concurrent_trials=max_concurrent_trials,
                 num_workers=num_workers,
