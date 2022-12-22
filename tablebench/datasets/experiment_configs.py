@@ -114,7 +114,9 @@ EXPERIMENT_CONFIGS = {
         # male vs. all others; white non-hispanic vs. others
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
+        # Note: using min_frequency=0.01 reduces data dimensionality from ~2400 -> 169 columns.
+        # This is due to high cardinality of 'diag_*' features.
+        preprocessor_config=PreprocessorConfig(min_frequency=0.01), tabular_dataset_kwargs={}),
 
     "german": ExperimentConfig(
         splitter=RandomSplitter(val_size=0.01, test_size=0.2, random_state=832),

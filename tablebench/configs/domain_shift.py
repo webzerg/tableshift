@@ -215,7 +215,7 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested([1, 2, 3, 4, 5, 6, 7, 8]),
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(),
+        preprocessor_config=PreprocessorConfig(min_frequency=0.01),
     ),
 
     "diabetes_admsrc": DomainShiftExperimentConfig(
@@ -225,7 +225,7 @@ domain_shift_experiment_configs = {
                                  20, 22, 25],
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(),
+        preprocessor_config=PreprocessorConfig(min_frequency=0.01),
     ),
 
     "mooc_course": DomainShiftExperimentConfig(

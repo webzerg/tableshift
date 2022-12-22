@@ -8,6 +8,7 @@ from pandas.api.types import CategoricalDtype as cat_dtype
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler, \
     LabelEncoder
+from tqdm import tqdm
 from tablebench.core.discretization import KBinsDiscretizer
 
 
@@ -147,10 +148,10 @@ def _transformed_columns_to_numeric(df, prefix: str,
     Valid prefixes include "scale_" for scaled columns, and "onehot_" for
     one-hot-encoded columns.
     """
-    for c in df.columns:
-        if c.startswith(prefix):
-            print(f"[DEBUG] casting column {c} to type {to_type}")
-            df[c] = df[c].astype(to_type)
+    cols_to_transform = [c for c in df.columns if c.startswith(prefix)]
+    print(f"[DEBUG] casting {len(cols_to_transform)} columns to type {to_type}")
+    for c in tqdm(cols_to_transform):
+        df[c] = df[c].astype(to_type)
     return df
 
 
@@ -169,7 +170,8 @@ class PreprocessorConfig:
     # containing na values; if None do not do anything for missing values.
     dropna: Union[str, None] = "rows"
 
-
+    min_frequency: float = None  # see OneHotEncoder.min_frequency
+    max_categories: int = None  # see OneHotEncoder.max_categories
 
     def _get_categorical_transforms(self, data: pd.DataFrame,
                                     categorical_columns: List[str],
@@ -177,8 +179,9 @@ class PreprocessorConfig:
         if self.categorical_features == "one_hot":
             transforms = [
                 (f'onehot_{c}',
-                 OneHotEncoder(dtype='int', categories=[data[c].unique()]),
-                 [c])
+                 OneHotEncoder(dtype=np.int8, categories=[data[c].unique()],
+                               min_frequency=self.min_frequency,
+                               max_categories=self.max_categories), [c])
                 for c in categorical_columns
                 if c not in passthrough_columns]
         else:
@@ -251,6 +254,8 @@ class PreprocessorConfig:
         transformed.columns = [re.sub('[\\[\\]{}.:<>/,"]', "", c) for c in
                                transformed.columns]
 
+        # By default transformed columns will be cast to 'object' dtype; we cast them
+        # back to a numeric type.
         transformed = _transformed_columns_to_numeric(transformed, "onehot_", np.int8)
         transformed = _transformed_columns_to_numeric(transformed, "scale_")
         # Cast the specified columns back to their original types
