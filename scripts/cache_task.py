@@ -46,6 +46,7 @@ def main(cache_dir, experiment, overwrite: bool, domain_shift_experiment=None):
             print(f"exception when caching experiment with ood values {expt_config.splitter.domain_split_ood_values}: "
                   f"{e}")
             continue
+    print("caching tasks complete!")
 
 
 if __name__ == "__main__":
