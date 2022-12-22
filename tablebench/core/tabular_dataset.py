@@ -365,5 +365,5 @@ class CachedDataset:
         assert len(files), f"no files detected for split {split} " \
                            f"matching {fileglob}"
         return ray.data\
-            .read_csv( files, meta_provider=ray.data.datasource.FastFileMetadataProvider() )\
+            .read_csv(files, meta_provider=ray.data.datasource.FastFileMetadataProvider() )\
             .repartition(num_partitions)
