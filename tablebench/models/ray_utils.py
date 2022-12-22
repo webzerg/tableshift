@@ -79,8 +79,8 @@ class RayExperimentConfig:
         if self.search_alg == "hyperopt":
             return ASHAScheduler(
                 time_attr='training_iteration',
-                metric=tune_config.tune_metric_name,
-                mode=tune_config.mode,
+                metric=self.tune_metric_name,
+                mode=self.mode,
                 stop_last_trials=True)
         elif self.search_alg == "random":
             return None
