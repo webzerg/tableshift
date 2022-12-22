@@ -1,8 +1,6 @@
 #!/bin/bash
 # usage:
-# sbatch --export=EXPERIMENT='acsfoodstamps_region',MODEL='resnet',\
-# EXPT_UID='acsincomedomain_split_varname_DIVISIONdomain_split_ood_value_00' \
-# scripts/sbatch/run_tune_expt.sbatch
+# sbatch --export=$EXPERIMENT=$EXPERIMENT,MODEL='resnet',EXPT_UID=$EXPT_UID scripts/sbatch/run_tune_expt.sbatch
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=6

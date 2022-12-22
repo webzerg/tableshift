@@ -72,7 +72,7 @@ class RayExperimentConfig:
             return HyperOptSearch(metric=self.tune_metric_name,
                                   mode=self.mode)
         elif self.search_alg == "random":
-            return tune.search.basic_variant.BasicVariantGenerator()
+            return tune.search.basic_variant.BasicVariantGenerator(max_concurrent=self.max_concurrent_trials)
         else:
             raise NotImplementedError
 
@@ -319,7 +319,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             scheduler=tune_config.get_scheduler(),
             num_samples=tune_config.num_samples,
             time_budget_s=tune_config.time_budget_hrs * 3600 if tune_config.time_budget_hrs else None,
-            max_concurrent_trials=tune_config.max_concurrent_trials))
+            max_concurrent_trials=tune_config.max_concurrent_trials,
+            reuse_actors=True))
 
     results = tuner.fit()
 
