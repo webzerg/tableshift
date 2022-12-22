@@ -168,6 +168,8 @@ class PreprocessorConfig:
     # containing na values; if None do not do anything for missing values.
     dropna: Union[str, None] = "rows"
 
+
+
     def _get_categorical_transforms(self, data: pd.DataFrame,
                                     categorical_columns: List[str],
                                     passthrough_columns: List[str]):
@@ -245,7 +247,7 @@ class PreprocessorConfig:
         """Postprocess the result of a ColumnTransformer."""
         transformed.columns = [c.replace("remainder__", "")
                                for c in transformed.columns]
-        transformed.columns = [re.sub("[\\[\\].<>]", "", c) for c in
+        transformed.columns = [re.sub('[\\[\\]{}.:<>/,"]', "", c) for c in
                                transformed.columns]
 
         transformed = _transformed_columns_to_numeric(transformed, "onehot_")
@@ -257,7 +259,7 @@ class PreprocessorConfig:
         return transformed
 
     def _dropna(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Apply the specified hanling of NA values.
+        """Apply the specified handling of NA values.
 
         If "rows", drop any rows containing NA values. If "columns", drop
         any columns containing NA values. If None, do not alter data.
@@ -274,7 +276,7 @@ class PreprocessorConfig:
             data.dropna(axis=1, inplace=True)
         print(f"[DEBUG] dropped {start_len - len(data)} rows "
               f"containing missing values "
-              f"({(start_len - len(data)) / start_len}% of data).")
+              f"({(start_len - len(data)) * 100 / start_len}% of data).")
         return data.reset_index(drop=True)
 
     def _check_inputs(self, data):
