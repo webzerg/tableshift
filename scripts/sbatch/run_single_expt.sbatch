@@ -1,7 +1,7 @@
 #!/bin/bash
 # usage:
 # sbatch --export=EXPERIMENT='acsfoodstamps_region',MODEL='resnet',\
-# UID='acsincomedomain_split_varname_DIVISIONdomain_split_ood_value_00' \
+# EXPT_UID='acsincomedomain_split_varname_DIVISIONdomain_split_ood_value_00' \
 # scripts/sbatch/run_tune_expt.sbatch
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -28,6 +28,7 @@ which python
 ## experimental command to test on a single experiment iteration
 python scripts/ray_train.py \
   --model_name $MODEL \
-  --uid $UID \
-  --num_samples 100 \
+  --uid $EXPT_UID \
+  --search_alg random \
+  --num_samples 1 \
   --use_cached
