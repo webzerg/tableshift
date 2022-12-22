@@ -64,6 +64,7 @@ class RayExperimentConfig:
     early_stop: bool = True
     time_budget_hrs: float = None
     search_alg: str = "hyperopt"
+    gpu_per_worker: float = 1.0  # set to fraction to allow multiple workers per GPU
 
     def get_search_alg(self):
         print(f"[INFO] instantiating search alg of type {self.search_alg}")
@@ -225,7 +226,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             datasets=datasets,
             scaling_config=ScalingConfig(
                 num_workers=tune_config.num_workers,
-                resources_per_worker={"GPU": 0.5} if use_gpu else None,
+                resources_per_worker={"GPU": tune_config.gpu_per_worker} if use_gpu else None,
                 use_gpu=use_gpu))
         # Hyperparameter search space; note that the scaling_config can also
         # be tuned but is fixed here.

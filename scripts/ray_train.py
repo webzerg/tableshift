@@ -8,13 +8,13 @@ from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.core import TabularDataset, TabularDatasetConfig
 
 
-
 def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          debug: bool,
          no_tune: bool, num_samples: int, search_alg: str,
          use_cached: bool,
          max_concurrent_trials=2,
          num_workers=1,
+         gpu_per_worker: float = 1.0,
          early_stop=True):
     if use_cached:
         print(f"[DEBUG] loading cached data from {cache_dir}")
@@ -42,6 +42,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
         num_samples=num_samples,
         tune_metric_name=metric_name,
         search_alg=search_alg,
+        gpu_per_worker=gpu_per_worker,
         mode=mode) if not no_tune else None
 
     results = run_ray_tune_experiment(dset=dset, model_name=model_name,
@@ -49,7 +50,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
 
     results_df = results.get_dataframe()
     print(results_df)
-    results_df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
+    results_df.to_csv(f"tune_results_{uid}_{model_name}_{search_alg}.csv",
                       index=False)
     print(results.get_best_result())
     # call fetc_posprocessed() just to match the full training loop
@@ -68,6 +69,10 @@ if __name__ == "__main__":
                              "speed up experiment.")
     parser.add_argument("--experiment", default="diabetes_readmission",
                         help="Experiment to run. Overridden when debug=True.")
+    parser.add_argument("--gpu_per_worker", default=1.0, type=float,
+                        help="GPUs per worker. Use fractional values < 1. "
+                             "(e.g. --gpu_per_worker=0.5) in order"
+                             "to allow multiple workers to share GPU.")
     parser.add_argument("--model_name", default="mlp")
     parser.add_argument("--num_samples", type=int, default=1,
                         help="Number of hparam samples to take in tuning "

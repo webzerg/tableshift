@@ -48,6 +48,7 @@ def main(experiment: str, cache_dir: str,
          num_workers=1,
          early_stop=True,
          use_cached: bool = False,
+         gpu_per_worker: float = 1.0,
          time_budget_hrs: float = None):
     # Use baseline models only.
     models = (
@@ -134,6 +135,7 @@ def main(experiment: str, cache_dir: str,
                 mode=mode,
                 time_budget_hrs=time_budget_hrs,
                 search_alg=search_alg,
+                gpu_per_worker=gpu_per_worker,
             ) if not no_tune else None
 
             results = run_ray_tune_experiment(dset=dset, model_name=model_name, tune_config=tune_config, debug=debug)
@@ -174,6 +176,10 @@ if __name__ == "__main__":
                              "speed up experiment.")
     parser.add_argument("--experiment", default="adult",
                         help="Experiment to run. Overridden when debug=True.")
+    parser.add_argument("--gpu_per_worker", default=1.0, type=float,
+                        help="GPUs per worker. Use fractional values < 1. "
+                             "(e.g. --gpu_per_worker=0.5) in order"
+                             "to allow multiple workers to share GPU.")
     parser.add_argument("--num_samples", type=int, default=1,
                         help="Number of hparam samples to take in tuning "
                              "sweep. Set to -1 and set time_budget_hrs to allow for"
