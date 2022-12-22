@@ -17,6 +17,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          num_workers=1,
          early_stop=True):
     if use_cached:
+        print(f"[DEBUG] loading cached data from {cache_dir}")
         dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
     else:
         expt_config = EXPERIMENT_CONFIGS[experiment]
