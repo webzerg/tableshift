@@ -22,12 +22,6 @@ eval "$(conda shell.bash hook)"
 conda activate tableshift
 which python
 
-## experimental command to test on a single experiment iteration
-#python scripts/ray_train.py \
-#  --model_name mlp \
-#  --uid acsincomedomain_split_varname_DIVISIONdomain_split_ood_value_00
-
-## the actual command to run
 python experiments/domain_shift.py \
   --experiment $EXPERIMENT \
   --use_cached \
