@@ -72,6 +72,20 @@ class RayExperimentConfig:
                                   mode=self.mode)
         elif self.search_alg == "random":
             return tune.search.basic_variant.BasicVariantGenerator()
+        else:
+            raise NotImplementedError
+
+    def get_scheduler(self):
+        if self.search_alg == "hyperopt":
+            return ASHAScheduler(
+                time_attr='training_iteration',
+                metric=tune_config.tune_metric_name,
+                mode=tune_config.mode,
+                stop_last_trials=True)
+        elif self.search_alg == "random":
+            return None
+        else:
+            raise NotImplementedError
 
 
 def make_ray_dataset(dset: Union[TabularDataset, CachedDataset], split, keep_domain_labels=False):
@@ -301,11 +315,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         param_space=param_space,
         tune_config=tune.TuneConfig(
             search_alg=tune_config.get_search_alg(),
-            scheduler=ASHAScheduler(
-                time_attr='training_iteration',
-                metric=tune_config.tune_metric_name,
-                mode=tune_config.mode,
-                stop_last_trials=True),
+            scheduler=tune_config.get_scheduler(),
             num_samples=tune_config.num_samples,
             time_budget_s=tune_config.time_budget_hrs * 3600 if tune_config.time_budget_hrs else None,
             max_concurrent_trials=tune_config.max_concurrent_trials))

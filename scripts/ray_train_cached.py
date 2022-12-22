@@ -1,13 +1,14 @@
 import argparse
 
 from tablebench.core import CachedDataset
-from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment, accuracy_metric_name_and_mode_for_model, \
+from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment, \
+    accuracy_metric_name_and_mode_for_model, \
     fetch_postprocessed_results_df
 
 
 def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          debug: bool,
-         no_tune: bool, num_samples: int, search_alg:str,
+         no_tune: bool, num_samples: int, search_alg: str,
          max_concurrent_trials=2,
          num_workers=1,
          early_stop=True):
