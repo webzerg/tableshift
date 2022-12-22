@@ -1,45 +1,28 @@
 import argparse
 
-from tablebench.core import TabularDataset, TabularDatasetConfig
-from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment
+from tablebench.core import CachedDataset
+from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment, accuracy_metric_name_and_mode_for_model, \
+    fetch_postprocessed_results_df
 
 
-def main(experiment: str, model_name: str, cache_dir: str,
+def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          debug: bool,
-         no_tune: bool, num_samples: int,
-         tune_metric_name: str = "validation_accuracy",
-         tune_metric_higher_is_better: bool = True,
+         no_tune: bool, num_samples: int, search_alg:str,
          max_concurrent_trials=2,
          num_workers=1,
          early_stop=True):
+    dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
 
-    if debug:
-        print("[INFO] running in debug mode.")
-        experiment = "_debug"
-        num_samples = 1
-
-    expt_config = EXPERIMENT_CONFIGS[experiment]
-
-    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
-    tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
-    if "name" not in tabular_dataset_kwargs:
-        tabular_dataset_kwargs["name"] = experiment
-
-    dset = TabularDataset(config=dataset_config,
-                          splitter=expt_config.splitter,
-                          grouper=expt_config.grouper,
-                          preprocessor_config=expt_config.preprocessor_config,
-                          **tabular_dataset_kwargs)
+    metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
 
     tune_config = RayExperimentConfig(
         early_stop=early_stop,
         max_concurrent_trials=max_concurrent_trials,
         num_workers=num_workers,
         num_samples=num_samples,
-        tune_metric_name=tune_metric_name,
-        tune_metric_higher_is_better=tune_metric_higher_is_better,
-    ) if not no_tune else None
+        tune_metric_name=metric_name,
+        search_alg=search_alg,
+        mode=mode) if not no_tune else None
 
     results = run_ray_tune_experiment(dset=dset, model_name=model_name,
                                       tune_config=tune_config, debug=debug)
@@ -48,6 +31,10 @@ def main(experiment: str, model_name: str, cache_dir: str,
     print(results_df)
     results_df.to_csv(f"tune_results_{experiment}_{model_name}.csv",
                       index=False)
+    print(results.get_best_result())
+    # call fetc_posprocessed() just to match the full training loop
+    df = fetch_postprocessed_results_df(results)
+    print(df)
     return
 
 
@@ -59,7 +46,7 @@ if __name__ == "__main__":
                         help="Whether to run in debug mode. If True, various "
                              "truncations/simplifications are performed to "
                              "speed up experiment.")
-    parser.add_argument("--experiment", default="adult",
+    parser.add_argument("--experiment", default="diabetes_readmission",
                         help="Experiment to run. Overridden when debug=True.")
     parser.add_argument("--model_name", default="mlp")
     parser.add_argument("--num_samples", type=int, default=1,
@@ -68,5 +55,11 @@ if __name__ == "__main__":
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
+    parser.add_argument("--search_alg", default="hyperopt", choices=["hyperopt", "random"],
+                        help="Ray search alg to use for hyperparameter tuning.")
+    parser.add_argument("--uid",
+                        default="diabetes_readmissiondomain_split_varname_admission_type_iddomain_split_ood_value_1",
+                        help="UID for experiment to run. Overridden when debug=True.")
+
     args = parser.parse_args()
     main(**vars(args))

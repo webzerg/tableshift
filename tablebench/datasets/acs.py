@@ -6,9 +6,11 @@ import pandas as pd
 from typing import Callable, Union
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
-from .acs_feature_mappings import get_feature_mapping
 
 ACS_YEARS = [2014, 2015, 2016, 2017, 2018]
+
+# Region codes; see 'DIVISION' feature below.
+ACS_REGIONS = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09']
 
 ACS_STATE_LIST = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI',
