@@ -149,6 +149,7 @@ def _transformed_columns_to_numeric(df, prefix: str,
     """
     for c in df.columns:
         if c.startswith(prefix):
+            print(f"[DEBUG] casting column {c} to type {to_type}")
             df[c] = df[c].astype(to_type)
     return df
 
@@ -248,7 +249,7 @@ class PreprocessorConfig:
         transformed.columns = [re.sub("[\\[\\].<>]", "", c) for c in
                                transformed.columns]
 
-        transformed = _transformed_columns_to_numeric(transformed, "onehot_")
+        transformed = _transformed_columns_to_numeric(transformed, "onehot_", np.int8)
         transformed = _transformed_columns_to_numeric(transformed, "scale_")
         # Cast the specified columns back to their original types
         if cast_dtypes:
@@ -298,7 +299,7 @@ class PreprocessorConfig:
                       domain_label_colname: Optional[str],
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         """Fit a feature_transformer and apply it to the input features."""
-
+        print(f"[INFO] transforming columns")
         if self.passthrough_columns:
             passthrough_columns += self.passthrough_columns
 
@@ -331,4 +332,5 @@ class PreprocessorConfig:
                 transformed.loc[:, domain_label_colname])
 
         self._post_transform_summary(transformed)
+        print("[INFO] transforming columns complete.")
         return transformed
