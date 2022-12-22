@@ -7,7 +7,7 @@ from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experi
 
 def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          debug: bool,
-         no_tune: bool, num_samples: int,
+         no_tune: bool, num_samples: int, search_alg:str,
          max_concurrent_trials=2,
          num_workers=1,
          early_stop=True):
@@ -21,6 +21,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
         num_workers=num_workers,
         num_samples=num_samples,
         tune_metric_name=metric_name,
+        search_alg=search_alg,
         mode=mode) if not no_tune else None
 
     results = run_ray_tune_experiment(dset=dset, model_name=model_name,
@@ -54,6 +55,8 @@ if __name__ == "__main__":
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
+    parser.add_argument("--search_alg", default="hyperopt", choices=["hyperopt", "random"],
+                        help="Ray search alg to use for hyperparameter tuning.")
     parser.add_argument("--uid",
                         default="diabetes_readmissiondomain_split_varname_admission_type_iddomain_split_ood_value_1",
                         help="UID for experiment to run. Overridden when debug=True.")
