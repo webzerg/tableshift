@@ -1,6 +1,6 @@
 #!/bin/bash
 # usage:
-# sbatch --export=$EXPERIMENT=$EXPERIMENT,MODEL='resnet',EXPT_UID=$EXPT_UID scripts/sbatch/run_tune_expt.sbatch
+# sbatch --export=EXPERIMENT=$EXPERIMENT,MODEL='resnet',SEARCH_ALG='random',EXPT_UID=$EXPT_UID scripts/sbatch/run_tune_expt.sbatch
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=6
@@ -15,7 +15,10 @@
 
 date;hostname;id;pwd
 
-echo 'experiment is:' $EXPERIMENT
+echo 'experiment is: ' $EXPERIMENT
+echo 'expt_uid is: ' $EXPT_UID
+echo 'model is: ' $MODEL
+echo 'search alg is: ' $SEARCH_ALG
 
 echo 'activating virtual environment'
 source ~/.bashrc
@@ -25,8 +28,9 @@ which python
 
 ## experimental command to test on a single experiment iteration
 python scripts/ray_train.py \
+  --experiment $EXPERIMENT \
   --model_name $MODEL \
   --uid $EXPT_UID \
-  --search_alg random \
+  --search_alg $SEARCH_ALG \
   --num_samples 100 \
   --use_cached
