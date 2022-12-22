@@ -30,5 +30,5 @@ python scripts/ray_train.py \
   --model_name $MODEL \
   --uid $EXPT_UID \
   --search_alg random \
-  --num_samples 1 \
+  --num_samples 100 \
   --use_cached
