@@ -138,6 +138,7 @@ def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
         prediction = np.round(prediction)
         acc = sklearn.metrics.accuracy_score(target, prediction)
         metrics[f"{split}_accuracy"] = acc
+        metrics[f"{split}_ymean"] = np.mean(target).item()
     return metrics
 
 
