@@ -67,6 +67,7 @@ class RayExperimentConfig:
     early_stop: bool = True
     time_budget_hrs: float = None
     search_alg: str = "hyperopt"
+    scheduler: str = None
     random_state: int = _DEFAULT_RANDOM_STATE  # random state for determinism in the search algorithm
     gpu_per_worker: float = 1.0  # set to fraction to allow multiple workers per GPU
 
@@ -82,15 +83,21 @@ class RayExperimentConfig:
             raise NotImplementedError
 
     def get_scheduler(self):
-        if self.search_alg == "hyperopt":
+        if self.scheduler is None:
             return None
-            # return ASHAScheduler(
-            #     time_attr='training_iteration',
-            #     metric=self.tune_metric_name,
-            #     mode=self.mode,
-            #     stop_last_trials=True)
-        elif self.search_alg == "random":
-            return None
+        elif self.scheduler == "asha":
+            return ASHAScheduler(
+                time_attr='training_iteration',
+                metric=self.tune_metric_name,
+                mode=self.mode,
+                stop_last_trials=True)
+        elif self.scheduler == "median":
+            return tune.schedulers.MedianStoppingRule(
+                time_attr='training_iteration',
+                metric=self.tune_metric_name,
+                mode=self.mode,
+                grace_period=5  # default is 60 (seconds); needs to be set.
+            )
         else:
             raise NotImplementedError
 

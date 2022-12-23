@@ -48,6 +48,7 @@ def main(experiment: str, cache_dir: str,
          num_workers=1,
          early_stop=True,
          use_cached: bool = False,
+         scheduler=None,
          gpu_per_worker: float = 1.0,
          time_budget_hrs: float = None):
     # Use baseline models only.
@@ -135,6 +136,7 @@ def main(experiment: str, cache_dir: str,
                 mode=mode,
                 time_budget_hrs=time_budget_hrs,
                 search_alg=search_alg,
+                scheduler=scheduler,
                 gpu_per_worker=gpu_per_worker,
             ) if not no_tune else None
 
@@ -190,6 +192,10 @@ if __name__ == "__main__":
                              "directory.")
     parser.add_argument("--search_alg", default="hyperopt", choices=["hyperopt", "random"],
                         help="Ray search alg to use for hyperparameter tuning.")
+    parser.add_argument("--scheduler", choices=(None, "asha", "median"),
+                        default=None,
+                        help="Scheduler to use for hyperparameter optimization."
+                             "See https://docs.ray.io/en/latest/tune/api_docs/schedulers.html .")
     parser.add_argument("--time_budget_hrs", type=float, default=None,
                         help="Time budget for each model tuning run, in hours. Fractional hours are ok."
                              "If this is set, num_samples has no effect.")
