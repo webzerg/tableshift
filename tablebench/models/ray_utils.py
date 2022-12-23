@@ -49,6 +49,9 @@ def accuracy_metric_name_and_mode_for_model(model_name: str, split="validation")
     return metric_name, mode
 
 
+_DEFAULT_RANDOM_STATE = 449237829
+
+
 @dataclass
 class RayExperimentConfig:
     """Container for various Ray tuning parameters.
@@ -64,15 +67,17 @@ class RayExperimentConfig:
     early_stop: bool = True
     time_budget_hrs: float = None
     search_alg: str = "hyperopt"
+    random_state: int = _DEFAULT_RANDOM_STATE  # random state for determinism in the search algorithm
     gpu_per_worker: float = 1.0  # set to fraction to allow multiple workers per GPU
 
     def get_search_alg(self):
         print(f"[INFO] instantiating search alg of type {self.search_alg}")
         if self.search_alg == "hyperopt":
             return HyperOptSearch(metric=self.tune_metric_name,
-                                  mode=self.mode)
+                                  mode=self.mode, random_state_seed=self.random_state)
         elif self.search_alg == "random":
-            return tune.search.basic_variant.BasicVariantGenerator(max_concurrent=self.max_concurrent_trials)
+            return tune.search.basic_variant.BasicVariantGenerator(max_concurrent=self.max_concurrent_trials,
+                                                                   random_state=self.random_state)
         else:
             raise NotImplementedError
 
