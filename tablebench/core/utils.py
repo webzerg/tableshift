@@ -45,7 +45,7 @@ def download_file(url: str, dirpath: str, if_not_exist=True,
     return fpath
 
 
-def read_xpt(fp):
+def read_xpt(fp) -> pd.DataFrame:
     assert os.path.exists(fp), "file does not exist %s" % fp
     with open(fp, "rb") as f:
         obj = xport.v56.load(f)

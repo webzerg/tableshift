@@ -27,7 +27,7 @@ from tablebench.datasets.diabetes_readmission import \
 from tablebench.datasets.german import GERMAN_RESOURCES, preprocess_german
 from tablebench.datasets.mooc import preprocess_mooc
 from tablebench.datasets.nhanes import preprocess_nhanes_cholesterol, \
-    get_nhanes_data_sources
+    get_nhanes_data_sources, preprocess_nhanes_lead
 from tablebench.datasets.physionet import preprocess_physionet
 
 
@@ -235,8 +235,19 @@ class BRFSSDataSource(DataSource):
 class NHANESDataSource(DataSource):
     def __init__(
             self,
-            preprocess_fn=preprocess_nhanes_cholesterol,
+            nhanes_task: str,
+            years: Optional[Sequence[int]] = None,
             **kwargs):
+        self.nhanes_task = nhanes_task
+        self.years = years
+
+        if self.nhanes_task == "cholesterol":
+            preprocess_fn = preprocess_nhanes_cholesterol
+        elif self.nhanes_task == "lead":
+            preprocess_fn = preprocess_nhanes_lead
+        else:
+            raise ValueError
+
         super().__init__(preprocess_fn=preprocess_fn,
                          **kwargs)
 
@@ -249,7 +260,7 @@ class NHANESDataSource(DataSource):
             new_fp = f + suffix + "." + extension
             return new_fp
 
-        sources = get_nhanes_data_sources()
+        sources = get_nhanes_data_sources(self.nhanes_task, self.years)
         for year, urls in sources.items():
             for url in urls:
                 destfile = _add_suffix_to_fname_from_url(url, str(year))
