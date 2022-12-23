@@ -83,11 +83,12 @@ class RayExperimentConfig:
 
     def get_scheduler(self):
         if self.search_alg == "hyperopt":
-            return ASHAScheduler(
-                time_attr='training_iteration',
-                metric=self.tune_metric_name,
-                mode=self.mode,
-                stop_last_trials=True)
+            return None
+            # return ASHAScheduler(
+            #     time_attr='training_iteration',
+            #     metric=self.tune_metric_name,
+            #     mode=self.mode,
+            #     stop_last_trials=True)
         elif self.search_alg == "random":
             return None
         else:
