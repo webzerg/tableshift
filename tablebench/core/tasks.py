@@ -53,6 +53,8 @@ _TASK_REGISTRY = {
     "nhanes_cholesterol": TaskConfig(NHANESDataSource,
                                      NHANES_CHOLESTEROL_FEATURES + \
                                      NHANES_DEMOG_FEATURES),
+    "nhanes_lead": TaskConfig(NHANESDataSource,
+                              NHANES_DEMOG_FEATURES + NHANES_LEAD_FEATURES),
     "physionet": TaskConfig(PhysioNetDataSource, PHYSIONET_FEATURES),
 }
 

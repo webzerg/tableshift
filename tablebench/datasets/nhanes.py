@@ -21,28 +21,55 @@ NHANES_DATA_SOURCES = os.path.join(os.path.dirname(__file__),
 # Mapping of NHANES component types to names of data sources to use.
 # See nhanes_data_sources.json. This ensures that only needed files
 # are downloaded/read from disk, because NHANES contains a huge number of sources per year.
-NHANES_DATA_SOURCES_TO_USE = {
+
+NHANES_CHOLESTEROL_DATA_SOURCES_TO_USE = {
     "Demographics": ["Demographic Variables and Sample Weights"],
-    "Laboratory": ["Cholesterol - LDL & Triglycerides"],
     "Questionnaire": ["Blood Pressure & Cholesterol",
                       "Cardiovascular Health",
                       "Diabetes",
                       "Kidney Conditions - Urology",
                       "Medical Conditions",
-                      "Osteoporosis", ]
+                      "Osteoporosis", ],
+    "Laboratory": ["Cholesterol - LDL & Triglycerides"],
+}
+
+NHANES_LEAD_DATA_SOURCES_TO_USE = {
+    "Demographics": ["Demographic Variables and Sample Weights"],
+    "Questionnaire": ["Diet Behavior & Nutrition",
+                      "Income"],
+    "Laboratory": [
+        "Cadmium, Lead, Total Mercury, Ferritin, Serum Folate, RBC Folate, Vitamin B12, Homocysteine, Methylmalonic "
+        "acid, Cotinine - Blood, Second Exam",  # 2001
+        "Cadmium, Lead, & Total Mercury - Blood",  # 2003
+        "Cadmium, Lead, & Total Mercury - Blood",  # 2005
+        "Cadmium, Lead, & Total Mercury - Blood",  # 2007
+        "Cadmium, Lead, & Total Mercury - Blood",  # 2009
+        "Cadmium, Lead, Total Mercury, Selenium, & Manganese - Blood",  # 2011
+        "Lead, Cadmium, Total Mercury, Selenium, and Manganese - Blood",  # 2013
+        "Lead, Cadmium, Total Mercury, Selenium & Manganese - Blood",  # 2015
+        "Lead, Cadmium, Total Mercury, Selenium, & Manganese - Blood"]  # 2017
 }
 
 
-def get_nhanes_data_sources():
+def get_nhanes_data_sources(task: str, years=None):
     """Fetch a mapping of {year: list of urls} for NHANES."""
+    years = [int(x) for x in years]
+    if task == "cholesterol":
+        data_sources_to_use = NHANES_CHOLESTEROL_DATA_SOURCES_TO_USE
+    elif task == "lead":
+        data_sources_to_use = NHANES_LEAD_DATA_SOURCES_TO_USE
+    else:
+        raise ValueError
+
     output = defaultdict(list)
     with open(NHANES_DATA_SOURCES, "r") as f:
         data_sources = json.load(f)
     for year, components in data_sources.items():
-        for component, sources in components.items():
-            for source_name, source_url in sources.items():
-                if source_name in NHANES_DATA_SOURCES_TO_USE[component]:
-                    output[year].append(source_url)
+        if (years is not None) and (int(year) in years):
+            for component, sources in components.items():
+                for source_name, source_url in sources.items():
+                    if source_name in data_sources_to_use[component]:
+                        output[year].append(source_url)
     return output
 
 
@@ -74,8 +101,18 @@ NHANES_DEMOG_FEATURES = FeatureList(features=[
     # with Non-Hispanic Asian Category
     Feature('RIDRETH3', cat_dtype),
 
-
 ], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
+
+NHANES_LEAD_FEATURES = FeatureList(features=[
+    Feature("INDFMMPC", cat_dtype, "Family monthly poverty level index categories"),
+    Feature("DBQ390", cat_dtype,
+            "{Do you/Does SP} get these lunches free,"
+            " at a reduced price, or {do you/does he/she} pay full price?"),
+    Feature("LBXBPB", float, "Blood lead (ug/dL)", is_target=True,
+            na_values=(".",)),
+    # Derived feature for survey year
+    Feature("nhanes_year", int, "Derived feature for year."),
+])
 
 NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
     # Derived feature for survey year
@@ -182,4 +219,25 @@ def preprocess_nhanes_cholesterol(df: pd.DataFrame, threshold=160.):
             df[name] = df[name].fillna("MISSING").apply(str).astype("category")
 
     df.reset_index(drop=True, inplace=True)
+    return df
+
+
+def preprocess_nhanes_lead(df: pd.DataFrame, threshold: float = 3.5):
+    """Preprocess the NHANES lead prediction dataset.
+
+    The value of 3.5 µg/dl is based on the CDC Blood Lead Reference Value
+    (BLRF) https://www.cdc.gov/nceh/lead/prevention/blood-lead-levels.htm
+    """
+    features = NHANES_LEAD_FEATURES + NHANES_DEMOG_FEATURES
+    df = df.loc[:, features.names]
+
+    # Drop observations with missing target
+    df = df.dropna(subset=[features.target])
+
+    # Keep only children
+    df = df[df['RIDAGEYR'] <= 18.]
+
+    # Binarize the target
+    df[features.target] = (df[features.target] >= threshold).astype(float)
+
     return df

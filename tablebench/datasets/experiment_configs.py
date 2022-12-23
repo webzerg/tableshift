@@ -145,7 +145,20 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins"),
-        tabular_dataset_kwargs={}),
+        tabular_dataset_kwargs={"nhanes_task": "cholesterol"}),
+
+    "nhanes_lead": ExperimentConfig(
+        splitter=RandomSplitter(test_size=0.5, val_size=0.25,
+                                random_state=229446),
+        # Race (non. hispanic white vs. all others; male vs. all others)
+        grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
+                        drop=False),
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=["nhanes_year"],
+            numeric_features="kbins"),
+        tabular_dataset_kwargs={
+            "nhanes_task": "lead",
+            "years": [2007, 2009, 2011, 2013, 2015, 2017]}),
 
     "physionet": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.05,
