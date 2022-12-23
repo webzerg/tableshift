@@ -64,7 +64,6 @@ class RayExperimentConfig:
     num_workers: int = 1
     num_samples: int = 1
     tune_metric_name: str = "metric"
-    early_stop: bool = True
     time_budget_hrs: float = None
     search_alg: str = "hyperopt"
     scheduler: str = None
@@ -315,26 +314,17 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
     # Create Tuner.
 
-    stopper = tune.stopper.ExperimentPlateauStopper(
-        metric=tune_config.tune_metric_name,
-        mode=tune_config.mode,
-        # TODO(jpgard): increase patience to 16 as in
-        #  https://arxiv.org/pdf/2106.11959.pdf
-        patience=5) if tune_config.early_stop else None
-
     tuner = Tuner(
         trainable=trainer,
-        run_config=RunConfig(name="test_tuner_notebook",
-                             local_dir="ray-results",
-                             stop=stopper),
+        run_config=RunConfig(name="tableshift",
+                             local_dir="ray-results"),
         param_space=param_space,
         tune_config=tune.TuneConfig(
             search_alg=tune_config.get_search_alg(),
             scheduler=tune_config.get_scheduler(),
             num_samples=tune_config.num_samples,
             time_budget_s=tune_config.time_budget_hrs * 3600 if tune_config.time_budget_hrs else None,
-            max_concurrent_trials=tune_config.max_concurrent_trials,
-            reuse_actors=True))
+            max_concurrent_trials=tune_config.max_concurrent_trials))
 
     results = tuner.fit()
 

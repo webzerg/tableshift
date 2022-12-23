@@ -15,8 +15,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          max_concurrent_trials=2,
          num_workers=1,
          gpu_per_worker: float = 1.0,
-         scheduler: str = None,
-         early_stop=True):
+         scheduler: str = None):
     if use_cached:
         print(f"[DEBUG] loading cached data from {cache_dir}")
         dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
@@ -37,7 +36,6 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
     metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
 
     tune_config = RayExperimentConfig(
-        early_stop=early_stop,
         max_concurrent_trials=max_concurrent_trials,
         num_workers=num_workers,
         num_samples=num_samples,

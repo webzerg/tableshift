@@ -128,7 +128,6 @@ def main(experiment: str, cache_dir: str,
 
             metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
             tune_config = RayExperimentConfig(
-                early_stop=early_stop,
                 max_concurrent_trials=max_concurrent_trials,
                 num_workers=num_workers,
                 num_samples=num_samples,
