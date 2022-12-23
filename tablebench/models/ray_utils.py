@@ -195,8 +195,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         criterion = config["criterion"]
         optimizer = get_optimizer(model, config)
 
-        n_epochs = config["n_epochs"] \
-            if not tune_config.early_stop else max_epochs
+        n_epochs = config["n_epochs"]
 
         if debug:
             # In debug mode,  train only for 2 epochs (2, not 1, so that we can ensure DataLoaders are

@@ -3,7 +3,7 @@ from ray import tune
 _DEFAULT_NN_SEARCH_SPACE = {
     "d_hidden": tune.choice([64, 128, 256, 512, 1024]),
     "lr": tune.loguniform(1e-5, 1e-1),
-    "n_epochs": tune.randint(2, 4),
+    "n_epochs": tune.qrandint(5, 100, 5),
     "num_layers": tune.randint(1, 8),
     "dropouts": tune.uniform(0., 0.5),
     "weight_decay": tune.quniform(0., 1., 0.1),
