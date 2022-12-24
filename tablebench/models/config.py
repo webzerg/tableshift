@@ -20,7 +20,8 @@ _DEFAULT_CONFIGS = frozendict({
          "group_weights_step_size": 0.05},
     "mlp":
         {"num_layers": 2,
-         "d_hidden": 256},
+         "d_hidden": 256,
+         "dropouts": 0.},
     "resnet":
         {"n_blocks": 2,
          "dropout_first": 0.2,
