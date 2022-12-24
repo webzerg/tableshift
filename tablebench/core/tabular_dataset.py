@@ -76,11 +76,10 @@ class TabularDataset(ABC):
     @property
     def n_domains(self) -> int:
         """Number of domains, across all sensitive attributes."""
-        if self.domain_labels is None:
+        if self.domain_label_colname is None:
             return 0
         else:
-            assert isinstance(self.domain_labels, Series)
-            return self.domain_labels.nunique()
+            return self._df[self.domain_label_colname].nunique()
 
     @property
     def eval_split_names(self) -> Tuple[str]:
@@ -219,7 +218,7 @@ class TabularDataset(ABC):
                        shuffle=True) -> torch.utils.data.DataLoader:
         """Fetch a dataloader yielding (X, y, G, d) tuples."""
         data = self._get_split_xygd(split)
-        if self.domain_labels is None:
+        if not self.domain_label_colname:
             # Drop the empty domain labels.
             data = data[:-1]
         device = torch.device(device)
