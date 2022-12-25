@@ -267,11 +267,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     elif model_name == "xgb":
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
-        cpus_per_worker = max(floor(os.cpu_count() - 1 / tune_config.num_workers), 1)
-        print(f"[DEBUG] requesting {cpus_per_worker} cpus per worker.")
         scaling_config = ScalingConfig(
             num_workers=tune_config.num_workers,
-            resources_per_worker={"CPU": cpus_per_worker},
             use_gpu=False)
         params = {
             # Note: tree_method must be gpu_hist if using GPU.
