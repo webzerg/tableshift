@@ -11,6 +11,9 @@ _DEFAULT_NN_SEARCH_SPACE = {
 
 _deepcoral_search_space = {
     **_DEFAULT_NN_SEARCH_SPACE,
+    # Tune s.t. CORAL loss is roughly of same order as the
+    # overall loss.
+    "loss_lambda": tune.loguniform(1e-5, 1),
 }
 
 _histgbm_search_space = {

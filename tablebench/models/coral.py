@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Mapping, Optional, Callable
 
 import torch
@@ -17,9 +18,9 @@ def domain_generalization_train_epoch(
     running_loss = 0.0
     n_train = 0
 
-    # use the final block
+    # use the pre-activation, pre-dropout output of the linear layer of final block
     block_num = len(get_module_attr(model, "blocks")) - 1
-    layer = criterion.layer
+    layer = "linear"
     # The key used to find the activations in the dictionary.
     activations_key = f'block{block_num}{layer}'
 
@@ -70,7 +71,7 @@ def domain_generalization_train_epoch(
         coral_loss = criterion(activations_id, activations_ood) / len(activations_id)
         ce_loss = binary_cross_entropy_with_logits(input=outputs_id,
                                                    target=labels_id)
-        loss = ce_loss + criterion.loss_lambda * coral_loss
+        loss = ce_loss + model.loss_lambda * coral_loss
 
         loss.backward()
         optimizer.step()
@@ -85,6 +86,9 @@ def domain_generalization_train_epoch(
 # TODO(jpgard): implement this in a way that takes a generic class, or maybe
 #  a function that produces a model?
 class DeepCoralModel(MLPModel):
+    def __init__(self, loss_lambda, **kwargs):
+        self.loss_lambda = loss_lambda
+        MLPModel.__init__(self, **kwargs)
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader,
                     optimizer: torch.optim.Optimizer,

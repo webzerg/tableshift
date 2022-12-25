@@ -17,7 +17,8 @@ def get_estimator(model, d_out=1, **kwargs):
                               d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
                               d_out=d_out,
                               dropouts=kwargs["dropouts"],
-                              activation=kwargs["activation"])
+                              activation=kwargs["activation"],
+                              loss_lambda=kwargs["loss_lambda"])
     elif model == "ft_transformer":
         tconfig = FTTransformerModel.get_default_transformer_config()
         tconfig["last_layer_query_idx"] = [-1]

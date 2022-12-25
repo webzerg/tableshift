@@ -82,11 +82,9 @@ class TabularDataset(ABC):
             return self._df[self.domain_label_colname].nunique()
 
     @property
-    def eval_split_names(self) -> Tuple[str]:
+    def eval_split_names(self) -> Tuple:
         """Fetch the names of the eval splits."""
-        eval_splits = ("test",) if not isinstance(
-            self.splitter, DomainSplitter) else ("id_test", "ood_test")
-        return eval_splits
+        return tuple([x for x in self.splits.keys() if "train" not in x])
 
     def _check_data(self):
         """Helper function to check data after all preprocessing/splitting."""

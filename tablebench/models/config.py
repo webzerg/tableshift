@@ -10,6 +10,7 @@ _DEFAULT_CONFIGS = frozendict({
     "deepcoral":
         {"num_layers": 4,
          "d_hidden": 512,
+         "loss_lambda": 0.01,
          "dropouts": 0.},
     "expgrad":
         {"constraints": ErrorRateParity()},

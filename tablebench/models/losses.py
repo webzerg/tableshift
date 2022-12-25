@@ -21,8 +21,6 @@ class DomainGeneralizationLoss:
 
 @dataclass
 class CORALLoss(DomainGeneralizationLoss):
-    layer: str = 'linear'  # component of layer to use for activations: linear, activation, dropout.
-    loss_lambda: float = 1.
 
     def __call__(self, activations_id, activations_ood):
         assert activations_id.shape[1] == activations_ood.shape[1], \
