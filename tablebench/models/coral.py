@@ -43,7 +43,7 @@ def domain_generalization_train_epoch(
                   f"vs {len(inputs_ood)}; this can occur in the final batch."
                   f"Skipping.")
             continue
-            
+
         inputs_id.float().to(device)
         labels_id.float().to(device)
         inputs_ood.float().to(device)
@@ -77,9 +77,6 @@ def domain_generalization_train_epoch(
 # TODO(jpgard): implement this in a way that takes a generic class, or maybe
 #  a function that produces a model?
 class DeepCoralModel(MLPModel):
-
-    def evaluate(self, train_loader, other_loaders, device):
-        raise
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader,
                     optimizer: torch.optim.Optimizer,
