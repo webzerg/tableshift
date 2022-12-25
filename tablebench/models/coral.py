@@ -5,6 +5,7 @@ from torch.nn.functional import binary_cross_entropy_with_logits
 from tablebench.models.rtdl import MLPModel
 from tablebench.models.torchutils import unpack_batch, apply_model
 from tablebench.models.losses import CORALLoss
+from tablebench.models.torchutils import get_module_attr
 
 
 def domain_generalization_train_epoch(
@@ -17,7 +18,7 @@ def domain_generalization_train_epoch(
     n_train = 0
 
     # use the final block
-    block_num = len(model.blocks) - 1
+    block_num = len(get_module_attr(model, "blocks")) - 1
     layer = criterion.layer
     # The key used to find the activations in the dictionary.
     activations_key = f'block{block_num}{layer}'
@@ -32,9 +33,10 @@ def domain_generalization_train_epoch(
 
         return hook
 
-    # TODO(jpgard): use get_model_attr here instead; this won't work
-    #  with a sharded model.
-    model.blocks[block_num].linear.register_forward_hook(get_activation())
+    if hasattr(model, "module"):  # Case: distributed module; access the module explicitly.
+        model.module.blocks[block_num].linear.register_forward_hook(get_activation())
+    else:  # Case: standard module.
+        model.blocks[block_num].linear.register_forward_hook(get_activation())
 
     for id_batch, ood_batch in zip(id_train_loader, ood_train_loader):
         inputs_id, labels_id, _, _ = unpack_batch(id_batch)
