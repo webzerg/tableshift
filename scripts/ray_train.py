@@ -16,6 +16,10 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          num_workers=1,
          gpu_per_worker: float = 1.0,
          scheduler: str = None):
+    if debug:
+        print("[INFO] running in debug mode.")
+        experiment = "_debug"
+
     if use_cached:
         print(f"[DEBUG] loading cached data from {cache_dir}")
         dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
@@ -50,9 +54,10 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
 
     results_df = results.get_dataframe()
     print(results_df)
-    fp = f"tune_results_{uid}_{model_name}_{search_alg}.csv"
-    print(f"[INFO] writing completed results to {fp}")
-    results_df.to_csv(fp, index=False)
+    if not debug:
+        fp = f"tune_results_{uid}_{model_name}_{search_alg}.csv"
+        print(f"[INFO] writing completed results to {fp}")
+        results_df.to_csv(fp, index=False)
 
     # call fetch_postprocessed() just to match the full training loop
     df = fetch_postprocessed_results_df(results)

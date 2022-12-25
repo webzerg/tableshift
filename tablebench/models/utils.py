@@ -6,11 +6,19 @@ from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
 from tablebench.models.dro import GroupDROModel
+from tablebench.models.coral import DeepCoralModel
 
 
 def get_estimator(model, d_out=1, **kwargs):
     if model == "expgrad":
         return ExponentiatedGradient(**kwargs)
+    elif model == "deepcoral":
+        return DeepCoralModel(d_in=kwargs["d_in"],
+                              d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
+                              d_out=d_out,
+                              dropouts=kwargs["dropouts"],
+                              activation=kwargs["activation"],
+                              loss_lambda=kwargs["loss_lambda"])
     elif model == "ft_transformer":
         tconfig = FTTransformerModel.get_default_transformer_config()
         tconfig["last_layer_query_idx"] = [-1]

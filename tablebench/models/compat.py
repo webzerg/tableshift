@@ -32,11 +32,11 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         """sklearn-compatible probability prediction function."""
         raise
 
-    def evaluate(self, train_loader, other_loaders):
-        split_scores = {"train": evaluate(self, train_loader)}
+    def evaluate(self, train_loader, other_loaders, device):
+        split_scores = {"train": evaluate(self, train_loader, device)}
         if other_loaders:
             for split, loader in other_loaders.items():
-                split_score = evaluate(self, loader)
+                split_score = evaluate(self, loader, device)
                 split_scores[split] = split_score
         return split_scores
 
@@ -44,10 +44,11 @@ class SklearnStylePytorchModel(ABC, nn.Module):
     def train_epoch(self, train_loader: torch.utils.data.DataLoader,
                     optimizer: torch.optim.Optimizer,
                     loss_fn: Callable,
+                    device: str,
                     other_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None
-                    ):
-        """Conduct one epoch of training."""
+                    ) -> float:
+        """Conduct one epoch of training and return the loss."""
         raise
 
     def save_checkpoint(self, optimizer: torch.optim.Optimizer) -> Checkpoint:
@@ -65,6 +66,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             train_loader: torch.utils.data.DataLoader,
             optimizer: torch.optim.Optimizer,
             loss_fn,
+            device: str,
             n_epochs=1,
             other_loaders: Optional[
                 Mapping[str, torch.utils.data.DataLoader]] = None,
@@ -78,8 +80,9 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             self.train_epoch(train_loader=train_loader,
                              optimizer=optimizer,
                              loss_fn=loss_fn,
-                             other_loaders=other_loaders)
-            metrics = self.evaluate(train_loader, other_loaders)
+                             other_loaders=other_loaders,
+                             device=device)
+            metrics = self.evaluate(train_loader, other_loaders, device=device)
             log_str = f'Epoch {epoch:03d} ' + ' | '.join(
                 f"{k} score: {v:.4f}" for k, v in metrics.items())
             print(log_str)
@@ -98,7 +101,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
 
 SKLEARN_MODEL_NAMES = ("expgrad", "histgbm", "lightgbm", "wcs", "xgb")
-PYTORCH_MODEL_NAMES = ("ft_transformer", "group_dro", "mlp", "resnet")
+PYTORCH_MODEL_NAMES = ("deepcoral", "ft_transformer", "group_dro", "mlp", "resnet")
 
 
 def is_pytorch_model_name(model: str) -> bool:

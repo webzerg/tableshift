@@ -27,6 +27,7 @@ from tablebench.models.expgrad import ExponentiatedGradientTrainer
 from tablebench.models.torchutils import get_predictions_and_labels
 from tablebench.models.training import get_optimizer, train_epoch
 from tablebench.models.utils import get_estimator
+from tablebench.models.coral import DeepCoralModel, domain_generalization_train_epoch
 
 
 def accuracy_metric_name_and_mode_for_model(model_name: str, split="validation") -> Tuple[str, str]:
@@ -174,7 +175,7 @@ def prepare_torch_datasets(split, dset: Union[TabularDataset, CachedDataset]):
 def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                             model_name: str,
                             tune_config: RayExperimentConfig = None,
-                            max_epochs=100, debug=False):
+                            debug=False):
     """Rune a ray tuning experiment.
 
     This defines the trainers, tuner, and other associated objects, runs the
@@ -213,11 +214,23 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 split: session.get_dataset_shard(split).iter_torch_batches(
                     batch_size=config["batch_size"]) for split in dset.splits}
 
-            train_loss = train_epoch(model, optimizer, criterion,
-                                     train_dataset_batches, device=device)
-            metrics = ray_evaluate(model, eval_batches)
+            if isinstance(model, DeepCoralModel): # Case: Domain Generalization training.
+                # Fetch a separate iterable for the OOD validation data;
+                # ech iterator can only be consumed once and the iterator
+                # in eval_batches is needed for evaluation.
+                ood_dataset_batches = session.get_dataset_shard(
+                    "ood_validation").iter_torch_batches(batch_size=config["batch_size"])
+
+                train_loss = domain_generalization_train_epoch(
+                    model, optimizer, criterion, train_dataset_batches,
+                    ood_dataset_batches, device=device)
+
+            else:  # Case: standard training loop.
+                train_loss = train_epoch(model, optimizer, criterion,
+                                         train_dataset_batches, device=device)
 
             # Log the metrics for this epoch
+            metrics = ray_evaluate(model, eval_batches)
             metrics.update(dict(train_loss=train_loss))
             checkpoint = get_ray_checkpoint(model)
             session.report(metrics, checkpoint=checkpoint)

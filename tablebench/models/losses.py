@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from torch.nn.functional import binary_cross_entropy_with_logits
 import torch
+from torch import Tensor
 
 
 @dataclass
@@ -14,13 +15,33 @@ class DomainLoss:
 
 
 @dataclass
+class DomainGeneralizationLoss:
+    """A class to represent losses for domain generalization."""
+
+
+@dataclass
+class CORALLoss(DomainGeneralizationLoss):
+
+    def __call__(self, activations_id, activations_ood):
+        assert activations_id.shape[1] == activations_ood.shape[1], \
+            f"got unexpected activations shapes: {activations_id.shape}, " \
+            f"{activations_ood.shape}"
+        d = activations_id.shape[1]
+        C_s = torch.cov(activations_id)
+        C_t = torch.cov(activations_ood)
+        const = 1 / (4 * d ** 2)
+        dist = torch.norm(C_s - C_t, p="fro") ** 2
+        return const * dist
+
+
+@dataclass
 class GroupDROLoss(DomainLoss):
     n_groups: int
 
-    def __call__(self, outputs: torch.Tensor,
-                 targets: torch.Tensor, group_ids: torch.Tensor,
-                 group_weights: torch.Tensor,
-                 group_weights_step_size: torch.Tensor,
+    def __call__(self, outputs: Tensor,
+                 targets: Tensor, group_ids: Tensor,
+                 group_weights: Tensor,
+                 group_weights_step_size: Tensor,
                  device):
         """Compute the Group DRO objective."""
         group_ids = group_ids.int()

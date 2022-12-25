@@ -77,7 +77,7 @@ def get_predictions_and_labels(model, loader, device, as_logits=False) -> Tuple[
 @torch.no_grad()
 def evaluate(model, loader, device):
     model.eval()
-    prediction, target = get_predictions_and_labels(model, loader)
+    prediction, target = get_predictions_and_labels(model, loader, device)
     prediction = np.round(prediction)
     score = sklearn.metrics.accuracy_score(target, prediction)
     return score
