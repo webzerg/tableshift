@@ -25,8 +25,6 @@ class CORALLoss(DomainGeneralizationLoss):
     loss_lambda: float = 1.
 
     def __call__(self, activations_id, activations_ood):
-        print(f"[JG] got activations shapes: {activations_id.shape}, " \
-            f"{activations_ood.shape}")
         assert activations_id.shape[1] == activations_ood.shape[1], \
             f"got unexpected activations shapes: {activations_id.shape}, " \
             f"{activations_ood.shape}"
