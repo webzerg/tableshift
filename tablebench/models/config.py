@@ -3,12 +3,16 @@ from frozendict import frozendict
 
 from tablebench.core import TabularDataset
 from tablebench.models.compat import is_pytorch_model_name
-from tablebench.models.losses import GroupDROLoss
+from tablebench.models.losses import GroupDROLoss, CORALLoss
 from torch.nn import functional as F
 
 # TODO(jpgard): set all architectural defaults here
 #  based on [gorishniy2021revisiting] paper.
 _DEFAULT_CONFIGS = frozendict({
+    "deepcoral":
+        {"num_layers": 2,
+         "d_hidden": 256,
+         "dropouts": 0.},
     "expgrad":
         {"constraints": ErrorRateParity()},
     "ft_transformer":
@@ -45,6 +49,9 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
     if model == "group_dro":
         config["n_groups"] = dset.n_domains
         config["criterion"] = GroupDROLoss(n_groups=dset.n_domains)
+
+    elif model == "deepcoral":
+        config["criterion"] = CORALLoss()
 
     else:
         config["criterion"] = F.binary_cross_entropy_with_logits

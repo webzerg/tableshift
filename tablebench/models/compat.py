@@ -101,7 +101,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
 
 SKLEARN_MODEL_NAMES = ("expgrad", "histgbm", "lightgbm", "wcs", "xgb")
-PYTORCH_MODEL_NAMES = ("ft_transformer", "group_dro", "mlp", "resnet")
+PYTORCH_MODEL_NAMES = ("deepcoral", "ft_transformer", "group_dro", "mlp", "resnet")
 
 
 def is_pytorch_model_name(model: str) -> bool:
