@@ -83,6 +83,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_samples", type=int, default=1,
                         help="Number of hparam samples to take in tuning "
                              "sweep.")
+    parser.add_argument("--num_workers", type=int, default=1,
+                        help="Number of workers to use.")
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")

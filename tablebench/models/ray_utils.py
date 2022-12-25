@@ -1,5 +1,7 @@
+import os
 from dataclasses import dataclass
 from functools import partial
+from math import floor
 import re
 from typing import Dict, Any, List, Union, Tuple
 
@@ -214,7 +216,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 split: session.get_dataset_shard(split).iter_torch_batches(
                     batch_size=config["batch_size"]) for split in dset.splits}
 
-            if isinstance(model, DeepCoralModel): # Case: Domain Generalization training.
+            if isinstance(model, DeepCoralModel):  # Case: Domain Generalization training.
                 # Fetch a separate iterable for the OOD validation data;
                 # ech iterator can only be consumed once and the iterator
                 # in eval_batches is needed for evaluation.
@@ -265,8 +267,10 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     elif model_name == "xgb":
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
+        cpus_per_worker = max(int(tune_config.num_workers / os.cpu_count()), 1)
         scaling_config = ScalingConfig(
             num_workers=tune_config.num_workers,
+            resources_per_worker={"CPU": cpus_per_worker},
             use_gpu=False)
         params = {
             # Note: tree_method must be gpu_hist if using GPU.
