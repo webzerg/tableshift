@@ -15,9 +15,9 @@ def domain_generalization_train_epoch(
     model.train()
     running_loss = 0.0
     n_train = 0
-    batch_size = id_train_loader.batch_size
 
-    block_num = criterion.block_num
+    # use the final block
+    block_num = len(model.blocks) - 1
     layer = criterion.layer
     # The key used to find the activations in the dictionary.
     activations_key = f'block{block_num}{layer}'
@@ -32,6 +32,8 @@ def domain_generalization_train_epoch(
 
         return hook
 
+    # TODO(jpgard): use get_model_attr here instead; this won't work
+    #  with a sharded model.
     model.blocks[block_num].linear.register_forward_hook(get_activation())
 
     for id_batch, ood_batch in zip(id_train_loader, ood_train_loader):
@@ -44,9 +46,13 @@ def domain_generalization_train_epoch(
                   f"Skipping.")
             continue
 
-        inputs_id.float().to(device)
-        labels_id.float().to(device)
-        inputs_ood.float().to(device)
+        if len(inputs_id) == 1 or len(inputs_ood) == 1:
+            # Skip size-1 batches
+            continue
+
+        inputs_id = inputs_id.float().to(device)
+        labels_id = labels_id.float().to(device)
+        inputs_ood = inputs_ood.float().to(device)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -59,7 +65,7 @@ def domain_generalization_train_epoch(
 
         # Normalize CORAL loss by the batch size, so its scale is
         # batch size-independent.
-        coral_loss = criterion(activations_id, activations_ood) / batch_size
+        coral_loss = criterion(activations_id, activations_ood) / len(activations_id)
         ce_loss = binary_cross_entropy_with_logits(input=outputs_id,
                                                    target=labels_id)
         loss = ce_loss + criterion.loss_lambda * coral_loss
@@ -84,7 +90,7 @@ class DeepCoralModel(MLPModel):
                     device: str,
                     other_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None,
-                    ood_loader_key="ood_test",
+                    ood_loader_key="ood_validation",
                     ):
         """Run a single epoch of model training."""
 

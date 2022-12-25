@@ -47,8 +47,8 @@ class SklearnStylePytorchModel(ABC, nn.Module):
                     device: str,
                     other_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None
-                    ):
-        """Conduct one epoch of training."""
+                    ) -> float:
+        """Conduct one epoch of training and return the loss."""
         raise
 
     def save_checkpoint(self, optimizer: torch.optim.Optimizer) -> Checkpoint:

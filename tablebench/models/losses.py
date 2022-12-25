@@ -21,12 +21,15 @@ class DomainGeneralizationLoss:
 
 @dataclass
 class CORALLoss(DomainGeneralizationLoss):
-    block_num: int = 1  # block number to use for actications
     layer: str = 'linear'  # component of layer to use for activations: linear, activation, dropout.
     loss_lambda: float = 1.
 
     def __call__(self, activations_id, activations_ood):
-        assert activations_id.shape[1] == activations_ood.shape[1]
+        print(f"[JG] got activations shapes: {activations_id.shape}, " \
+            f"{activations_ood.shape}")
+        assert activations_id.shape[1] == activations_ood.shape[1], \
+            f"got unexpected activations shapes: {activations_id.shape}, " \
+            f"{activations_ood.shape}"
         d = activations_id.shape[1]
         C_s = torch.cov(activations_id)
         C_t = torch.cov(activations_ood)

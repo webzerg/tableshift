@@ -9,6 +9,10 @@ _DEFAULT_NN_SEARCH_SPACE = {
     "weight_decay": tune.quniform(0., 1., 0.1),
 }
 
+_deepcoral_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+}
+
 _histgbm_search_space = {
     "learning_rate": tune.choice([0.1, 0.3, 1.0, 2.0]),
     "max_leaf_nodes": tune.choice([None, 2, 4, 8, 16, 32, 64]),
@@ -71,6 +75,7 @@ _ft_transformer_search_space = {
 }
 
 search_space = {
+    "deepcoral": _deepcoral_search_space,
     "expgrad": _expgrad_search_space,
     "ft_transformer": _ft_transformer_search_space,
     "group_dro": _group_dro_search_space,

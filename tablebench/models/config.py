@@ -6,12 +6,10 @@ from tablebench.models.compat import is_pytorch_model_name
 from tablebench.models.losses import GroupDROLoss, CORALLoss
 from torch.nn import functional as F
 
-# TODO(jpgard): set all architectural defaults here
-#  based on [gorishniy2021revisiting] paper.
 _DEFAULT_CONFIGS = frozendict({
     "deepcoral":
-        {"num_layers": 2,
-         "d_hidden": 256,
+        {"num_layers": 4,
+         "d_hidden": 512,
          "dropouts": 0.},
     "expgrad":
         {"constraints": ErrorRateParity()},
@@ -57,7 +55,7 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
         config["criterion"] = F.binary_cross_entropy_with_logits
 
     if is_pytorch_model_name(model):
-        config.update({"batch_size": 256,
+        config.update({"batch_size": 64,
                        "lr": 0.01,
                        "weight_decay": 0.01,
                        "n_epochs": 1})
