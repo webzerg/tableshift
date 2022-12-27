@@ -10,15 +10,15 @@ from tablebench.models.coral import DeepCoralModel
 
 
 def get_estimator(model, d_out=1, **kwargs):
-    if model == "expgrad":
-        return ExponentiatedGradient(**kwargs)
-    elif model == "deepcoral":
+    if model == "deepcoral":
         return DeepCoralModel(d_in=kwargs["d_in"],
                               d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
                               d_out=d_out,
                               dropouts=kwargs["dropouts"],
                               activation=kwargs["activation"],
                               loss_lambda=kwargs["loss_lambda"])
+    elif model == "expgrad":
+        return ExponentiatedGradient(**kwargs)
     elif model == "ft_transformer":
         tconfig = FTTransformerModel.get_default_transformer_config()
 
@@ -49,7 +49,7 @@ def get_estimator(model, d_out=1, **kwargs):
         return HistGradientBoostingClassifier(**kwargs)
     elif model == "lightgbm":
         return LGBMClassifier(**kwargs)
-    elif model == "mlp":
+    elif model == "mlp" or model == "dro":
         return MLPModel(d_in=kwargs["d_in"],
                         d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
                         d_out=d_out,

@@ -1,8 +1,23 @@
+from typing import Callable
 from dataclasses import dataclass
 
 from torch.nn.functional import binary_cross_entropy_with_logits
 import torch
 from torch import Tensor
+from tablebench.models.fastdro.robust_losses import RobustLoss
+
+
+class DROLoss(RobustLoss):
+    """Robust loss that computes the DRO loss."""
+
+    def __init__(self, base_loss_fn: Callable[[Tensor, Tensor], Tensor] = binary_cross_entropy_with_logits, **kwargs):
+        super().__init__(**kwargs)
+        self.base_loss_fn = base_loss_fn
+
+    def forward(self, input, target):
+        elementwise_loss = self.base_loss_fn(input=input, target=target, reduction='none')
+        assert len(elementwise_loss) == len(input), "(non-)reduction sanity check"
+        return RobustLoss.forward(self, elementwise_loss)
 
 
 @dataclass
