@@ -73,12 +73,19 @@ _resnet_search_space = {
     "dropout_second": tune.uniform(0., 0.5),  # after second/hidden linear layer
 }
 
+# Superset of https://arxiv.org/pdf/2106.11959.pdf, Table 13
 _ft_transformer_search_space = {
-    **_DEFAULT_NN_SEARCH_SPACE,
+    # Drop the key for d_hidden;
+    **{k: v for k, v in _DEFAULT_NN_SEARCH_SPACE.items() if k != "d_hidden"},
     "n_blocks": tune.randint(1, 4),
-    # TODO(jpgard): tune the remaining parameters here; it is hard to parse
-    #  how values from https://arxiv.org/pdf/2106.11959.pdf Table 13 map to
-    #  ft-transformer params.
+    "residual_dropout": tune.uniform(0, 0.2),
+    "attention_dropout": tune.uniform(0, 0.5),
+    "ffn_dropout": tune.uniform(0, 0.5),
+    "ffn_factor": tune.uniform(2 / 3, 8 / 3),
+    # This is feature embedding size in Table 13 above. Note that Table 13 reports
+    # this as a uniform (64, 512) parameter, but d_token *must* be a multiple of
+    # n_heads, which is fixed at 8, so we use this simpler/equivalent range instead.
+    "d_token": tune.choice([64, 128, 256, 512])
 }
 
 search_space = {

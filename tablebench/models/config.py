@@ -16,7 +16,14 @@ _DEFAULT_CONFIGS = frozendict({
         {"constraints": ErrorRateParity()},
     "ft_transformer":
         {"cat_cardinalities": None,
-         "n_blocks": 1},
+         "n_blocks": 1,
+         "residual_dropout": 0.,
+         "attention_dropout": 0.,
+         "ffn_dropout": 0.,
+         "ffn_factor": 1.,
+         # This is feature embedding size in Table 13 above.
+         "d_token": 64,
+         },
     "group_dro":
         {"num_layers": 2,
          "d_hidden": 256,
