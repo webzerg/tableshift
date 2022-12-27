@@ -282,8 +282,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         param_space = {"params": search_space[model_name]}
 
     elif model_name == "lightgbm":
-        print("[WARNING] overriding scaling config for LightGBM; GPU not "
-              "currently supported.")
         scaling_config = ScalingConfig(
             num_workers=tune_config.num_workers,
             use_gpu=False)
