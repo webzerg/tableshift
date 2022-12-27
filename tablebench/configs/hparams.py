@@ -62,12 +62,13 @@ _group_dro_search_space = {
     "group_weights_step_size": tune.loguniform(1e-4, 1e0),
 }
 
+# Superset of https://arxiv.org/pdf/2106.11959.pdf, Table 14.
 _resnet_search_space = {
-    **_DEFAULT_NN_SEARCH_SPACE,
-    "n_blocks": tune.randint(1, 8),  # TODO(jpgard): possibly expand to 16.
-    # TODO(jpgard): use d_main and d_hidden via a hidden_factor; see
-    #  https://arxiv.org/pdf/2106.11959.pdf Table 14.
-    "d_main": tune.choice([64, 128, 256, 512, 1024]),
+    # Drop the key for d_hidden;
+    **{k: v for k, v in _DEFAULT_NN_SEARCH_SPACE.items() if k != "d_hidden"},
+    "n_blocks": tune.randint(1, 16),
+    "d_main": tune.randint(64, 1024),
+    "hidden_factor": tune.randint(1, 4),
     "dropout_first": tune.uniform(0., 0.5),  # after first linear layer
     "dropout_second": tune.uniform(0., 0.5),  # after second/hidden linear layer
 }

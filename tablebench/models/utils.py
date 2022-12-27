@@ -49,11 +49,12 @@ def get_estimator(model, d_out=1, **kwargs):
                         activation=kwargs["activation"],
                         )
     elif model == "resnet":
+        d_hidden = kwargs["d_main"] * kwargs["hidden_factor"]
         return ResNetModel(
             d_in=kwargs["d_in"],
             n_blocks=kwargs["n_blocks"],
             d_main=kwargs["d_main"],
-            d_hidden=kwargs["d_hidden"],
+            d_hidden=d_hidden,
             dropout_first=kwargs["dropout_first"],
             dropout_second=kwargs["dropout_second"],
             normalization='BatchNorm1d',
