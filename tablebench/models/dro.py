@@ -26,6 +26,7 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
     def train_epoch(self, train_loader: torch.utils.data.DataLoader,
                     optimizer: torch.optim.Optimizer,
                     loss_fn: GroupDROLoss,
+                    device: str,
                     other_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None
                     ):
