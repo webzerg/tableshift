@@ -135,11 +135,18 @@ def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
     model.eval()
     metrics = {}
     for split in splits:
-        prediction, target = get_predictions_and_labels(model, splits[split],
+        prediction_soft, target = get_predictions_and_labels(model, splits[split],
                                                         device=device)
-        prediction = np.round(prediction)
-        acc = sklearn.metrics.accuracy_score(target, prediction)
+        prediction_hard = np.round(prediction_soft)
+        acc = sklearn.metrics.accuracy_score(target, prediction_hard)
+        f1 = sklearn.metrics.f1_score(target, prediction_hard)
+        auc_roc = sklearn.metrics.roc_auc_score(target, prediction_soft)
+        avg_prec = sklearn.metrics.average_precision_score(target, prediction_soft)
         metrics[f"{split}_accuracy"] = acc
+        metrics[f"{split}_auc_roc"] = auc_roc
+        metrics[f"{split}_average_precision_score"] = avg_prec
+        metrics[f"{split}_f1"] = f1
+        metrics[f"{split}_num_samples"] = len(target)
         metrics[f"{split}_ymean"] = np.mean(target).item()
     return metrics
 
