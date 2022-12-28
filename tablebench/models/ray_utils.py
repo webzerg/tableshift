@@ -279,6 +279,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             # Note: tree_method must be gpu_hist if using GPU.
             "tree_method": "hist",
             "objective": "binary:logistic",
+            # Note: the `map` in sklearn is *not* directly comparable
+            # to the average precision score for lightgbm and sklearn.
             "eval_metric": ["error", "auc", "map"]}
         trainer = XGBoostTrainer(label_column=dset.target,
                                  datasets=datasets,
