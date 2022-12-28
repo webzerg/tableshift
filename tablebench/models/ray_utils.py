@@ -139,13 +139,11 @@ def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
                                                         device=device)
         prediction_hard = np.round(prediction_soft)
         acc = sklearn.metrics.accuracy_score(target, prediction_hard)
-        f1 = sklearn.metrics.f1_score(target, prediction_hard)
         auc_roc = sklearn.metrics.roc_auc_score(target, prediction_soft)
         avg_prec = sklearn.metrics.average_precision_score(target, prediction_soft)
         metrics[f"{split}_accuracy"] = acc
-        metrics[f"{split}_auc_roc"] = auc_roc
-        metrics[f"{split}_average_precision_score"] = avg_prec
-        metrics[f"{split}_f1"] = f1
+        metrics[f"{split}_auc"] = auc_roc
+        metrics[f"{split}_map"] = avg_prec
         metrics[f"{split}_num_samples"] = len(target)
         metrics[f"{split}_ymean"] = np.mean(target).item()
     return metrics
@@ -281,7 +279,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             # Note: tree_method must be gpu_hist if using GPU.
             "tree_method": "hist",
             "objective": "binary:logistic",
-            "eval_metric": "error"}
+            "eval_metric": ["error", "auc", "map"]}
         trainer = XGBoostTrainer(label_column=dset.target,
                                  datasets=datasets,
                                  params=params,
