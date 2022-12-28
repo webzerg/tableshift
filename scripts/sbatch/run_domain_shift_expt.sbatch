@@ -25,5 +25,4 @@ which python
 python experiments/domain_shift.py \
   --experiment $EXPERIMENT \
   --use_cached \
-  --time_budget_hrs 1 \
   --num_samples 100
