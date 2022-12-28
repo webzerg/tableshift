@@ -60,8 +60,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
         results_df.to_csv(fp, index=False)
 
     # call fetch_postprocessed() just to match the full training loop
-    df = fetch_postprocessed_results_df(results)
-    print(df)
+    _ = fetch_postprocessed_results_df(results)
     return
 
 
