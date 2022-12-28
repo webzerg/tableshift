@@ -3,8 +3,15 @@ from frozendict import frozendict
 
 from tablebench.core import TabularDataset
 from tablebench.models.compat import is_pytorch_model_name
-from tablebench.models.losses import GroupDROLoss, CORALLoss
+from tablebench.models.losses import GroupDROLoss, CORALLoss, DROLoss
 from torch.nn import functional as F
+
+# Default configs for testing models. These are not tuned
+# or selected for any particular reason; they might not even
+# be good choices for hyperparameters. These values do set
+# values for the non-tuned hyperparameters (those not
+# defined in the search space for each algorithm in
+# tablebench.configs.config.py
 
 _DEFAULT_CONFIGS = frozendict({
     "deepcoral":
@@ -12,6 +19,18 @@ _DEFAULT_CONFIGS = frozendict({
          "d_hidden": 512,
          "loss_lambda": 0.01,
          "dropouts": 0.},
+    "dro":
+        {"num_layers": 2,
+         "d_hidden": 512,
+         "dropouts": 0.,
+         "geometry": "cvar",
+         "size": 0.5,
+
+         # Note: reg == 0 is equivalent to using chi-square constraint
+         # (i.e. not using chi-square penalty).
+         "reg": 0.,
+
+         "max_iter": 10000},
     "expgrad":
         {"constraints": ErrorRateParity()},
     "ft_transformer":
@@ -52,12 +71,19 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
     elif is_pytorch_model_name(model):
         config.update({"n_num_features": dset.X_shape[1]})
 
-    if model == "group_dro":
+    # Models that use non-cross-entropy training objectives.
+    if model == "deepcoral":
+        config["criterion"] = CORALLoss()
+
+    elif model == "dro":
+        config["criterion"] = DROLoss(size=config["size"],
+                                      reg=config["reg"],
+                                      geometry=config["geometry"],
+                                      max_iter=config["max_iter"])
+    elif model == "group_dro":
         config["n_groups"] = dset.n_domains
         config["criterion"] = GroupDROLoss(n_groups=dset.n_domains)
 
-    elif model == "deepcoral":
-        config["criterion"] = CORALLoss()
 
     else:
         config["criterion"] = F.binary_cross_entropy_with_logits
