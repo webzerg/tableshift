@@ -1,6 +1,6 @@
 #!/bin/bash
 # usage:
-# sbatch --export=EXPERIMENT=$EXPERIMENT,MODEL='resnet',SEARCH_ALG='random',EXPT_UID=$EXPT_UID scripts/sbatch/run_single_expt.sbatch
+# sbatch --export=EXPERIMENT=$EXPERIMENT,EXPT_UID=$EXPT_UID,MODEL='resnet',SEARCH_ALG='random' scripts/sbatch/run_single_expt.sbatch
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=6
