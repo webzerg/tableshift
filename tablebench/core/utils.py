@@ -1,4 +1,5 @@
 import collections
+import datetime
 from itertools import islice
 import os
 import requests
@@ -92,3 +93,9 @@ def make_uid(name: str, splitter: Splitter, replace_chars="*/:'$!") -> str:
     for char in replace_chars:
         uid = uid.replace(char, '.')
     return uid
+
+
+def timestamp_as_int() -> int:
+    """Helper function to get the current timestamp as int."""
+    dt = datetime.datetime.now()
+    return int(dt.strftime("%Y%m%d%H%M%S"))

@@ -10,7 +10,7 @@ from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter
 from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment, fetch_postprocessed_results_df, \
     accuracy_metric_name_and_mode_for_model
 from tablebench.datasets.experiment_configs import ExperimentConfig
-from tablebench.core.utils import make_uid
+from tablebench.core.utils import make_uid, timestamp_as_int
 
 
 def get_dataset(expt_config: ExperimentConfig, dataset_config: TabularDatasetConfig,
@@ -61,6 +61,8 @@ def main(experiment: str, cache_dir: str,
         "lightgbm"
     )
 
+    start_time = timestamp_as_int()
+
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
@@ -69,7 +71,8 @@ def main(experiment: str, cache_dir: str,
 
     print(f"DEBUG torch.cuda.is_available(): {torch.cuda.is_available()}")
 
-    expt_results_dir = os.path.join(results_dir, experiment)
+    expt_results_dir = os.path.join(results_dir, experiment, start_time)
+    print(f"[INFO] results will be written to {expt_results_dir}")
     if not os.path.exists(expt_results_dir):
         os.makedirs(expt_results_dir)
 
@@ -160,7 +163,7 @@ def main(experiment: str, cache_dir: str,
             df.to_csv(os.path.join(expt_results_dir, f"tune_results_{uid}_{model_name}.csv"), index=False)
             iterates.append(df)
 
-    fp = os.path.join(expt_results_dir, f"tune_results_{experiment}_full.csv")
+    fp = os.path.join(expt_results_dir, f"tune_results_{experiment}_{start_time}_full.csv")
     print(f"[INFO] writing results to {fp}")
     pd.concat(iterates).to_csv(fp, index=False)
     print(f"[INFO] completed domain shift experiment {experiment}!")
