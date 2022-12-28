@@ -66,7 +66,7 @@ def main(experiment: str, cache_dir: str,
 
     print(f"DEBUG torch.cuda.is_available(): {torch.cuda.is_available()}")
 
-    expt_results_dir = os.path.join(results_dir, experiment, start_time)
+    expt_results_dir = os.path.join(results_dir, experiment, str(start_time))
     print(f"[INFO] results will be written to {expt_results_dir}")
     if not os.path.exists(expt_results_dir):
         os.makedirs(expt_results_dir)
