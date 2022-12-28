@@ -293,7 +293,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
         params = {"objective": "binary",
-                  "metric": ["binary_error", "auc", "map"],
+                  # Note that for lightgbm, average_precision <=> sklearn's
+                  # average_precision_score.
+                  "metric": ["binary_error", "auc", "average_precision"],
                   # use only the first metric for early stopping;
                   # the others are only for evaluation.
                   "first_metric_only": True,
