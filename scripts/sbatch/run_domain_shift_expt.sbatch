@@ -25,4 +25,5 @@ which python
 python experiments/domain_shift.py \
   --experiment $EXPERIMENT \
   --use_cached \
-  --num_samples 100
+  --num_samples 100 \
+  --gpu_models_only

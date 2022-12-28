@@ -50,16 +50,11 @@ def main(experiment: str, cache_dir: str,
          use_cached: bool = False,
          scheduler=None,
          gpu_per_worker: float = 1.0,
+         gpu_models_only: bool = False,
          time_budget_hrs: float = None):
-    # Use baseline models only.
-    models = (
-        "mlp",
-        "resnet",
-        "ft_transformer",
-        # # "group_dro",
-        "xgb",
-        "lightgbm"
-    )
+    _gpu_models = ["mlp", "resnet", "ft_transformer"]
+    _cpu_models = ["xgb", "lightgbm"]
+    models = _gpu_models if gpu_models_only else _gpu_models + _cpu_models
 
     start_time = timestamp_as_int()
 
@@ -180,6 +175,9 @@ if __name__ == "__main__":
                              "speed up experiment.")
     parser.add_argument("--experiment", default="adult",
                         help="Experiment to run. Overridden when debug=True.")
+    parser.add_argument("--gpu_models_only", default=False,
+                        action="store_true",
+                        help="whether to only train models that use GPU.")
     parser.add_argument("--gpu_per_worker", default=1.0, type=float,
                         help="GPUs per worker. Use fractional values < 1. "
                              "(e.g. --gpu_per_worker=0.5) in order"
