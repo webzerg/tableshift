@@ -293,7 +293,10 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
         params = {"objective": "binary",
-                  "metric": "binary_error",
+                  "metric": ["binary_error", "auc", "map"],
+                  # use only the first metric for early stopping;
+                  # the others are only for evaluation.
+                  "first_metric_only": True,
                   # Note: device_type must be 'gpu' if using GPU.
                   "device_type": "cpu"}
         trainer = LightGBMTrainer(label_column=dset.target,
