@@ -192,7 +192,7 @@ if __name__ == "__main__":
     parser.add_argument("--search_alg", default="hyperopt", choices=["hyperopt", "random"],
                         help="Ray search alg to use for hyperparameter tuning.")
     parser.add_argument("--scheduler", choices=(None, "asha", "median"),
-                        default=None,
+                        default="asha",
                         help="Scheduler to use for hyperparameter optimization."
                              "See https://docs.ray.io/en/latest/tune/api_docs/schedulers.html .")
     parser.add_argument("--time_budget_hrs", type=float, default=None,
