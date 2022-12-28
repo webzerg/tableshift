@@ -18,6 +18,16 @@ _deepcoral_search_space = {
     "loss_lambda": tune.loguniform(1e-5, 1),
 }
 
+_dro_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    "geometry": ("cvar", "chi-square"),
+    # Note: training is very slow for large values of uncertainty
+    # set size (larger than ~0.5) for chi-square geometry, particularly
+    # when the learning rate is small.
+    "size": tune.loguniform(1e-6, 1.),
+
+}
+
 # Similar to XGBoost search space; however, note that LightGBM is not
 # use in the study from which the XGBoost space is derived.
 _lightgbm_search_space = {
@@ -90,6 +100,7 @@ _ft_transformer_search_space = {
 
 search_space = {
     "deepcoral": _deepcoral_search_space,
+    "dro": _dro_search_space,
     "expgrad": _expgrad_search_space,
     "ft_transformer": _ft_transformer_search_space,
     "group_dro": _group_dro_search_space,

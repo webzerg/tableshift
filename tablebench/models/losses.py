@@ -11,6 +11,7 @@ class DROLoss(RobustLoss):
     """Robust loss that computes the DRO loss."""
 
     def __init__(self, base_loss_fn: Callable[[Tensor, Tensor], Tensor] = binary_cross_entropy_with_logits, **kwargs):
+        assert kwargs["geometry"] in ("cvar", "chi-square")
         super().__init__(**kwargs)
         self.base_loss_fn = base_loss_fn
 

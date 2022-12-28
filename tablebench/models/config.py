@@ -8,7 +8,10 @@ from torch.nn import functional as F
 
 # Default configs for testing models. These are not tuned
 # or selected for any particular reason; they might not even
-# be good choices for hyperparameters.
+# be good choices for hyperparameters. These values do set
+# values for the non-tuned hyperparameters (those not
+# defined in the search space for each algorithm in
+# tablebench.configs.config.py
 
 _DEFAULT_CONFIGS = frozendict({
     "deepcoral":
@@ -22,8 +25,12 @@ _DEFAULT_CONFIGS = frozendict({
          "dropouts": 0.,
          "geometry": "cvar",
          "size": 0.5,
-         "reg": 0.01,
-         "max_iter": 1000},
+
+         # Note: reg == 0 is equivalent to using chi-square constraint
+         # (i.e. not using chi-square penalty).
+         "reg": 0.,
+
+         "max_iter": 10000},
     "expgrad":
         {"constraints": ErrorRateParity()},
     "ft_transformer":
