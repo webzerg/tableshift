@@ -10,7 +10,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler, \
     LabelEncoder
 from tqdm import tqdm
 from tablebench.core.discretization import KBinsDiscretizer
-
+from tablebench.core.utils import sub_illegal_chars
 
 def _contains_missing_values(df: pd.DataFrame) -> bool:
     return np.any(pd.isnull(df).values)
@@ -251,8 +251,7 @@ class PreprocessorConfig:
         """Postprocess the result of a ColumnTransformer."""
         transformed.columns = [c.replace("remainder__", "")
                                for c in transformed.columns]
-        transformed.columns = [re.sub('[\\[\\]{}.:<>/,"]', "", c) for c in
-                               transformed.columns]
+        transformed.columns = [sub_illegal_chars(c) for c in transformed.columns]
 
         # By default transformed columns will be cast to 'object' dtype; we cast them
         # back to a numeric type.
