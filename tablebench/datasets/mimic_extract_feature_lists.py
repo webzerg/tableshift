@@ -1,11 +1,12 @@
 """FeatureList objects for the preprocessed MIMIC-extract data."""
 
-from tablebench.core.features import FeatureList, Feature, cat_dtype
+from tablebench.core.features import FeatureList, Feature
+
+# The default set of features output by MIMIC-extract; see
+# https://github.com/MLforHealth/MIMIC_Extract/blob/master/notebooks/Baselines%20for%20Mortality%20and%20LOS%20prediction%20-%20Sklearn.ipynb
+# Note that illegal characters are removed from the variable names.
 
 LOS3_FEATURES = FeatureList(features=[
-    Feature("subject_id", int),
-    Feature("hadm_id", int),
-    Feature("icustay_id", int),
     Feature("alanine_aminotransferase_mask_0", int),
     Feature("alanine_aminotransferase_mask_1", int),
     Feature("alanine_aminotransferase_mask_2", int),
@@ -7494,4 +7495,5 @@ LOS3_FEATURES = FeatureList(features=[
     Feature("white_blood_cell_count_urine_time_since_measured_21", int),
     Feature("white_blood_cell_count_urine_time_since_measured_22", int),
     Feature("white_blood_cell_count_urine_time_since_measured_23", int),
+        Feature("los_3", int, is_target=True),
 ])
