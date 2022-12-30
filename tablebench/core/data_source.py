@@ -481,6 +481,12 @@ class MIMICExtractDataSource(OfflineDataSource):
 
     def __init__(self, task: str = "los_3", preprocess_fn=preprocess_mimic_extract,
                  static_features=MIMIC_EXTRACT_STATIC_FEATURES.names, **kwargs):
+        # Note: mean label values in overall dataset:
+        # mort_hosp 0.106123
+        # mort_icu 0.071709
+        # los_3 0.430296
+        # los_7 0.077055
+
         if task not in ('mort_hosp', 'mort_icu', 'los_3', 'los_7'):
             raise NotImplementedError(f"task {task} is not implemented.")
         self.task = task
