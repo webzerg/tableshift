@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from tablebench.core import RandomSplitter, Grouper, PreprocessorConfig, \
     DomainSplitter, FixedSplitter, Splitter
 from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS
-from tablebench.datasets.mimic_extract import MIMICExtractSplitter, MIMICExtractPreprocessorConfig
+from tablebench.datasets.mimic_extract_feature_lists import LOS3_FEATURES
+from tablebench.datasets.mimic_extract import MIMIC_EXTRACT_STATIC_FEATURES
 
 
 @dataclass
@@ -126,9 +127,20 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
     "mimic_extract_los_3": ExperimentConfig(
-        splitter=MIMICExtractSplitter(val_size=0.01, test_size=0.2, random_state=832),
+        splitter=DomainSplitter(val_size=0.05,
+                                id_test_size=0.2,
+                                random_state=43456,
+                                domain_split_varname="insurance",
+                                domain_split_ood_values=[
+                                    "Medicare", "Medicaid"]),
         grouper=Grouper({"gender": ['M'], }, drop=False),
-        preprocessor_config=MIMICExtractPreprocessorConfig(),
+        # We passthrough all non-static columns because we use MIMIC-extract's default
+        # preprocessing/imputation and do not wish to modify it for these features
+        # (static features are not preprocessed by MIMIC-extract). See
+        # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=[f for f in LOS3_FEATURES.names
+                                 if f not in MIMIC_EXTRACT_STATIC_FEATURES.names]),
         tabular_dataset_kwargs={"task": "los_3"}),
 
     "mooc": ExperimentConfig(
