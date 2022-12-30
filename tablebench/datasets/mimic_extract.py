@@ -67,10 +67,6 @@ def preprocess_mimic_extract(df: pd.DataFrame, task: str, static_features: List[
     # Merging with "flat" (non-hierarchical) static features and labels flattens the MultiIndex
     # of the data. Here we restore it, so that we can use the MIMIC-extract imputer.
     df.columns = pd.MultiIndex.from_tuples(df.columns, names=['LEVEL2', 'Aggregation Function'])
-    df = df[:5000]
-    print("#" * 50)
-    print("[WARNING!!!!] only using 5000 rows; this is for debugging only!!")
-    print("#" * 50)
 
     print(f"[DEBUG] performing imputation on dataframe of shape {df.shape}")
     df = simple_imputer(df)
