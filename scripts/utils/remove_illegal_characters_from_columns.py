@@ -4,15 +4,11 @@ Utility script to remove any illegal characters  form columns names."""
 import argparse
 import glob
 import os
-import re
 import pandas as pd
 import json
 import copy
-ILLEGAL_CHARS_REGEX = '[\\[\\]{}.:<>/,"]'
 
-
-def sub_illegal_chars(s: str) -> str:
-    return re.sub(ILLEGAL_CHARS_REGEX, "", s)
+from tablebench.core.utils import sub_illegal_chars
 
 
 def main(cache_dir, experiment, domain_split_varname, index_colname='Unnamed: 0'):

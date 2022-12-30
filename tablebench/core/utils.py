@@ -1,5 +1,6 @@
 import collections
 import datetime
+import re
 from itertools import islice
 import os
 import requests
@@ -99,3 +100,10 @@ def timestamp_as_int() -> int:
     """Helper function to get the current timestamp as int."""
     dt = datetime.datetime.now()
     return int(dt.strftime("%Y%m%d%H%M%S"))
+
+
+ILLEGAL_CHARS_REGEX = '[\\[\\]{}.:<>/,"]'
+
+
+def sub_illegal_chars(s: str) -> str:
+    return re.sub(ILLEGAL_CHARS_REGEX, "", s)

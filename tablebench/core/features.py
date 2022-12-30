@@ -10,7 +10,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler, \
     LabelEncoder
 from tqdm import tqdm
 from tablebench.core.discretization import KBinsDiscretizer
-
+from tablebench.core.utils import sub_illegal_chars
 
 def _contains_missing_values(df: pd.DataFrame) -> bool:
     return np.any(pd.isnull(df).values)
@@ -165,7 +165,7 @@ class PreprocessorConfig:
     domain_labels: str = "label_encode"
     feature_transformer: ColumnTransformer = None
     domain_label_transformer: LabelEncoder = None
-    passthrough_columns: List[str] = None  # Feature names to passthrough.
+    passthrough_columns: Union[str, List[str]] = None  # Feature names to passthrough, or "all".
     # If "rows", drop rows containing na values, if "columns", drop columns
     # containing na values; if None do not do anything for missing values.
     dropna: Union[str, None] = "rows"
@@ -251,8 +251,7 @@ class PreprocessorConfig:
         """Postprocess the result of a ColumnTransformer."""
         transformed.columns = [c.replace("remainder__", "")
                                for c in transformed.columns]
-        transformed.columns = [re.sub('[\\[\\]{}.:<>/,"]', "", c) for c in
-                               transformed.columns]
+        transformed.columns = [sub_illegal_chars(c) for c in transformed.columns]
 
         # By default transformed columns will be cast to 'object' dtype; we cast them
         # back to a numeric type.
@@ -307,6 +306,9 @@ class PreprocessorConfig:
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         """Fit a feature_transformer and apply it to the input features."""
         print(f"[INFO] transforming columns")
+        if self.passthrough_columns == "all":
+            print("[DEBUG] passthrough is 'all'; data will not be preprocessed by tableshift.")
+            return data
         if self.passthrough_columns:
             passthrough_columns += self.passthrough_columns
 

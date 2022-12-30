@@ -23,4 +23,6 @@ dependencies:
     - hyperopt
     - xgboost_ray
     - lightgbm_ray
+    - h5py
+    - tables
 
