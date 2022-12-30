@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from tablebench.core import RandomSplitter, Grouper, PreprocessorConfig, \
     DomainSplitter, FixedSplitter, Splitter
 from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS
+from tablebench.datasets.mimic_extract import MIMICExtractSplitter, MIMICExtractPreprocessorConfig
 
 
 @dataclass
@@ -123,6 +124,12 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
+
+    "mimic_extract_los_3": ExperimentConfig(
+        splitter=MIMICExtractSplitter(val_size=0.01, test_size=0.2, random_state=832),
+        grouper=Grouper({"gender": ['M'], }, drop=False),
+        preprocessor_config=MIMICExtractPreprocessorConfig(),
+        tabular_dataset_kwargs={"task": "los_3"}),
 
     "mooc": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.01,
