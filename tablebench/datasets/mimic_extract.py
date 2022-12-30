@@ -1,8 +1,10 @@
-from typing import List, Optional, Mapping, Union
+from typing import List, Union
 import pandas as pd
 
-from tablebench.core.splitter import RandomSplitter, _check_input_indices, _stratify, train_test_split
-from tablebench.core.features import Feature, FeatureList, PreprocessorConfig, cat_dtype
+from tablebench.core.features import Feature, FeatureList, cat_dtype
+from tablebench.core.utils import sub_illegal_chars
+from tablebench.datasets.utils import convert_numeric_dtypes, complete_cases
+from tablebench.datasets.mimic_extract_feature_lists import LOS3_FEATURES
 
 ID_COLS = ['subject_id', 'hadm_id', 'icustay_id']
 
@@ -15,7 +17,7 @@ MIMIC_EXTRACT_STATIC_FEATURES = FeatureList(features=[
 
 MIMIC_EXTRACT_LOS3_FEATURES = FeatureList(features=[
     *MIMIC_EXTRACT_STATIC_FEATURES,
-    Feature("los3", int, is_target=True),
+    *LOS3_FEATURES
 ])
 
 
@@ -49,36 +51,6 @@ def simple_imputer(df: pd.DataFrame) -> pd.DataFrame:
     return df_out
 
 
-class MIMICExtractSplitter(RandomSplitter):
-    def __call__(self, data: pd.DataFrame, labels: pd.Series,
-                 groups: pd.DataFrame = None, *args, **kwargs
-                 ) -> Mapping[str, List[int]]:
-        _check_input_indices(data)
-        stratify = _stratify(labels, groups)
-
-        train_val_idxs, test_idxs = train_test_split(
-            data,
-            test_size=self.test_size,
-            random_state=self.random_state,
-            stratify=stratify)
-        train_idxs, val_idxs = train_test_split(
-            data.iloc[train_val_idxs],
-            train_size=self.train_size / (self.train_size + self.val_size),
-            random_state=self.random_state,
-            stratify=stratify.iloc[train_val_idxs])
-        del train_val_idxs
-        return {"train": train_idxs, "validation": val_idxs, "test": test_idxs}
-
-
-class MIMICExtractPreprocessorConfig(PreprocessorConfig):
-    """Custom preprocessor for MIMIC-extract data."""
-
-    def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
-                      domain_label_colname: Optional[str],
-                      passthrough_columns: List[str] = None) -> pd.DataFrame:
-        raise
-
-
 def preprocess_mimic_extract(df: pd.DataFrame, task: str, static_features: List[str]) -> pd.DataFrame:
     """Apply the default MIMIC-extract preprocessing.
 
@@ -95,10 +67,11 @@ def preprocess_mimic_extract(df: pd.DataFrame, task: str, static_features: List[
     # Merging with "flat" (non-hierarchical) static features and labels flattens the MultiIndex
     # of the data. Here we restore it, so that we can use the MIMIC-extract imputer.
     df.columns = pd.MultiIndex.from_tuples(df.columns, names=['LEVEL2', 'Aggregation Function'])
-    df = df[:500]
-    print("#"*50)
-    print("[WARNING!!!!] only using 500 rows; this is for debugging only!!")
-    print("#"*50)
+    df = df[:5000]
+    print("#" * 50)
+    print("[WARNING!!!!] only using 5000 rows; this is for debugging only!!")
+    print("#" * 50)
+
     print(f"[DEBUG] performing imputation on dataframe of shape {df.shape}")
     df = simple_imputer(df)
     print(f"[DEBUG] pivoting dataframe of shape {df.shape}")
@@ -142,5 +115,17 @@ def preprocess_mimic_extract(df: pd.DataFrame, task: str, static_features: List[
     for idxname in idxnames:
         assert flattened_df[idxname].nunique() == len(flattened_df), \
             f"values for index level {idxname} are not unique."
+    flattened_df.drop(columns=idxnames, inplace=True)
 
+    len_pre_drop = len(flattened_df)
+    flattened_df = complete_cases(flattened_df)
+    print(f"dropped {len_pre_drop - len(flattened_df)} rows "
+          f"({100 * (len_pre_drop - len(flattened_df)) / len_pre_drop:.2f})% of data) containing missing values "
+          f"after imputation (could be due to missing static features).")
+
+    flattened_df = convert_numeric_dtypes(flattened_df)
+
+    # Clean up variable names, since most columns are passed-through by the
+    # TableShift preprocessor.
+    flattened_df.columns = [sub_illegal_chars(c) for c in flattened_df.columns]
     return flattened_df
