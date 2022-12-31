@@ -296,7 +296,7 @@ domain_shift_experiment_configs = {
                                                dropna=None)),
 
     "mimic_extract_los_3_ins": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={'task': 'los_3', 'name': 'mimic_extract'},
+        tabular_dataset_kwargs={'task': 'los_3', 'name': 'mimic_extract_los_3'},
         domain_split_varname="insurance",
         domain_split_ood_values=_to_nested(["Medicare", "Medicaid", "Government", "Self Pay"]),
         grouper=Grouper({"gender": ['M'], }, drop=False),
@@ -309,7 +309,7 @@ domain_shift_experiment_configs = {
                                  if f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),
 
     "mimic_extract_mort_hosp_ins": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={'task': 'mort_hosp', 'name': 'mimic_extract'},
+        tabular_dataset_kwargs={'task': 'mort_hosp', 'name': 'mimic_extract_mort_hosp'},
         domain_split_varname="insurance",
         domain_split_ood_values=_to_nested(["Medicare", "Medicaid", "Government", "Self Pay"]),
         grouper=Grouper({"gender": ['M'], }, drop=False),
