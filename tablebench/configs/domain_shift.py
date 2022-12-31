@@ -4,7 +4,7 @@ from tablebench.core import Grouper, PreprocessorConfig, DomainSplitter
 from tablebench.core.utils import sliding_window
 from tablebench.datasets import ACS_REGIONS, ACS_STATE_LIST, ACS_YEARS, BRFSS_STATE_LIST, \
     BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS, \
-    ANES_REGIONS
+    ANES_REGIONS, MIMIC_EXTRACT_SHARED_FEATURES, MIMIC_EXTRACT_STATIC_FEATURES
 from tablebench.datasets.experiment_configs import ExperimentConfig
 
 DEFAULT_RANDOM_STATE = 264738
@@ -294,4 +294,30 @@ domain_shift_experiment_configs = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
                                                dropna=None)),
+
+    "mimic_extract_los_3_ins": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={'task': 'los_3', 'name': 'mimic_extract'},
+        domain_split_varname="insurance",
+        domain_split_ood_values=_to_nested(["Medicare", "Medicaid", "Government", "Self Pay"]),
+        grouper=Grouper({"gender": ['M'], }, drop=False),
+        # We passthrough all non-static columns because we use MIMIC-extract's default
+        # preprocessing/imputation and do not wish to modify it for these features
+        # (static features are not preprocessed by MIMIC-extract). See
+        # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
+                                 if f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),
+
+    "mimic_extract_mort_hosp_ins": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={'task': 'mort_hosp', 'name': 'mimic_extract'},
+        domain_split_varname="insurance",
+        domain_split_ood_values=_to_nested(["Medicare", "Medicaid", "Government", "Self Pay"]),
+        grouper=Grouper({"gender": ['M'], }, drop=False),
+        # We passthrough all non-static columns because we use MIMIC-extract's default
+        # preprocessing/imputation and do not wish to modify it for these features
+        # (static features are not preprocessed by MIMIC-extract). See
+        # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
+                                 if f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),
 }
