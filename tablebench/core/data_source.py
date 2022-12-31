@@ -499,7 +499,10 @@ class MIMICExtractDataSource(OfflineDataSource):
 
         filename = os.path.join(self.cache_dir, 'all_hourly_data.h5')
         assert os.path.exists(filename), f"file {filename} does not exist; see the TableShift instructions for " \
-                                         f"accessing/placing the MIMIC-extract dataset at the expected location."
+                                         f"accessing/placing the MIMIC-extract dataset at the expected location." \
+                                         "The data file can be accessed at " \
+                                         "https://storage.googleapis.com/mimic_extract/all_hourly_data.h5 after " \
+                                         "obtaining access as described at https://github.com/MLforHealth/MIMIC_Extract"
         data_full_lvl2 = pd.read_hdf(filename, 'vitals_labs')
         statics = pd.read_hdf(filename, 'patients')
 
