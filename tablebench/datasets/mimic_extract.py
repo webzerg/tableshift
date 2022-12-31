@@ -4,7 +4,7 @@ import pandas as pd
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 from tablebench.core.utils import sub_illegal_chars
 from tablebench.datasets.utils import convert_numeric_dtypes, complete_cases
-from tablebench.datasets.mimic_extract_feature_lists import LOS3_FEATURES
+from tablebench.datasets.mimic_extract_feature_lists import MIMIC_EXTRACT_SHARED_FEATURES
 
 ID_COLS = ['subject_id', 'hadm_id', 'icustay_id']
 
@@ -15,9 +15,16 @@ MIMIC_EXTRACT_STATIC_FEATURES = FeatureList(features=[
     Feature("insurance", cat_dtype, "Medicare, Private, Medicaid, Government, Self Pay.")
 ])
 
-MIMIC_EXTRACT_LOS3_FEATURES = FeatureList(features=[
+MIMIC_EXTRACT_LOS_3_FEATURES = FeatureList(features=[
     *MIMIC_EXTRACT_STATIC_FEATURES,
-    *LOS3_FEATURES
+    *MIMIC_EXTRACT_SHARED_FEATURES,
+    Feature('los_3', int, is_target=True)
+])
+
+MIMIC_EXTRACT_MORT_HOSP_FEATURES = FeatureList(features=[
+    *MIMIC_EXTRACT_STATIC_FEATURES,
+    *MIMIC_EXTRACT_SHARED_FEATURES,
+    Feature('mort_hosp', int, is_target=True)
 ])
 
 

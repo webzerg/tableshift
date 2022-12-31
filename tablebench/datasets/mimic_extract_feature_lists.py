@@ -6,7 +6,7 @@ from tablebench.core.features import FeatureList, Feature
 # https://github.com/MLforHealth/MIMIC_Extract/blob/master/notebooks/Baselines%20for%20Mortality%20and%20LOS%20prediction%20-%20Sklearn.ipynb
 # Note that illegal characters are removed from the variable names.
 
-LOS3_FEATURES = FeatureList(features=[
+MIMIC_EXTRACT_SHARED_FEATURES = FeatureList(features=[
 	Feature("alanine_aminotransferase_mask_0", int),
     Feature("alanine_aminotransferase_mask_1", int),
     Feature("alanine_aminotransferase_mask_2", int),

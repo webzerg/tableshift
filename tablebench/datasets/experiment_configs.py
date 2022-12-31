@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from tablebench.core import RandomSplitter, Grouper, PreprocessorConfig, \
     DomainSplitter, FixedSplitter, Splitter
 from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS
-from tablebench.datasets.mimic_extract_feature_lists import LOS3_FEATURES
+from tablebench.datasets.mimic_extract_feature_lists import MIMIC_EXTRACT_SHARED_FEATURES
 from tablebench.datasets.mimic_extract import MIMIC_EXTRACT_STATIC_FEATURES
 
 
@@ -139,7 +139,7 @@ EXPERIMENT_CONFIGS = {
         # (static features are not preprocessed by MIMIC-extract). See
         # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
         preprocessor_config=PreprocessorConfig(
-            passthrough_columns=[f for f in LOS3_FEATURES.names
+            passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
                                  if f not in MIMIC_EXTRACT_STATIC_FEATURES.names]),
         tabular_dataset_kwargs={"task": "los_3"}),
 
