@@ -51,10 +51,19 @@ def main(experiment: str, cache_dir: str,
          scheduler=None,
          gpu_per_worker: float = 1.0,
          gpu_models_only: bool = False,
+         cpu_models_only: bool = False,
          time_budget_hrs: float = None):
+
     _gpu_models = ["mlp", "resnet", "ft_transformer"]
     _cpu_models = ["xgb", "lightgbm"]
-    models = _gpu_models if gpu_models_only else _gpu_models + _cpu_models
+
+    assert not (gpu_models_only and cpu_models_only)
+    if gpu_models_only:
+        models = _gpu_models
+    elif cpu_models_only:
+        models = _cpu_models
+    else:
+        models = _gpu_models + _cpu_models
 
     start_time = timestamp_as_int()
 
@@ -169,6 +178,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache_dir", default="tmp",
                         help="Directory to cache raw data files to.")
+    parser.add_argument("--cpu_models_only", default=False,
+                        action="store_true",
+                        help="whether to only use models that use CPU."
+                             "Mutually exclusive of --gpu_models_only.")
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Whether to run in debug mode. If True, various "
                              "truncations/simplifications are performed to "
@@ -177,7 +190,8 @@ if __name__ == "__main__":
                         help="Experiment to run. Overridden when debug=True.")
     parser.add_argument("--gpu_models_only", default=False,
                         action="store_true",
-                        help="whether to only train models that use GPU.")
+                        help="whether to only train models that use GPU."
+                             "Mutually exclusive of cpu_models_only.")
     parser.add_argument("--gpu_per_worker", default=1.0, type=float,
                         help="GPUs per worker. Use fractional values < 1. "
                              "(e.g. --gpu_per_worker=0.5) in order"
