@@ -10,6 +10,7 @@ from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
 from tablebench.models.dro import GroupDROModel
 from tablebench.models.coral import DeepCoralModel
+from tablebench.models.irm import IRMModel
 
 
 def get_estimator(model, d_out=1, **kwargs):
@@ -21,8 +22,7 @@ def get_estimator(model, d_out=1, **kwargs):
                               dropouts=kwargs["dropouts"],
                               activation=kwargs["activation"],
                               loss_lambda=kwargs["loss_lambda"],
-                              lr=kwargs["lr"],
-                              weight_decay=kwargs["weight_decay"])
+                              **{k: kwargs[k] for k in OPTIMIZER_ARGS}, )
     elif model == "expgrad":
         return ExponentiatedGradient(**kwargs)
     elif model == "ft_transformer":
@@ -60,11 +60,22 @@ def get_estimator(model, d_out=1, **kwargs):
             activation=kwargs["activation"],
             group_weights_step_size=kwargs["group_weights_step_size"],
             n_groups=kwargs["n_groups"],
-            lr=kwargs["lr"],
-            weight_decay=kwargs["weight_decay"]
+            **{k: kwargs[k] for k in OPTIMIZER_ARGS},
         )
     elif model == "histgbm":
         return HistGradientBoostingClassifier(**kwargs)
+
+    elif model == "irm":
+        return IRMModel(
+            d_in=kwargs["d_in"],
+            d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
+            d_out=d_out,
+            dropouts=kwargs["dropouts"],
+            activation=kwargs["activation"],
+            irm_lambda=kwargs['irm_lambda'],
+            irm_penalty_anneal_iters=kwargs['irm_penalty_anneal_iters'],
+            **{k: kwargs[k] for k in OPTIMIZER_ARGS}, )
+
     elif model == "lightgbm":
         return LGBMClassifier(**kwargs)
     elif model == "mlp" or model == "dro":
@@ -73,8 +84,7 @@ def get_estimator(model, d_out=1, **kwargs):
                         d_out=d_out,
                         dropouts=kwargs["dropouts"],
                         activation=kwargs["activation"],
-                        lr=kwargs["lr"],
-                        weight_decay=kwargs["weight_decay"],
+                        **{k: kwargs[k] for k in OPTIMIZER_ARGS},
                         )
     elif model == "resnet":
         d_hidden = kwargs["d_main"] * kwargs["hidden_factor"]
@@ -88,8 +98,7 @@ def get_estimator(model, d_out=1, **kwargs):
             normalization='BatchNorm1d',
             activation=kwargs["activation"],
             d_out=d_out,
-            lr=kwargs["lr"],
-            weight_decay=kwargs["weight_decay"]
+            **{k: kwargs[k] for k in OPTIMIZER_ARGS},
         )
 
     elif model == "wcs":

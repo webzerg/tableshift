@@ -16,7 +16,7 @@ def irm_penalty(logits: Tensor, y: Tensor) -> Tensor:
     See https://github.com/facebookresearch/DomainBed/blob/main/domainbed
     /algorithms.py.
     """
-    device = "cuda" if logits[0][0].is_cuda else "cpu"
+    device = "cuda" if logits.is_cuda else "cpu"
     scale = torch.tensor(1.).to(device).requires_grad_()
     loss_1 = F.cross_entropy(logits[::2] * scale, y[::2])
     loss_2 = F.cross_entropy(logits[1::2] * scale, y[1::2])

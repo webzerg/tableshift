@@ -47,6 +47,12 @@ _DEFAULT_CONFIGS = frozendict({
         {"num_layers": 2,
          "d_hidden": 256,
          "group_weights_step_size": 0.05},
+    "irm":
+        {"num_layers": 2,
+         "d_hidden": 256,
+         "dropouts": 0.,
+         "irm_lambda": 1e-2,
+         "irm_penalty_anneal_iters": 500},
     "mlp":
         {"num_layers": 2,
          "d_hidden": 256,
