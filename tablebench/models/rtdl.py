@@ -35,9 +35,14 @@ class SklearnStyleRTDLModel(SklearnStylePytorchModel):
 
 
 class ResNetModel(rtdl.ResNet, SklearnStyleRTDLModel):
-    def __init__(self, **kwargs):
-        self.config: Mapping[str, Any] = kwargs
-        super().__init__(**kwargs)
+    def __init__(self, **hparams):
+        self.config = copy.deepcopy(hparams)
+
+        # Remove hparams that are not taken by the rtdl constructor.
+        for k in OPTIMIZER_ARGS:
+            hparams.pop(k)
+
+        super().__init__(**hparams)
         self._init_optimizer()
 
     def predict_proba(self, X) -> np.ndarray:

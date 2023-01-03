@@ -55,6 +55,7 @@ _DEFAULT_CONFIGS = frozendict({
         {"n_blocks": 2,
          "dropout_first": 0.2,
          "dropout_second": 0.,
+         "hidden_factor": 1,
          "d_main": 128,
          "d_hidden": 256},
 
