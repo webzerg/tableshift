@@ -12,7 +12,7 @@ import rtdl
 import scipy
 import torch
 
-from tablebench.models.compat import SklearnStylePytorchModel
+from tablebench.models.compat import SklearnStylePytorchModel, OPTIMIZER_ARGS
 from tablebench.models.training import train_epoch
 
 
@@ -49,7 +49,7 @@ class MLPModel(rtdl.MLP, SklearnStyleRTDLModel):
         self.config = copy.deepcopy(hparams)
 
         # Remove hparams that are not taken by the rtdl constructor.
-        for k in ("lr", "weight_decay"):
+        for k in OPTIMIZER_ARGS:
             hparams.pop(k)
 
         super().__init__(**hparams)

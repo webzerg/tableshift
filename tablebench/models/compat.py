@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from functools import partial
-from typing import Optional, Mapping, Union, Callable, Any
+from typing import Optional, Mapping, Union, Callable
 
 import numpy as np
 import os
@@ -13,6 +12,8 @@ from torch import nn
 
 from tablebench.models.torchutils import evaluate
 from tablebench.models.optimizers import get_optimizer
+
+OPTIMIZER_ARGS = ("lr", "weight_decay")
 
 
 def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
@@ -27,8 +28,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
     def _init_optimizer(self):
         """(re)initialize the optimizer."""
-        opt_config = {"lr": self.config["lr"],
-                      "weight_decay": self.config["weight_decay"]}
+        opt_config = {k: self.config[k] for k in OPTIMIZER_ARGS}
         print(f"[DEBUG] initializing optimizer with params {opt_config}")
         self.optimizer = get_optimizer(self, config=opt_config)
 
