@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from tablebench.core import RandomSplitter, Grouper, PreprocessorConfig, \
     DomainSplitter, FixedSplitter, Splitter
 from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS
-from tablebench.datasets.mimic_extract_feature_lists import MIMIC_EXTRACT_SHARED_FEATURES
+from tablebench.datasets.mimic_extract_feature_lists import \
+    MIMIC_EXTRACT_SHARED_FEATURES
 from tablebench.datasets.mimic_extract import MIMIC_EXTRACT_STATIC_FEATURES
 
 
@@ -97,15 +98,16 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
     "_debug": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.01,
-                                id_test_size=0.2,
-                                ood_val_size=0.25,
-                                random_state=43406,
-                                domain_split_varname="purpose",
-                                # values: car(new), car(used), furniture/equipment
-                                domain_split_ood_values=["A40", "A41", "A42",
-                                                         "A43"]
-                                ),
+        splitter=DomainSplitter(
+            val_size=0.01,
+            id_test_size=0.2,
+            ood_val_size=0.25,
+            random_state=43406,
+            domain_split_varname="purpose",
+            # values: car(new), car(used), furniture/equipment
+            domain_split_ood_values=["A40", "A41", "A42",
+                                     "A43"]
+        ),
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(),
@@ -116,9 +118,11 @@ EXPERIMENT_CONFIGS = {
         # male vs. all others; white non-hispanic vs. others
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
-        # Note: using min_frequency=0.01 reduces data dimensionality from ~2400 -> 169 columns.
+        # Note: using min_frequency=0.01 reduces data
+        # dimensionality from ~2400 -> 169 columns.
         # This is due to high cardinality of 'diag_*' features.
-        preprocessor_config=PreprocessorConfig(min_frequency=0.01), tabular_dataset_kwargs={}),
+        preprocessor_config=PreprocessorConfig(min_frequency=0.01),
+        tabular_dataset_kwargs={}),
 
     "german": ExperimentConfig(
         splitter=RandomSplitter(val_size=0.01, test_size=0.2, random_state=832),
@@ -134,13 +138,15 @@ EXPERIMENT_CONFIGS = {
                                 domain_split_ood_values=[
                                     "Medicare", "Medicaid"]),
         grouper=Grouper({"gender": ['M'], }, drop=False),
-        # We passthrough all non-static columns because we use MIMIC-extract's default
-        # preprocessing/imputation and do not wish to modify it for these features
+        # We passthrough all non-static columns because we use
+        # MIMIC-extract's default preprocessing/imputation and do not
+        # wish to modify it for these features
         # (static features are not preprocessed by MIMIC-extract). See
         # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
-                                 if f not in MIMIC_EXTRACT_STATIC_FEATURES.names]),
+                                 if
+                                 f not in MIMIC_EXTRACT_STATIC_FEATURES.names]),
         tabular_dataset_kwargs={"task": "los_3"}),
 
     "mooc": ExperimentConfig(

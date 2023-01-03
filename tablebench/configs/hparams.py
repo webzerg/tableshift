@@ -25,9 +25,19 @@ _dro_search_space = {
     # set size (larger than ~0.5) for chi-square geometry, particularly
     # when the learning rate is small.
     # TODO(jpgard): adjust uncertainty set size grid based
-    # on discussion with authors.
+    #  on discussion with authors.
     "size": tune.loguniform(1e-4, 1.),
 
+}
+
+_irm_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    # Same tuning space as  for IRM parameters as DomainBed; see
+    # https://github.com/facebookresearch/DomainBed/blob
+    # /2ed9edf781fe4b336c2fb6ffe7ca8a7c6f994422/domainbed/hparams_registry.py
+    # #L61
+    "irm_lambda": tune.choice([10 ** x for x in range(-1, 5)]),
+    "irm_penalty_anneal_iters": tune.choice([10 ** x for x in range(0, 4)])
 }
 
 # Similar to XGBoost search space; however, note that LightGBM is not
@@ -94,9 +104,10 @@ _ft_transformer_search_space = {
     "attention_dropout": tune.uniform(0, 0.5),
     "ffn_dropout": tune.uniform(0, 0.5),
     "ffn_factor": tune.uniform(2 / 3, 8 / 3),
-    # This is feature embedding size in Table 13 above. Note that Table 13 reports
-    # this as a uniform (64, 512) parameter, but d_token *must* be a multiple of
-    # n_heads, which is fixed at 8, so we use this simpler/equivalent range instead.
+    # This is feature embedding size in Table 13 above. Note that Table 13
+    # reports this as a uniform (64, 512) parameter, but d_token *must* be a
+    # multiple of n_heads, which is fixed at 8, so we use this
+    # simpler/equivalent range instead.
     "d_token": tune.choice([64, 128, 256, 512])
 }
 
@@ -106,6 +117,7 @@ search_space = {
     "expgrad": _expgrad_search_space,
     "ft_transformer": _ft_transformer_search_space,
     "group_dro": _group_dro_search_space,
+    "irm": _irm_search_space,
     "lightgbm": _lightgbm_search_space,
     "mlp": _DEFAULT_NN_SEARCH_SPACE,
     "resnet": _resnet_search_space,

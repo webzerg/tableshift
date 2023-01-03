@@ -10,7 +10,8 @@ from tablebench.models.torchutils import get_module_attr
 
 
 def domain_generalization_train_epoch(
-        model: MLPModel, optimizer, criterion: CORALLoss,
+        model: MLPModel, optimizer: torch.optim.Optimizer,
+        criterion: CORALLoss,
         id_train_loader: torch.utils.data.DataLoader,
         ood_train_loader: torch.utils.data.DataLoader,
         device):
@@ -34,8 +35,10 @@ def domain_generalization_train_epoch(
 
         return hook
 
-    if hasattr(model, "module"):  # Case: distributed module; access the module explicitly.
-        model.module.blocks[block_num].linear.register_forward_hook(get_activation())
+    if hasattr(model,
+               "module"):  # Case: distributed module; access the module explicitly.
+        model.module.blocks[block_num].linear.register_forward_hook(
+            get_activation())
     else:  # Case: standard module.
         model.blocks[block_num].linear.register_forward_hook(get_activation())
 
@@ -68,7 +71,8 @@ def domain_generalization_train_epoch(
 
         # Normalize CORAL loss by the batch size, so its scale is
         # batch size-independent.
-        coral_loss = criterion(activations_id, activations_ood) / len(activations_id)
+        coral_loss = criterion(activations_id, activations_ood) / len(
+            activations_id)
         ce_loss = binary_cross_entropy_with_logits(input=outputs_id,
                                                    target=labels_id)
         loss = ce_loss + model.loss_lambda * coral_loss
@@ -91,7 +95,6 @@ class DeepCoralModel(MLPModel):
         MLPModel.__init__(self, **kwargs)
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader,
-                    optimizer: torch.optim.Optimizer,
                     loss_fn: Callable,
                     device: str,
                     other_loaders: Optional[
@@ -100,6 +103,6 @@ class DeepCoralModel(MLPModel):
                     ):
         """Run a single epoch of model training."""
 
-        domain_generalization_train_epoch(self, optimizer, loss_fn, train_loader,
+        domain_generalization_train_epoch(self, self.optimizer, loss_fn,
+                                          train_loader,
                                           other_loaders[ood_loader_key], device)
-        # train_epoch(self, optimizer, loss_fn, train_loader, device=device)

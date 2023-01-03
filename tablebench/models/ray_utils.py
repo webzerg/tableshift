@@ -27,7 +27,8 @@ from tablebench.models.compat import SklearnStylePytorchModel, \
 from tablebench.models.config import get_default_config
 from tablebench.models.expgrad import ExponentiatedGradientTrainer
 from tablebench.models.torchutils import get_predictions_and_labels
-from tablebench.models.training import get_optimizer, train_epoch
+from tablebench.models.training import train_epoch
+from tablebench.models.optimizers import get_optimizer
 from tablebench.models.utils import get_estimator
 from tablebench.models.coral import DeepCoralModel, domain_generalization_train_epoch
 

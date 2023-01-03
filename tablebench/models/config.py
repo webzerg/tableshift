@@ -46,7 +46,14 @@ _DEFAULT_CONFIGS = frozendict({
     "group_dro":
         {"num_layers": 2,
          "d_hidden": 256,
-         "group_weights_step_size": 0.05},
+         "group_weights_step_size": 0.05,
+         "dropouts": 0.},
+    "irm":
+        {"num_layers": 2,
+         "d_hidden": 256,
+         "dropouts": 0.,
+         "irm_lambda": 1e-2,
+         "irm_penalty_anneal_iters": 500},
     "mlp":
         {"num_layers": 2,
          "d_hidden": 256,
@@ -55,6 +62,7 @@ _DEFAULT_CONFIGS = frozendict({
         {"n_blocks": 2,
          "dropout_first": 0.2,
          "dropout_second": 0.,
+         "hidden_factor": 1,
          "d_main": 128,
          "d_hidden": 256},
 

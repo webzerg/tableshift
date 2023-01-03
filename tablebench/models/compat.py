@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Optional, Mapping, Union, Callable, Any
+from typing import Optional, Mapping, Union, Callable
 
 import numpy as np
 import os
@@ -11,6 +11,9 @@ import torch
 from torch import nn
 
 from tablebench.models.torchutils import evaluate
+from tablebench.models.optimizers import get_optimizer
+
+OPTIMIZER_ARGS = ("lr", "weight_decay")
 
 
 def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
@@ -22,6 +25,12 @@ def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
 
 class SklearnStylePytorchModel(ABC, nn.Module):
     """A pytorch model with an sklearn-style interface."""
+
+    def _init_optimizer(self):
+        """(re)initialize the optimizer."""
+        opt_config = {k: self.config[k] for k in OPTIMIZER_ARGS}
+        print(f"[DEBUG] initializing optimizer with params {opt_config}")
+        self.optimizer = get_optimizer(self, config=opt_config)
 
     def predict(self, X) -> np.ndarray:
         """sklearn-compatible prediction function."""
@@ -42,7 +51,6 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
     @abstractmethod
     def train_epoch(self, train_loader: torch.utils.data.DataLoader,
-                    optimizer: torch.optim.Optimizer,
                     loss_fn: Callable,
                     device: str,
                     other_loaders: Optional[
@@ -51,20 +59,19 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         """Conduct one epoch of training and return the loss."""
         raise
 
-    def save_checkpoint(self, optimizer: torch.optim.Optimizer) -> Checkpoint:
+    def save_checkpoint(self) -> Checkpoint:
         # Here we save a checkpoint. It is automatically registered with
         # Ray Tune and can be accessed through `session.get_checkpoint()`
         # API in future iterations.
         os.makedirs("model", exist_ok=True)
         torch.save(
-            (self.state_dict(), optimizer.state_dict()),
+            (self.state_dict(), self.optimizer.state_dict()),
             "model/checkpoint.pt")
         checkpoint = Checkpoint.from_directory("model")
         return checkpoint
 
     def fit(self,
             train_loader: torch.utils.data.DataLoader,
-            optimizer: torch.optim.Optimizer,
             loss_fn,
             device: str,
             n_epochs=1,
@@ -78,7 +85,6 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
         for epoch in range(1, n_epochs + 1):
             self.train_epoch(train_loader=train_loader,
-                             optimizer=optimizer,
                              loss_fn=loss_fn,
                              other_loaders=other_loaders,
                              device=device)
@@ -87,7 +93,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
                 f"{k} score: {v:.4f}" for k, v in metrics.items())
             print(log_str)
 
-            checkpoint = self.save_checkpoint(optimizer)
+            checkpoint = self.save_checkpoint()
 
             if tune_report_split:
                 # TODO(jpgard): consider reporting multiple named metrics here.
@@ -101,7 +107,8 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
 
 SKLEARN_MODEL_NAMES = ("expgrad", "histgbm", "lightgbm", "wcs", "xgb")
-PYTORCH_MODEL_NAMES = ("deepcoral", "dro", "ft_transformer", "group_dro", "mlp", "resnet")
+PYTORCH_MODEL_NAMES = ("deepcoral", "dro", "ft_transformer", "group_dro",
+                       "irm", "mlp", "resnet")
 
 
 def is_pytorch_model_name(model: str) -> bool:
