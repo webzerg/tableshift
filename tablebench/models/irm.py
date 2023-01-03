@@ -35,10 +35,17 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
                     other_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None,
                     ) -> float:
+        """IRM training epoch.
+
+        Implementation via https://github.com/facebookresearch/DomainBed/blob
+        /main/domainbed/algorithms.py#L330.
+
+        """
         penalty_weight = (
             self.irm_lambda
             if self.update_count >= self.irm_penalty_anneal_iters
             else 1.0)
+
         nll = torch.Tensor([0.])
         penalty = torch.Tensor([0.])
         num_batches = 0.
