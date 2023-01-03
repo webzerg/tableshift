@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 import xgboost as xgb
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -12,11 +14,14 @@ from tablebench.models.coral import DeepCoralModel
 def get_estimator(model, d_out=1, **kwargs):
     if model == "deepcoral":
         return DeepCoralModel(d_in=kwargs["d_in"],
-                              d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
+                              d_layers=[kwargs["d_hidden"]] * kwargs[
+                                  "num_layers"],
                               d_out=d_out,
                               dropouts=kwargs["dropouts"],
                               activation=kwargs["activation"],
-                              loss_lambda=kwargs["loss_lambda"])
+                              loss_lambda=kwargs["loss_lambda"],
+                              lr=kwargs["lr"],
+                              weight_decay=kwargs["weight_decay"])
     elif model == "expgrad":
         return ExponentiatedGradient(**kwargs)
     elif model == "ft_transformer":
@@ -30,7 +35,8 @@ def get_estimator(model, d_out=1, **kwargs):
             tconfig[k] = kwargs[k]
 
         tconfig["ffn_d_hidden"] = int(kwargs["d_token"] * kwargs["ffn_factor"])
-        tconfig['attention_n_heads'] = 8  # Fixed as in https://arxiv.org/pdf/2106.11959.pdf
+        tconfig[
+            'attention_n_heads'] = 8  # Fixed as in https://arxiv.org/pdf/2106.11959.pdf
         return FTTransformerModel._make(
             n_num_features=kwargs["n_num_features"],
             cat_cardinalities=kwargs["cat_cardinalities"],
@@ -44,7 +50,10 @@ def get_estimator(model, d_out=1, **kwargs):
             dropouts=kwargs["dropouts"],
             activation=kwargs["activation"],
             group_weights_step_size=kwargs["group_weights_step_size"],
-            n_groups=kwargs["n_groups"])
+            n_groups=kwargs["n_groups"],
+            lr=kwargs["lr"],
+            weight_decay=kwargs["weight_decay"]
+        )
     elif model == "histgbm":
         return HistGradientBoostingClassifier(**kwargs)
     elif model == "lightgbm":
@@ -55,6 +64,8 @@ def get_estimator(model, d_out=1, **kwargs):
                         d_out=d_out,
                         dropouts=kwargs["dropouts"],
                         activation=kwargs["activation"],
+                        lr=kwargs["lr"],
+                        weight_decay=kwargs["weight_decay"],
                         )
     elif model == "resnet":
         d_hidden = kwargs["d_main"] * kwargs["hidden_factor"]
@@ -67,7 +78,10 @@ def get_estimator(model, d_out=1, **kwargs):
             dropout_second=kwargs["dropout_second"],
             normalization='BatchNorm1d',
             activation=kwargs["activation"],
-            d_out=d_out)
+            d_out=d_out,
+            lr=kwargs["lr"],
+            weight_decay=kwargs["weight_decay"]
+        )
 
     elif model == "wcs":
         # Weighted Covariate Shift classifier.

@@ -4,7 +4,8 @@ Wrappers for tabular baseline models from the rtdl package.
 rtdl source: https://github.com/Yura52/rtdl
 """
 
-from typing import Mapping, Optional, Callable
+import copy
+from typing import Mapping, Optional, Callable, Any
 
 import numpy as np
 import rtdl
@@ -13,12 +14,6 @@ import torch
 
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.training import train_epoch
-
-
-@torch.no_grad()
-def predict_proba(model, X):
-    prediction = model.predict(X)
-    return scipy.special.expit(prediction)
 
 
 class SklearnStyleRTDLModel(SklearnStylePytorchModel):
@@ -30,23 +25,45 @@ class SklearnStyleRTDLModel(SklearnStylePytorchModel):
                         Mapping[str, torch.utils.data.DataLoader]] = None,
                     ) -> float:
         """Run a single epoch of model training."""
-        return train_epoch(self, loss_fn, train_loader, device=device)
+        return train_epoch(self, self.optimizer,
+                           loss_fn, train_loader, device=device)
 
-    def predict_proba(self, X) -> np.ndarray:
-        raise
+    @torch.no_grad()
+    def predict_proba(self, X):
+        prediction = self.predict(X)
+        return scipy.special.expit(prediction)
 
 
 class ResNetModel(rtdl.ResNet, SklearnStyleRTDLModel):
+    def __init__(self, **kwargs):
+        self.config: Mapping[str, Any] = kwargs
+        super().__init__(**kwargs)
+        self._init_optimizer()
 
     def predict_proba(self, X) -> np.ndarray:
-        return predict_proba(self, X)
+        return self.predict_proba(X)
 
 
 class MLPModel(rtdl.MLP, SklearnStyleRTDLModel):
+    def __init__(self, **hparams):
+        self.config = copy.deepcopy(hparams)
+
+        # Remove hparams that are not taken by the rtdl constructor.
+        for k in ("lr", "weight_decay"):
+            hparams.pop(k)
+
+        super().__init__(**hparams)
+        self._init_optimizer()
+
     def predict_proba(self, X) -> np.ndarray:
-        return predict_proba(self, X)
+        return self.predict_proba(X)
 
 
 class FTTransformerModel(rtdl.FTTransformer, SklearnStyleRTDLModel):
+    def __init__(self, **kwargs):
+        self.config: Mapping[str, Any] = kwargs
+        super().__init__(**kwargs)
+        self._init_optimizer()
+
     def predict_proba(self, X) -> np.ndarray:
-        return predict_proba(self, X)
+        return self.predict_proba(X)

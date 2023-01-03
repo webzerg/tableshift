@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from functools import partial
 from typing import Optional, Mapping, Union, Callable, Any
 
 import numpy as np
@@ -11,6 +12,7 @@ import torch
 from torch import nn
 
 from tablebench.models.torchutils import evaluate
+from tablebench.models.optimizers import get_optimizer
 
 
 def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
@@ -23,12 +25,12 @@ def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
 class SklearnStylePytorchModel(ABC, nn.Module):
     """A pytorch model with an sklearn-style interface."""
 
-    def __init__(self,
-                 init_optimizer_fn: Callable[[], torch.optim.Optimizer],
-                 **kwargs):
-        super().__init__(self, **kwargs)
-        self._init_optimizer_fn = init_optimizer_fn
-        self.optimizer = self._init_optimizer_fn()
+    def _init_optimizer(self):
+        """(re)initialize the optimizer."""
+        opt_config = {"lr": self.config["lr"],
+                      "weight_decay": self.config["weight_decay"]}
+        print(f"[DEBUG] initializing optimizer with params {opt_config}")
+        self.optimizer = get_optimizer(self, config=opt_config)
 
     def predict(self, X) -> np.ndarray:
         """sklearn-compatible prediction function."""
@@ -106,7 +108,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
 SKLEARN_MODEL_NAMES = ("expgrad", "histgbm", "lightgbm", "wcs", "xgb")
 PYTORCH_MODEL_NAMES = (
-"deepcoral", "dro", "ft_transformer", "group_dro", "mlp", "resnet")
+    "deepcoral", "dro", "ft_transformer", "group_dro", "mlp", "resnet")
 
 
 def is_pytorch_model_name(model: str) -> bool:
