@@ -1,9 +1,10 @@
-from typing import Dict, Any
+import copy
 
 import xgboost as xgb
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 
+from tablebench.models.compat import OPTIMIZER_ARGS
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
@@ -35,12 +36,20 @@ def get_estimator(model, d_out=1, **kwargs):
             tconfig[k] = kwargs[k]
 
         tconfig["ffn_d_hidden"] = int(kwargs["d_token"] * kwargs["ffn_factor"])
-        tconfig[
-            'attention_n_heads'] = 8  # Fixed as in https://arxiv.org/pdf/2106.11959.pdf
-        return FTTransformerModel._make(
+
+        # Fixed as in https://arxiv.org/pdf/2106.11959.pdf
+        tconfig['attention_n_heads'] = 8
+
+        # Hacky way to construct a FTTransformer model
+        model = FTTransformerModel._make(
             n_num_features=kwargs["n_num_features"],
             cat_cardinalities=kwargs["cat_cardinalities"],
             transformer_config=tconfig)
+        tconfig.update({k: kwargs[k] for k in OPTIMIZER_ARGS})
+        model.config = copy.deepcopy(tconfig)
+        model._init_optimizer()
+
+        return model
 
     elif model == "group_dro":
         return GroupDROModel(

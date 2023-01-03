@@ -65,10 +65,6 @@ class MLPModel(rtdl.MLP, SklearnStyleRTDLModel):
 
 
 class FTTransformerModel(rtdl.FTTransformer, SklearnStyleRTDLModel):
-    def __init__(self, **kwargs):
-        self.config: Mapping[str, Any] = kwargs
-        super().__init__(**kwargs)
-        self._init_optimizer()
 
     def predict_proba(self, X) -> np.ndarray:
         return self.predict_proba(X)
