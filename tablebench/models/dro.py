@@ -1,4 +1,4 @@
-from typing import List, Optional, Mapping, Callable, Type
+from typing import Optional, Mapping
 
 import torch
 
@@ -24,7 +24,6 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
         return self
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader,
-                    optimizer: torch.optim.Optimizer,
                     loss_fn: GroupDROLoss,
                     device: str,
                     other_loaders: Optional[
@@ -33,11 +32,12 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
         for iteration, batch in enumerate(train_loader):
             x_batch, y_batch, _, d_batch = unpack_batch(batch)
             self.train()
-            optimizer.zero_grad()
+            self.optimizer.zero_grad()
             outputs = apply_model(self, x_batch)
             loss = loss_fn(outputs.squeeze(1), y_batch, d_batch,
                            self.group_weights,
-                           self.group_weights_step_size)
+                           self.group_weights_step_size,
+                           device=device)
 
             loss.backward()
-            optimizer.step()
+            self.optimizer.step()

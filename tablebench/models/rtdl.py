@@ -24,14 +24,13 @@ def predict_proba(model, X):
 class SklearnStyleRTDLModel(SklearnStylePytorchModel):
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader,
-                    optimizer: torch.optim.Optimizer,
                     loss_fn: Callable,
                     device: str,
                     other_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None,
                     ) -> float:
         """Run a single epoch of model training."""
-        return train_epoch(self, optimizer, loss_fn, train_loader, device=device)
+        return train_epoch(self, loss_fn, train_loader, device=device)
 
     def predict_proba(self, X) -> np.ndarray:
         raise
