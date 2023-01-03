@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from torch.nn.functional import binary_cross_entropy_with_logits
 import torch
 from torch import Tensor
+import torch.nn.functional as F
+import torch.autograd as autograd
+
 from tablebench.models.fastdro.robust_losses import RobustLoss
 
 
