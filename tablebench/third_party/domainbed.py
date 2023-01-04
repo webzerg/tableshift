@@ -14,10 +14,10 @@ class _InfiniteSampler(torch.utils.data.Sampler):
 
 
 class InfiniteDataLoader:
-    """See DomainBed fast_data_loader.py"""
+    """Adapted from InfiniteDataLoader in DomainBed fast_data_loader.py"""
 
-    def __init__(self, dataset, weights, batch_size, num_workers):
-        super().__init__()
+    def __init__(self, dataset, weights, batch_size, **kwargs):
+        super().__init__(**kwargs)
 
         if weights is not None:
             sampler = torch.utils.data.WeightedRandomSampler(
@@ -29,9 +29,6 @@ class InfiniteDataLoader:
                 dataset,
                 replacement=True)
 
-        if weights == None:
-            weights = torch.ones(len(dataset))
-
         batch_sampler = torch.utils.data.BatchSampler(
             sampler,
             batch_size=batch_size,
@@ -39,7 +36,6 @@ class InfiniteDataLoader:
 
         self._infinite_iterator = iter(torch.utils.data.DataLoader(
             dataset,
-            num_workers=num_workers,
             batch_sampler=_InfiniteSampler(batch_sampler)
         ))
 

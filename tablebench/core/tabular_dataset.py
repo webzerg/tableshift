@@ -5,13 +5,14 @@ import json
 import math
 import os
 import pickle
-from typing import Optional, Tuple, Union, List
+from typing import Optional, Tuple, Union, List, Dict, Any
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 import ray.data
 import torch
+from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 
 from .splitter import Splitter, DomainSplitter
@@ -20,19 +21,29 @@ from .tasks import get_task_config
 from .features import PreprocessorConfig
 from .metrics import metrics_by_group
 from .utils import make_uid
+from tablebench.third_party.domainbed import InfiniteDataLoader
 
 
-def _make_dataloader_from_dataframe(
-        data: DataFrame, batch_size: int, shuffle: bool,
-        device: str) -> torch.utils.data.DataLoader:
+def _make_dataloader_from_dataframes(
+        data, batch_size: int, shuffle: bool,
+        device: str, infinite=False) -> DataLoader:
+    """Construct a DataLoader from a DataFrame."""
     device = torch.device(device)
     data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
     tds = torch.utils.data.TensorDataset(*data)
     _collate_fn = lambda x: tuple(t.to(device) for t in default_collate(x))
-    return torch.utils.data.DataLoader(
-        dataset=tds, batch_size=batch_size,
-        shuffle=shuffle,
-        collate_fn=_collate_fn)
+    if infinite:
+        loader = InfiniteDataLoader(dataset=tds, batch_size=batch_size,
+                                    weights=None,
+                                    shuffle=shuffle,
+                                    collate_fn=_collate_fn)
+    else:
+        loader = DataLoader(
+            dataset=tds, batch_size=batch_size,
+            shuffle=shuffle,
+            # num_workers=num_workers,
+            collate_fn=_collate_fn)
+    return loader
 
 
 @dataclass
@@ -226,7 +237,8 @@ class TabularDataset(ABC):
         return self._get_split_xygd(split)
 
     def get_domain_dataloaders(self, split, batch_size=2048, device='cpu',
-                               shuffle=True):
+                               shuffle=True, infinite=True) -> Dict[
+        Any, DataLoader]:
         """Fetch a dict of {domain_id:DataLoader}."""
         loaders = {}
         data = self._get_split_xygd(split)
@@ -234,16 +246,21 @@ class TabularDataset(ABC):
 
         for domain in data[self.domain_label_colname].unique():
             split_domain_data = data[data[self.domain_label_colname] == domain]
+            split_loader = _make_dataloader_from_dataframes(
+                split_domain_data, batch_size, shuffle, device,
+                infinite=infinite)
+            loaders[domain] = split_loader
+        return loaders
 
     def get_dataloader(self, split, batch_size=2048, device='cpu',
-                       shuffle=True) -> torch.utils.data.DataLoader:
+                       shuffle=True, infinite=False) -> DataLoader:
         """Fetch a dataloader yielding (X, y, G, d) tuples."""
         data = self._get_split_xygd(split)
         if not self.domain_label_colname:
             # Drop the empty domain labels.
             data = data[:-1]
-        return _make_dataloader_from_dataframe(data, batch_size, shuffle,
-                                               device)
+        return _make_dataloader_from_dataframes(data, batch_size, shuffle,
+                                                device, infinite=infinite)
 
     def get_dataset_baseline_metrics(self, split):
 
