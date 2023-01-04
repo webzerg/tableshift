@@ -5,7 +5,7 @@ rtdl source: https://github.com/Yura52/rtdl
 """
 
 import copy
-from typing import Mapping, Optional, Callable, Any, Dict
+from typing import Optional, Callable, Any, Dict
 
 import numpy as np
 import rtdl

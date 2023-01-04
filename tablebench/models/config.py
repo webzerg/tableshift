@@ -3,7 +3,7 @@ from frozendict import frozendict
 
 from tablebench.core import TabularDataset
 from tablebench.models.compat import is_pytorch_model_name
-from tablebench.models.losses import GroupDROLoss, CORALLoss, DROLoss
+from tablebench.models.losses import GroupDROLoss, DROLoss
 from torch.nn import functional as F
 
 # Default configs for testing models. These are not tuned
@@ -90,10 +90,7 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
         config.update({"n_num_features": dset.X_shape[1]})
 
     # Models that use non-cross-entropy training objectives.
-    if model == "deepcoral":
-        config["criterion"] = CORALLoss()
-
-    elif model == "dro":
+    if model == "dro":
         config["criterion"] = DROLoss(size=config["size"],
                                       reg=config["reg"],
                                       geometry=config["geometry"],

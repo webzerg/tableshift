@@ -1,5 +1,4 @@
-import os
-from typing import Any
+from typing import Any, Dict
 
 from frozendict import frozendict
 from ray.air import session
@@ -38,7 +37,7 @@ def train_epoch(model, optimizer, criterion, train_loader,
         optimizer.zero_grad()
 
         # forward + backward + optimize
-        outputs = apply_model(model, inputs).squeeze()
+        outputs = apply_model(model, inputs).squeeze(1)
         if isinstance(criterion, GroupDROLoss):
             # Case: loss requires domain labels, plus group weights + step size.
             domains = domains.float().to(device)
@@ -69,6 +68,36 @@ def train_epoch(model, optimizer, criterion, train_loader,
     return running_loss / n_train
 
 
+def get_train_loaders(
+        estimator: SklearnStylePytorchModel,
+        dset: TabularDataset,
+        batch_size: int) -> Dict[Any, torch.utils.data.DataLoader]:
+    if estimator.domain_generalization:
+        train_loaders = dset.get_domain_dataloaders("train", batch_size)
+    elif estimator.domain_adaptation:
+        raise NotImplementedError
+    else:
+        train_loaders = {"train": dset.get_dataloader("train", batch_size)}
+    return train_loaders
+
+
+def get_eval_loaders(
+        estimator: SklearnStylePytorchModel,
+        dset: TabularDataset,
+        batch_size: int) -> Dict[Any, torch.utils.data.DataLoader]:
+    eval_loaders = {s: dset.get_dataloader(s, batch_size) for s in
+                    dset.eval_split_names}
+    if estimator.domain_generalization:
+        train_eval_loaders = dset.get_domain_dataloaders("train", batch_size,
+                                                         infinite=False)
+        eval_loaders.update(train_eval_loaders)
+    elif estimator.domain_adaptation:
+        raise NotImplementedError
+    else:
+        eval_loaders["train"] = dset.get_dataloader("train", batch_size)
+    return eval_loaders
+
+
 def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
                    device: str,
                    config=PYTORCH_DEFAULTS,
@@ -80,20 +109,8 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
     print(f"[DEBUG] device is {device}")
     print(f"[DEBUG] tune_report_split is {tune_report_split}")
 
-    batch_size = config["batch_size"]
-    eval_loaders = {s: dset.get_dataloader(s, batch_size) for s in
-                    dset.eval_split_names}
-
-    if estimator.domain_generalization:
-        train_loaders = dset.get_domain_dataloaders("train", batch_size)
-        train_eval_loaders = dset.get_domain_dataloaders("train", batch_size,
-                                                         infinite=False)
-        eval_loaders.update(train_eval_loaders)
-    elif estimator.domain_adaptation:
-        raise NotImplementedError
-    else:
-        train_loaders = {"train": dset.get_dataloader("train", batch_size)}
-        eval_loaders["train"] = dset.get_dataloader("train", batch_size)
+    train_loaders = get_train_loaders(estimator, dset, config["batch_size"])
+    eval_loaders = get_eval_loaders(estimator, dset, config["batch_size"])
 
     loss_fn = config["criterion"]
 
