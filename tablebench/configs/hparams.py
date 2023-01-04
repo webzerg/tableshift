@@ -36,8 +36,8 @@ _irm_search_space = {
     # https://github.com/facebookresearch/DomainBed/blob
     # /2ed9edf781fe4b336c2fb6ffe7ca8a7c6f994422/domainbed/hparams_registry.py
     # #L61
-    "irm_lambda": tune.choice([10 ** x for x in range(-1, 5)]),
-    "irm_penalty_anneal_iters": tune.choice([10 ** x for x in range(0, 4)])
+    "irm_lambda": tune.loguniform(-1, 5),
+    "irm_penalty_anneal_iters": tune.loguniform(0, 4)
 }
 
 # Similar to XGBoost search space; however, note that LightGBM is not
