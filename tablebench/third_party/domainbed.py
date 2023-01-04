@@ -1,3 +1,5 @@
+from typing import Callable
+
 import torch
 
 
@@ -16,8 +18,8 @@ class _InfiniteSampler(torch.utils.data.Sampler):
 class InfiniteDataLoader:
     """Adapted from InfiniteDataLoader in DomainBed fast_data_loader.py"""
 
-    def __init__(self, dataset, weights, batch_size, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, dataset, batch_size, weights=None):
+        super().__init__()
 
         if weights is not None:
             sampler = torch.utils.data.WeightedRandomSampler(

@@ -26,23 +26,16 @@ from tablebench.third_party.domainbed import InfiniteDataLoader
 
 def _make_dataloader_from_dataframes(
         data, batch_size: int, shuffle: bool,
-        device: str, infinite=False) -> DataLoader:
-    """Construct a DataLoader from a DataFrame."""
-    device = torch.device(device)
+        infinite=False) -> DataLoader:
+    """Construct a (shuffled) DataLoader from a DataFrame."""
     data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
     tds = torch.utils.data.TensorDataset(*data)
-    _collate_fn = lambda x: tuple(t.to(device) for t in default_collate(x))
     if infinite:
-        loader = InfiniteDataLoader(dataset=tds, batch_size=batch_size,
-                                    weights=None,
-                                    shuffle=shuffle,
-                                    collate_fn=_collate_fn)
+        loader = InfiniteDataLoader(dataset=tds, batch_size=batch_size)
     else:
         loader = DataLoader(
             dataset=tds, batch_size=batch_size,
-            shuffle=shuffle,
-            # num_workers=num_workers,
-            collate_fn=_collate_fn)
+            shuffle=shuffle)
     return loader
 
 
@@ -236,23 +229,25 @@ class TabularDataset(ABC):
         #  e.g. numeric vs. categorical features, where this is needed.
         return self._get_split_xygd(split)
 
-    def get_domain_dataloaders(self, split, batch_size=2048, device='cpu',
+    def get_domain_dataloaders(self, split, batch_size=2048,
                                shuffle=True, infinite=True) -> Dict[
         Any, DataLoader]:
         """Fetch a dict of {domain_id:DataLoader}."""
         loaders = {}
-        data = self._get_split_xygd(split)
+        split_data = self._get_split_xygd(split)
         assert self.n_domains, "sanity check for a domain-split dataset"
 
-        for domain in data[self.domain_label_colname].unique():
-            split_domain_data = data[data[self.domain_label_colname] == domain]
+        for domain in split_data[3].unique():
+            # Boolean vector where True indicates observations in the domain.
+            idxs = split_data[3] == domain
+
+            split_domain_data = [df[idxs] for df in split_data]
             split_loader = _make_dataloader_from_dataframes(
-                split_domain_data, batch_size, shuffle, device,
-                infinite=infinite)
+                split_domain_data, batch_size, shuffle, infinite=infinite)
             loaders[domain] = split_loader
         return loaders
 
-    def get_dataloader(self, split, batch_size=2048, device='cpu',
+    def get_dataloader(self, split, batch_size=2048,
                        shuffle=True, infinite=False) -> DataLoader:
         """Fetch a dataloader yielding (X, y, G, d) tuples."""
         data = self._get_split_xygd(split)
@@ -260,7 +255,7 @@ class TabularDataset(ABC):
             # Drop the empty domain labels.
             data = data[:-1]
         return _make_dataloader_from_dataframes(data, batch_size, shuffle,
-                                                device, infinite=infinite)
+                                                infinite=infinite)
 
     def get_dataset_baseline_metrics(self, split):
 
