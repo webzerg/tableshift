@@ -78,13 +78,10 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
     print(f"[DEBUG] device is {device}")
     print(f"[DEBUG] tune_report_split is {tune_report_split}")
 
-    train_loader = dset.get_dataloader("train", config["batch_size"],
-                                       device=device)
-    domain_loaders = dset.get_domain_dataloaders("train", config["batch_size"],
-                                                 device=device)
-    import ipdb;ipdb.set_trace()
+    train_loader = dset.get_dataloader("train", config["batch_size"])
+    domain_loaders = dset.get_domain_dataloaders("train", config["batch_size"])
     eval_loaders = {
-        s: dset.get_dataloader(s, config["batch_size"], device=device) for s in
+        s: dset.get_dataloader(s, config["batch_size"]) for s in
         dset.eval_split_names}
 
     loss_fn = config["criterion"]

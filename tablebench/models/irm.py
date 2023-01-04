@@ -29,7 +29,7 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
         self.irm_penalty_anneal_iters = irm_penalty_anneal_iters
         self.register_buffer('update_count', torch.tensor([0]))
 
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+    def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
                     loss_fn: Callable,
                     device: str,
                     other_loaders: Optional[
@@ -50,7 +50,7 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
         penalty = torch.Tensor([0.])
         num_batches = 0.
 
-        for batch in train_loader:
+        for batch in train_loaders:
             x_batch, y_batch, _, _ = unpack_batch(batch)
             self.train()
             self.optimizer.zero_grad()

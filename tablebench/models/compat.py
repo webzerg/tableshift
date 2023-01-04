@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Optional, Mapping, Union, Callable
+from typing import Optional, Mapping, Union, Callable, Any, Dict
 
 import numpy as np
 import os
@@ -9,6 +9,7 @@ from ray.air import session
 from ray.air.checkpoint import Checkpoint
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
 
 from tablebench.models.torchutils import evaluate
 from tablebench.models.optimizers import get_optimizer
@@ -50,11 +51,13 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         return split_scores
 
     @abstractmethod
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+    def train_epoch(self,
+                    train_loaders: Union[DataLoader,
+                    Dict[Any, DataLoader]],
                     loss_fn: Callable,
                     device: str,
                     other_loaders: Optional[
-                        Mapping[str, torch.utils.data.DataLoader]] = None
+                        Mapping[str, DataLoader]] = None
                     ) -> float:
         """Conduct one epoch of training and return the loss."""
         raise
@@ -70,13 +73,12 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         checkpoint = Checkpoint.from_directory("model")
         return checkpoint
 
-    def fit(self,
-            train_loader: torch.utils.data.DataLoader,
+    def fit(self, train_loaders: Union[DataLoader, Dict[Any, DataLoader]],
             loss_fn,
             device: str,
             n_epochs=1,
             other_loaders: Optional[
-                Mapping[str, torch.utils.data.DataLoader]] = None,
+                Mapping[str, DataLoader]] = None,
             tune_report_split: Optional[str] = None) -> dict:
         fit_metrics = defaultdict(list)
 
@@ -84,11 +86,11 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             assert tune_report_split in list(other_loaders.keys()) + ["train"]
 
         for epoch in range(1, n_epochs + 1):
-            self.train_epoch(train_loader=train_loader,
+            self.train_epoch(train_loaders=train_loaders,
                              loss_fn=loss_fn,
                              other_loaders=other_loaders,
                              device=device)
-            metrics = self.evaluate(train_loader, other_loaders, device=device)
+            metrics = self.evaluate(train_loaders, other_loaders, device=device)
             log_str = f'Epoch {epoch:03d} ' + ' | '.join(
                 f"{k} score: {v:.4f}" for k, v in metrics.items())
             print(log_str)

@@ -96,7 +96,7 @@ class DeepCoralModel(MLPModel):
         self.loss_lambda = loss_lambda
         MLPModel.__init__(self, **kwargs)
 
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+    def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
                     loss_fn: Callable,
                     device: str,
                     other_loaders: Optional[
@@ -106,5 +106,5 @@ class DeepCoralModel(MLPModel):
         """Run a single epoch of model training."""
 
         domain_generalization_train_epoch(self, self.optimizer, loss_fn,
-                                          train_loader,
+                                          train_loaders,
                                           other_loaders[ood_loader_key], device)

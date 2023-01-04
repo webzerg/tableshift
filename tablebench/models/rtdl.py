@@ -18,7 +18,7 @@ from tablebench.models.training import train_epoch
 
 class SklearnStyleRTDLModel(SklearnStylePytorchModel):
 
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+    def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
                     loss_fn: Callable,
                     device: str,
                     other_loaders: Optional[
@@ -26,7 +26,7 @@ class SklearnStyleRTDLModel(SklearnStylePytorchModel):
                     ) -> float:
         """Run a single epoch of model training."""
         return train_epoch(self, self.optimizer,
-                           loss_fn, train_loader, device=device)
+                           loss_fn, train_loaders, device=device)
 
     @torch.no_grad()
     def predict_proba(self, X):

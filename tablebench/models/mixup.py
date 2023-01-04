@@ -46,7 +46,7 @@ class MixUpModel(MLPModel, SklearnStylePytorchModel):
         super().__init__(**hparams)
         self.mixup_alpha = mixup_alpha
 
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+    def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
                     loss_fn: Callable,
                     device: str,
                     other_loaders: Optional[
@@ -56,7 +56,7 @@ class MixUpModel(MLPModel, SklearnStylePytorchModel):
         n_train = 0
         microbatch_size = 16  # must evenly divide batch size
 
-        for batch in train_loader:
+        for batch in train_loaders:
             loss = 0
 
             x_batch, y_batch, _, _ = unpack_batch(batch)

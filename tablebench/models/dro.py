@@ -23,13 +23,13 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
             setattr(self, attr, getattr(self, attr).to(device))
         return self
 
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+    def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
                     loss_fn: GroupDROLoss,
                     device: str,
                     other_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None
                     ):
-        for iteration, batch in enumerate(train_loader):
+        for iteration, batch in enumerate(train_loaders):
             x_batch, y_batch, _, d_batch = unpack_batch(batch)
             self.train()
             self.optimizer.zero_grad()
