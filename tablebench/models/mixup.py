@@ -49,7 +49,7 @@ class MixUpModel(MLPModel, SklearnStylePytorchModel):
     def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
                     loss_fn: Callable,
                     device: str,
-                    other_loaders: Optional[
+                    eval_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None,
                     ) -> float:
         total_loss = None

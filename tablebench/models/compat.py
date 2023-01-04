@@ -42,13 +42,9 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         """sklearn-compatible probability prediction function."""
         raise
 
-    def evaluate(self, train_loader, other_loaders, device):
-        split_scores = {"train": evaluate(self, train_loader, device)}
-        if other_loaders:
-            for split, loader in other_loaders.items():
-                split_score = evaluate(self, loader, device)
-                split_scores[split] = split_score
-        return split_scores
+    def evaluate(self, eval_loaders: Dict[str, DataLoader], device):
+        return {str(split): evaluate(self, loader, device)
+                for split, loader in eval_loaders.items()}
 
     @abstractmethod
     def train_epoch(self,
@@ -56,7 +52,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
                     loss_fn: Callable,
                     device: str,
                     uda_loader: Optional[DataLoader] = None,
-                    other_loaders: Optional[Mapping[str, DataLoader]] = None,
+                    eval_loaders: Optional[Mapping[str, DataLoader]] = None,
                     # Terminate after this many steps if reached before end
                     # of epoch.
                     max_examples_per_epoch: Optional[int] = None
@@ -79,22 +75,23 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             loss_fn,
             device: str,
             n_epochs=1,
-            other_loaders: Optional[
-                Mapping[str, DataLoader]] = None,
+            eval_loaders: Optional[Mapping[str, DataLoader]] = None,
             tune_report_split: Optional[str] = None,
             max_examples_per_epoch: Optional[int] = None) -> dict:
         fit_metrics = defaultdict(list)
 
         if tune_report_split:
-            assert tune_report_split in list(other_loaders.keys()) + ["train"]
+            assert tune_report_split in list(eval_loaders.keys()) + ["train"]
 
         for epoch in range(1, n_epochs + 1):
+            print(f"[DEBUG] starting epoch {epoch}")
             self.train_epoch(train_loaders=train_loaders,
                              loss_fn=loss_fn,
-                             other_loaders=other_loaders,
+                             eval_loaders=eval_loaders,
                              device=device,
                              max_examples_per_epoch=max_examples_per_epoch)
-            metrics = self.evaluate(train_loaders, other_loaders, device=device)
+            print(f"[DEBUG] training epoch {epoch} complete; evaluating")
+            metrics = self.evaluate(eval_loaders, device=device)
             log_str = f'Epoch {epoch:03d} ' + ' | '.join(
                 f"{k} score: {v:.4f}" for k, v in metrics.items())
             print(log_str)

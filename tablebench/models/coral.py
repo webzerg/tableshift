@@ -99,7 +99,7 @@ class DeepCoralModel(MLPModel):
     def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
                     loss_fn: Callable,
                     device: str,
-                    other_loaders: Optional[
+                    eval_loaders: Optional[
                         Mapping[str, torch.utils.data.DataLoader]] = None,
                     ood_loader_key="ood_validation",
                     ):
@@ -107,4 +107,4 @@ class DeepCoralModel(MLPModel):
 
         domain_generalization_train_epoch(self, self.optimizer, loss_fn,
                                           train_loaders,
-                                          other_loaders[ood_loader_key], device)
+                                          eval_loaders[ood_loader_key], device)

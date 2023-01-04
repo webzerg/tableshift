@@ -82,7 +82,7 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
                     loss_fn: Callable,
                     device: str,
                     uda_loader: Optional[DataLoader] = None,
-                    other_loaders: Optional[Mapping[str, DataLoader]] = None,
+                    eval_loaders: Optional[Mapping[str, DataLoader]] = None,
                     max_examples_per_epoch: Optional[int] = None
                     ) -> float:
         """Conduct one epoch of training and return the loss."""

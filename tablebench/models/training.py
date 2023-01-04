@@ -78,11 +78,16 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
     print(f"[DEBUG] device is {device}")
     print(f"[DEBUG] tune_report_split is {tune_report_split}")
 
+    # TODO(jpgard): clean up this block; should be an if/else
     train_loader = dset.get_dataloader("train", config["batch_size"])
     domain_loaders = dset.get_domain_dataloaders("train", config["batch_size"])
-    eval_loaders = {
-        s: dset.get_dataloader(s, config["batch_size"]) for s in
-        dset.eval_split_names}
+
+    eval_loaders = {s: dset.get_dataloader(s, config["batch_size"]) for s in
+                    dset.eval_split_names}
+    train_eval_loaders = dset.get_domain_dataloaders("train",
+                                                     config["batch_size"],
+                                                     infinite=False)
+    eval_loaders.update(train_eval_loaders)
 
     loss_fn = config["criterion"]
 
@@ -90,12 +95,12 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
     # estimator.fit(train_loader, loss_fn,
     #               n_epochs=config["n_epochs"],
     #               device=device,
-    #               other_loaders=eval_loaders,
+    #               eval_loaders=eval_loaders,
     #               tune_report_split=tune_report_split)
     estimator.fit(domain_loaders, loss_fn,
                   n_epochs=config["n_epochs"],
                   device=device,
-                  other_loaders=eval_loaders,
+                  eval_loaders=eval_loaders,
                   tune_report_split=tune_report_split,
                   max_examples_per_epoch=dset.n_train)
     return estimator
