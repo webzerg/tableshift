@@ -6,6 +6,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.autograd as autograd
+from tqdm import tqdm
 
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.rtdl import MLPModel
@@ -54,7 +55,6 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
         all_logits_idx = 0
 
         for i, (x, y) in enumerate(minibatches):
-            print(i)
             logits = all_logits[all_logits_idx:all_logits_idx + x.shape[0]]
             all_logits_idx += x.shape[0]
             nll += F.cross_entropy(logits, y)
@@ -83,7 +83,7 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
                     device: str,
                     uda_loader: Optional[DataLoader] = None,
                     other_loaders: Optional[Mapping[str, DataLoader]] = None,
-                    steps: Optional[int] = None
+                    max_examples_per_epoch: Optional[int] = None
                     ) -> float:
         """Conduct one epoch of training and return the loss."""
 
@@ -94,14 +94,18 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
             x_batch, y_batch = batch[:2]
             return x_batch.to(device), y_batch.to(device)
 
-        print("[WARNING] remove 100-step limit after testing!!!")
-        print("#" * 50)
-        for step in range(100):
-
+        loss = None
+        examples_seen = 0
+        while True:
             minibatches_device = [_prepare_batch(batch) for batch in
                                   next(train_minibatches_iterator)]
             # Note: if this was a domain_adaption task, do the same as above
             # for uda_loader.
             tmp = self.update(minibatches_device)
-            import ipdb;
-            ipdb.set_trace()
+
+            loss = tmp['loss'] if loss is None else loss + tmp['loss']
+            examples_seen += sum(len(x) for x in minibatches_device)
+            if examples_seen >= max_examples_per_epoch:
+                break
+
+        return loss / examples_seen

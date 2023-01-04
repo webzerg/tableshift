@@ -91,6 +91,11 @@ class TabularDataset(ABC):
         return [None, len(self.feature_names)]
 
     @property
+    def n_train(self) -> int:
+        """Fetch the number of training observations."""
+        return len(self.splits["train"])
+
+    @property
     def n_domains(self) -> int:
         """Number of domains, across all sensitive attributes."""
         if self.domain_label_colname is None:

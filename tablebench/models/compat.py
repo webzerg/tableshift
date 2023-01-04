@@ -57,9 +57,9 @@ class SklearnStylePytorchModel(ABC, nn.Module):
                     device: str,
                     uda_loader: Optional[DataLoader] = None,
                     other_loaders: Optional[Mapping[str, DataLoader]] = None,
-                    # Terminate after this many steps, if reached before end
+                    # Terminate after this many steps if reached before end
                     # of epoch.
-                    steps: Optional[int] = None
+                    max_examples_per_epoch: Optional[int] = None
                     ) -> float:
         """Conduct one epoch of training and return the loss."""
         raise
@@ -81,7 +81,8 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             n_epochs=1,
             other_loaders: Optional[
                 Mapping[str, DataLoader]] = None,
-            tune_report_split: Optional[str] = None) -> dict:
+            tune_report_split: Optional[str] = None,
+            max_examples_per_epoch: Optional[int] = None) -> dict:
         fit_metrics = defaultdict(list)
 
         if tune_report_split:
@@ -91,7 +92,8 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             self.train_epoch(train_loaders=train_loaders,
                              loss_fn=loss_fn,
                              other_loaders=other_loaders,
-                             device=device)
+                             device=device,
+                             max_examples_per_epoch=max_examples_per_epoch)
             metrics = self.evaluate(train_loaders, other_loaders, device=device)
             log_str = f'Epoch {epoch:03d} ' + ' | '.join(
                 f"{k} score: {v:.4f}" for k, v in metrics.items())
