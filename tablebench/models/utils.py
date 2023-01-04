@@ -5,12 +5,13 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from tablebench.models.compat import OPTIMIZER_ARGS
+from tablebench.models.coral import DeepCoralModel
+from tablebench.models.dro import GroupDROModel
 from tablebench.models.expgrad import ExponentiatedGradient
+from tablebench.models.irm import IRMModel
 from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
-from tablebench.models.dro import GroupDROModel
-from tablebench.models.coral import DeepCoralModel
-from tablebench.models.irm import IRMModel
+from tablebench.models.mixup import MixUpModel
 
 
 def get_estimator(model, d_out=1, **kwargs):
@@ -78,6 +79,18 @@ def get_estimator(model, d_out=1, **kwargs):
 
     elif model == "lightgbm":
         return LGBMClassifier(**kwargs)
+
+    elif model == "mixup":
+        return MixUpModel(
+            d_in=kwargs["d_in"],
+            d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
+            d_out=d_out,
+            dropouts=kwargs["dropouts"],
+            activation=kwargs["activation"],
+            mixup_alpha=kwargs["mixup_alpha"],
+            **{k: kwargs[k] for k in OPTIMIZER_ARGS}
+        )
+
     elif model == "mlp" or model == "dro":
         return MLPModel(d_in=kwargs["d_in"],
                         d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],

@@ -58,6 +58,11 @@ _DEFAULT_CONFIGS = frozendict({
         {"num_layers": 2,
          "d_hidden": 256,
          "dropouts": 0.},
+    "mixup":
+        {"num_layers": 2,
+         "d_hidden": 256,
+         "dropouts": 0.,
+         "mixup_alpha": 0.4},
     "resnet":
         {"n_blocks": 2,
          "dropout_first": 0.2,
