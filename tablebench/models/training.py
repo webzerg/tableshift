@@ -87,7 +87,12 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
     loss_fn = config["criterion"]
 
     estimator.to(device)
-    estimator.fit(train_loader, loss_fn,
+    # estimator.fit(train_loader, loss_fn,
+    #               n_epochs=config["n_epochs"],
+    #               device=device,
+    #               other_loaders=eval_loaders,
+    #               tune_report_split=tune_report_split)
+    estimator.fit(domain_loaders, loss_fn,
                   n_epochs=config["n_epochs"],
                   device=device,
                   other_loaders=eval_loaders,

@@ -52,12 +52,14 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
     @abstractmethod
     def train_epoch(self,
-                    train_loaders: Union[DataLoader,
-                    Dict[Any, DataLoader]],
+                    train_loaders: Union[DataLoader, Dict[Any, DataLoader]],
                     loss_fn: Callable,
                     device: str,
-                    other_loaders: Optional[
-                        Mapping[str, DataLoader]] = None
+                    uda_loader: Optional[DataLoader] = None,
+                    other_loaders: Optional[Mapping[str, DataLoader]] = None,
+                    # Terminate after this many steps, if reached before end
+                    # of epoch.
+                    steps: Optional[int] = None
                     ) -> float:
         """Conduct one epoch of training and return the loss."""
         raise

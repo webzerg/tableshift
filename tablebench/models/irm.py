@@ -1,23 +1,24 @@
 import copy
-from typing import Callable, Mapping, Optional
+from typing import Callable, Mapping, Optional, Dict, Any, Union, Tuple
 
 import torch
+from torch import Tensor
+from torch.utils.data import DataLoader
 import torch.nn.functional as F
+import torch.autograd as autograd
 
-from tablebench.models.losses import irm_penalty
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.rtdl import MLPModel
 from tablebench.models.torchutils import unpack_batch, apply_model
-from tablebench.models.utils import OPTIMIZER_ARGS
 
 
 class IRMModel(MLPModel, SklearnStylePytorchModel):
     """Class to represent Invariant Risk Minimization models.
 
-    Based on implementation from
-    https://github.com/facebookresearch/DomainBed/blob/main/domainbed
-    /algorithms.py .
-    """
+        Based on implementation from
+        https://github.com/facebookresearch/DomainBed/blob/main/domainbed
+        /algorithms.py .
+        """
 
     def __init__(self, irm_lambda: float, irm_penalty_anneal_iters: int,
                  **hparams):
@@ -29,38 +30,38 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
         self.irm_penalty_anneal_iters = irm_penalty_anneal_iters
         self.register_buffer('update_count', torch.tensor([0]))
 
-    def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
-                    loss_fn: Callable,
-                    device: str,
-                    other_loaders: Optional[
-                        Mapping[str, torch.utils.data.DataLoader]] = None,
-                    ) -> float:
-        """IRM training epoch.
+    @staticmethod
+    def _irm_penalty(logits, y):
+        device = "cuda" if logits.is_cuda else "cpu"
+        scale = torch.tensor(1.).to(device).requires_grad_()
+        loss_1 = F.cross_entropy(logits[::2] * scale, y[::2])
+        loss_2 = F.cross_entropy(logits[1::2] * scale, y[1::2])
+        grad_1 = autograd.grad(loss_1, [scale], create_graph=True)[0]
+        grad_2 = autograd.grad(loss_2, [scale], create_graph=True)[0]
+        result = torch.sum(grad_1 * grad_2)
+        return result
 
-        Implementation via https://github.com/facebookresearch/DomainBed/blob
-        /main/domainbed/algorithms.py#L330.
+    def update(self, minibatches, unlabeled=None):
 
-        """
         penalty_weight = (
-            self.irm_lambda
+            self.hparams['irm_lambda']
             if self.update_count >= self.irm_penalty_anneal_iters
             else 1.0)
+        nll = 0.
+        penalty = 0.
+        all_x = torch.cat([x for x, y in minibatches])
+        all_logits = apply_model(self, all_x).squeeze()
+        all_logits_idx = 0
 
-        nll = torch.Tensor([0.])
-        penalty = torch.Tensor([0.])
-        num_batches = 0.
+        for i, (x, y) in enumerate(minibatches):
+            print(i)
+            logits = all_logits[all_logits_idx:all_logits_idx + x.shape[0]]
+            all_logits_idx += x.shape[0]
+            nll += F.cross_entropy(logits, y)
+            penalty += self._irm_penalty(logits, y)
 
-        for batch in train_loaders:
-            x_batch, y_batch, _, _ = unpack_batch(batch)
-            self.train()
-            self.optimizer.zero_grad()
-            logits = apply_model(self, x_batch).squeeze(1)
-            nll += F.cross_entropy(logits, y_batch)
-            penalty += irm_penalty(logits, y_batch)
-            num_batches += 1
-
-        nll /= num_batches
-        penalty /= num_batches
+        nll /= len(minibatches)
+        penalty /= len(minibatches)
         loss = nll + (penalty_weight * penalty)
 
         if self.update_count == self.irm_penalty_anneal_iters:
@@ -73,4 +74,34 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
         self.optimizer.step()
 
         self.update_count += 1
-        return loss.item()
+        return {'loss': loss.item(), 'nll': nll.item(),
+                'penalty': penalty.item()}
+
+    def train_epoch(self,
+                    train_loaders: Union[DataLoader, Dict[Any, DataLoader]],
+                    loss_fn: Callable,
+                    device: str,
+                    uda_loader: Optional[DataLoader] = None,
+                    other_loaders: Optional[Mapping[str, DataLoader]] = None,
+                    steps: Optional[int] = None
+                    ) -> float:
+        """Conduct one epoch of training and return the loss."""
+
+        loaders = [x for x in train_loaders.values()]
+        train_minibatches_iterator = zip(*loaders)
+
+        def _prepare_batch(batch) -> Tuple[Tensor, Tensor]:
+            x_batch, y_batch = batch[:2]
+            return x_batch.to(device), y_batch.to(device)
+
+        print("[WARNING] remove 100-step limit after testing!!!")
+        print("#" * 50)
+        for step in range(100):
+
+            minibatches_device = [_prepare_batch(batch) for batch in
+                                  next(train_minibatches_iterator)]
+            # Note: if this was a domain_adaption task, do the same as above
+            # for uda_loader.
+            tmp = self.update(minibatches_device)
+            import ipdb;
+            ipdb.set_trace()

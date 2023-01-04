@@ -237,9 +237,14 @@ class TabularDataset(ABC):
         split_data = self._get_split_xygd(split)
         assert self.n_domains, "sanity check for a domain-split dataset"
 
-        for domain in split_data[3].unique():
+        print("[DEBUG] printing domain value counts: {}".format(
+            split_data[3].value_counts()))
+
+        for domain in sorted(split_data[3].unique()):
             # Boolean vector where True indicates observations in the domain.
             idxs = split_data[3] == domain
+            assert idxs.sum() >= batch_size, \
+                "sanity check at least one full batch per domain."
 
             split_domain_data = [df[idxs] for df in split_data]
             split_loader = _make_dataloader_from_dataframes(
