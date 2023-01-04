@@ -42,6 +42,8 @@ def domain_generalization_train_epoch(
     else:  # Case: standard module.
         model.blocks[block_num].linear.register_forward_hook(get_activation())
 
+    # TODO(jpgard): restart one iterator if there are still batches in the other.
+    raise NotImplementedError
     for id_batch, ood_batch in zip(id_train_loader, ood_train_loader):
         inputs_id, labels_id, _, _ = unpack_batch(id_batch)
         inputs_ood, _, _, _ = unpack_batch(ood_batch)
