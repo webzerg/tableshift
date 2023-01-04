@@ -1,6 +1,22 @@
-from typing import Callable
-
 import torch
+
+
+def random_pairs_of_minibatches(minibatches):
+    """From DomainBed.misc."""
+    perm = torch.randperm(len(minibatches)).tolist()
+    pairs = []
+
+    for i in range(len(minibatches)):
+        j = i + 1 if i < (len(minibatches) - 1) else 0
+
+        xi, yi = minibatches[perm[i]][0], minibatches[perm[i]][1]
+        xj, yj = minibatches[perm[j]][0], minibatches[perm[j]][1]
+
+        min_n = min(len(xi), len(xj))
+
+        pairs.append(((xi[:min_n], yi[:min_n]), (xj[:min_n], yj[:min_n])))
+
+    return pairs
 
 
 class _InfiniteSampler(torch.utils.data.Sampler):

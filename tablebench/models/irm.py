@@ -60,8 +60,9 @@ class IRMModel(DomainGeneralizationModel):
         loss = nll + (penalty_weight * penalty)
 
         if self.update_count == self.irm_penalty_anneal_iters:
-            # Reset Adam, because it doesn't like the sharp jump in gradient
-            # magnitudes that happens at this step.
+            # Reset optimizer (as in DomainBed), because Adam optimizer
+            # doesn't like the sharp jump in gradient magnitudes that happens
+            # at this step.
             self._init_optimizer()
 
         self.optimizer.zero_grad()
