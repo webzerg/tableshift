@@ -27,6 +27,15 @@ def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
 class SklearnStylePytorchModel(ABC, nn.Module):
     """A pytorch model with an sklearn-style interface."""
 
+    def __init__(self):
+        super().__init__()
+
+        # Indicator for domain generalization model
+        self.domain_generalization = False
+
+        # Indicator for domain adaptation model
+        self.domain_adaptation = False
+
     def _init_optimizer(self):
         """(re)initialize the optimizer."""
         opt_config = {k: self.config[k] for k in OPTIMIZER_ARGS}
@@ -48,7 +57,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 
     @abstractmethod
     def train_epoch(self,
-                    train_loaders: Union[DataLoader, Dict[Any, DataLoader]],
+                    train_loaders: Dict[Any, DataLoader],
                     loss_fn: Callable,
                     device: str,
                     uda_loader: Optional[DataLoader] = None,
@@ -71,11 +80,11 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         checkpoint = Checkpoint.from_directory("model")
         return checkpoint
 
-    def fit(self, train_loaders: Union[DataLoader, Dict[Any, DataLoader]],
+    def fit(self, train_loaders: Dict[Any, DataLoader],
             loss_fn,
             device: str,
             n_epochs=1,
-            eval_loaders: Optional[Mapping[str, DataLoader]] = None,
+            eval_loaders: Optional[Dict[str, DataLoader]] = None,
             tune_report_split: Optional[str] = None,
             max_examples_per_epoch: Optional[int] = None) -> dict:
         fit_metrics = defaultdict(list)
@@ -84,13 +93,11 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             assert tune_report_split in list(eval_loaders.keys()) + ["train"]
 
         for epoch in range(1, n_epochs + 1):
-            print(f"[DEBUG] starting epoch {epoch}")
             self.train_epoch(train_loaders=train_loaders,
                              loss_fn=loss_fn,
                              eval_loaders=eval_loaders,
                              device=device,
                              max_examples_per_epoch=max_examples_per_epoch)
-            print(f"[DEBUG] training epoch {epoch} complete; evaluating")
             metrics = self.evaluate(eval_loaders, device=device)
             log_str = f'Epoch {epoch:03d} ' + ' | '.join(
                 f"{k} score: {v:.4f}" for k, v in metrics.items())

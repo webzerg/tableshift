@@ -1,19 +1,14 @@
 import copy
-from typing import Callable, Mapping, Optional, Dict, Any, Union, Tuple
 
 import torch
-from torch import Tensor
-from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.autograd as autograd
-from tqdm import tqdm
 
-from tablebench.models.compat import SklearnStylePytorchModel
-from tablebench.models.rtdl import MLPModel
-from tablebench.models.torchutils import unpack_batch, apply_model
+from tablebench.models.domain_generalization import DomainGeneralizationModel
+from tablebench.models.torchutils import apply_model
 
 
-class IRMModel(MLPModel, SklearnStylePytorchModel):
+class IRMModel(DomainGeneralizationModel):
     """Class to represent Invariant Risk Minimization models.
 
         Based on implementation from
@@ -77,35 +72,3 @@ class IRMModel(MLPModel, SklearnStylePytorchModel):
         return {'loss': loss.item(), 'nll': nll.item(),
                 'penalty': penalty.item()}
 
-    def train_epoch(self,
-                    train_loaders: Union[DataLoader, Dict[Any, DataLoader]],
-                    loss_fn: Callable,
-                    device: str,
-                    uda_loader: Optional[DataLoader] = None,
-                    eval_loaders: Optional[Mapping[str, DataLoader]] = None,
-                    max_examples_per_epoch: Optional[int] = None
-                    ) -> float:
-        """Conduct one epoch of training and return the loss."""
-
-        loaders = [x for x in train_loaders.values()]
-        train_minibatches_iterator = zip(*loaders)
-
-        def _prepare_batch(batch) -> Tuple[Tensor, Tensor]:
-            x_batch, y_batch = batch[:2]
-            return x_batch.to(device), y_batch.to(device)
-
-        loss = None
-        examples_seen = 0
-        while True:
-            minibatches_device = [_prepare_batch(batch) for batch in
-                                  next(train_minibatches_iterator)]
-            # Note: if this was a domain_adaption task, do the same as above
-            # for uda_loader.
-            tmp = self.update(minibatches_device)
-
-            loss = tmp['loss'] if loss is None else loss + tmp['loss']
-            examples_seen += sum(len(x) for x in minibatches_device)
-            if examples_seen >= max_examples_per_epoch:
-                break
-
-        return loss / examples_seen

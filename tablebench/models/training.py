@@ -75,29 +75,31 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
                    tune_report_split: str = None):
     """Helper function to train a pytorch estimator."""
     print(f"[DEBUG] config is {config}")
+    print(f"[DEBUG] estimator is of type {type(estimator)}")
+    print(f"[DEBUG] dset name is {dset.name}")
     print(f"[DEBUG] device is {device}")
     print(f"[DEBUG] tune_report_split is {tune_report_split}")
 
-    # TODO(jpgard): clean up this block; should be an if/else
-    train_loader = dset.get_dataloader("train", config["batch_size"])
-    domain_loaders = dset.get_domain_dataloaders("train", config["batch_size"])
-
-    eval_loaders = {s: dset.get_dataloader(s, config["batch_size"]) for s in
+    batch_size = config["batch_size"]
+    eval_loaders = {s: dset.get_dataloader(s, batch_size) for s in
                     dset.eval_split_names}
-    train_eval_loaders = dset.get_domain_dataloaders("train",
-                                                     config["batch_size"],
-                                                     infinite=False)
-    eval_loaders.update(train_eval_loaders)
+
+    if estimator.domain_generalization:
+        train_loaders = dset.get_domain_dataloaders("train", batch_size)
+        train_eval_loaders = dset.get_domain_dataloaders("train", batch_size,
+                                                         infinite=False)
+        eval_loaders.update(train_eval_loaders)
+    elif estimator.domain_adaptation:
+        raise NotImplementedError
+    else:
+        train_loaders = {"train": dset.get_dataloader("train", batch_size)}
+        eval_loaders["train"] = dset.get_dataloader("train", batch_size)
 
     loss_fn = config["criterion"]
 
     estimator.to(device)
-    # estimator.fit(train_loader, loss_fn,
-    #               n_epochs=config["n_epochs"],
-    #               device=device,
-    #               eval_loaders=eval_loaders,
-    #               tune_report_split=tune_report_split)
-    estimator.fit(domain_loaders, loss_fn,
+
+    estimator.fit(train_loaders, loss_fn,
                   n_epochs=config["n_epochs"],
                   device=device,
                   eval_loaders=eval_loaders,
