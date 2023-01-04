@@ -22,6 +22,19 @@ from .metrics import metrics_by_group
 from .utils import make_uid
 
 
+def _make_dataloader_from_dataframe(
+        data: DataFrame, batch_size: int, shuffle: bool,
+        device: str) -> torch.utils.data.DataLoader:
+    device = torch.device(device)
+    data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
+    tds = torch.utils.data.TensorDataset(*data)
+    _collate_fn = lambda x: tuple(t.to(device) for t in default_collate(x))
+    return torch.utils.data.DataLoader(
+        dataset=tds, batch_size=batch_size,
+        shuffle=shuffle,
+        collate_fn=_collate_fn)
+
+
 @dataclass
 class TabularDatasetConfig:
     cache_dir: str = "tmp"
@@ -212,6 +225,16 @@ class TabularDataset(ABC):
         #  e.g. numeric vs. categorical features, where this is needed.
         return self._get_split_xygd(split)
 
+    def get_domain_dataloaders(self, split, batch_size=2048, device='cpu',
+                               shuffle=True):
+        """Fetch a dict of {domain_id:DataLoader}."""
+        loaders = {}
+        data = self._get_split_xygd(split)
+        assert self.n_domains, "sanity check for a domain-split dataset"
+
+        for domain in data[self.domain_label_colname].unique():
+            split_domain_data = data[data[self.domain_label_colname] == domain]
+
     def get_dataloader(self, split, batch_size=2048, device='cpu',
                        shuffle=True) -> torch.utils.data.DataLoader:
         """Fetch a dataloader yielding (X, y, G, d) tuples."""
@@ -219,14 +242,8 @@ class TabularDataset(ABC):
         if not self.domain_label_colname:
             # Drop the empty domain labels.
             data = data[:-1]
-        device = torch.device(device)
-        data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
-        tds = torch.utils.data.TensorDataset(*data)
-        _collate_fn = lambda x: tuple(t.to(device) for t in default_collate(x))
-        return torch.utils.data.DataLoader(
-            dataset=tds, batch_size=batch_size,
-            shuffle=shuffle,
-            collate_fn=_collate_fn)
+        return _make_dataloader_from_dataframe(data, batch_size, shuffle,
+                                               device)
 
     def get_dataset_baseline_metrics(self, split):
 
@@ -298,7 +315,8 @@ class TabularDataset(ABC):
             num_shards = math.ceil(len(df) / rows_per_shard)
             for i in range(num_shards):
                 fp = os.path.join(outdir, f"{split}_{i:05d}.csv")
-                df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard].to_csv(fp, index=False)
+                df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard].to_csv(fp,
+                                                                            index=False)
 
         # write metadata
         schema = self._df.dtypes.to_dict()
@@ -361,6 +379,7 @@ class CachedDataset:
         files = glob.glob(fileglob)
         assert len(files), f"no files detected for split {split} " \
                            f"matching {fileglob}"
-        return ray.data\
-            .read_csv(files, meta_provider=ray.data.datasource.FastFileMetadataProvider() )\
+        return ray.data \
+            .read_csv(files,
+                      meta_provider=ray.data.datasource.FastFileMetadataProvider()) \
             .repartition(num_partitions)
