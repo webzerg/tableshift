@@ -327,18 +327,34 @@ class TabularDataset(ABC):
         uid = make_uid(self.name, self.splitter)
 
         base_dir = os.path.join(self.config.cache_dir, uid)
+
+        def initialize_dir(dirname):
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+
         for split in self.splits:
             outdir = os.path.join(base_dir, split)
             print(f"[INFO] caching task {uid} to {outdir}")
-            if not os.path.exists(outdir):
-                os.makedirs(outdir)
+            initialize_dir(outdir)
             df = self._get_split_df(split)
 
-            num_shards = math.ceil(len(df) / rows_per_shard)
-            for i in range(num_shards):
-                fp = os.path.join(outdir, f"{split}_{i:05d}.csv")
-                df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard].to_csv(fp,
-                                                                            index=False)
+            def write_shards(df, dirname):
+                num_shards = math.ceil(len(df) / rows_per_shard)
+                for i in range(num_shards):
+                    fp = os.path.join(dirname, f"{split}_{i:05d}.csv")
+                    df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard] \
+                        .to_csv(fp, index=False)
+
+            if self.domain_label_colname:
+                # Write to {split}/{domain_value}/{shard_filename.csv}
+                for domain in sorted(df[self.domain_label_colname].unique()):
+                    df_ = df[df[self.domain_label_colname] == domain]
+                    domain_dir = os.path.join(outdir, str(domain))
+                    initialize_dir(domain_dir)
+                    write_shards(df_, domain_dir)
+            else:
+                # Write to {split}/{shard_filename.csv}
+                write_shards(df, outdir)
 
         # write metadata
         schema = self._df.dtypes.to_dict()
@@ -348,6 +364,9 @@ class TabularDataset(ABC):
         ds_info = {
             'target': self.target,
             'domain_label_colname': self.domain_label_colname,
+            'domain_label_values': self._df[
+                self.domain_label_colname].unique().tolist() \
+                if self.domain_label_colname else None,
             'group_feature_names': self.group_feature_names,
             'feature_names': self.feature_names,
             'X_shape': self.X_shape,
