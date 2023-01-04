@@ -116,9 +116,20 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         return fit_metrics
 
 
+DOMAIN_GENERALIZATION_MODEL_NAMES = ["deepcoral", "irm", "mixup", "mmd", ]
+DOMAIN_ADAPTATION_MODEL_NAMES = []
 SKLEARN_MODEL_NAMES = ("expgrad", "histgbm", "lightgbm", "wcs", "xgb")
-PYTORCH_MODEL_NAMES = ("deepcoral", "dro", "ft_transformer", "group_dro",
-                       "irm", "mixup", "mlp", "mmd", "resnet")
+PYTORCH_MODEL_NAMES = ["dro", "ft_transformer", "group_dro", "mlp", "resnet"] \
+                      + DOMAIN_GENERALIZATION_MODEL_NAMES \
+                      + DOMAIN_ADAPTATION_MODEL_NAMES
+
+
+def is_domain_generalization_model_name(model_name: str) -> bool:
+    return model_name in DOMAIN_GENERALIZATION_MODEL_NAMES
+
+
+def is_domain_adaptation_model_name(model_name: str) -> bool:
+    return model_name in DOMAIN_ADAPTATION_MODEL_NAMES
 
 
 def is_pytorch_model_name(model: str) -> bool:

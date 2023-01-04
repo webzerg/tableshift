@@ -1,11 +1,12 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from frozendict import frozendict
 from ray.air import session
 import torch
 
 from tablebench.core import TabularDataset
-from tablebench.models.compat import SklearnStylePytorchModel
+from tablebench.models.compat import SklearnStylePytorchModel, \
+    is_domain_adaptation_model_name, is_domain_generalization_model_name
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
 from tablebench.models.torchutils import unpack_batch, apply_model
@@ -69,12 +70,18 @@ def train_epoch(model, optimizer, criterion, train_loader,
 
 
 def get_train_loaders(
-        estimator: SklearnStylePytorchModel,
         dset: TabularDataset,
-        batch_size: int) -> Dict[Any, torch.utils.data.DataLoader]:
-    if estimator.domain_generalization:
+        batch_size: int,
+        model_name: Optional[str] = None,
+        estimator: Optional[SklearnStylePytorchModel] = None,
+) -> Dict[Any, torch.utils.data.DataLoader]:
+    assert (model_name or estimator) and not (model_name and estimator), \
+        "provide either model_name or estimator, but not both."
+    if estimator.domain_generalization or is_domain_generalization_model_name(
+            model_name):
         train_loaders = dset.get_domain_dataloaders("train", batch_size)
-    elif estimator.domain_adaptation:
+    elif estimator.domain_adaptation or is_domain_adaptation_model_name(
+            model_name):
         raise NotImplementedError
     else:
         train_loaders = {"train": dset.get_dataloader("train", batch_size)}
@@ -82,16 +89,22 @@ def get_train_loaders(
 
 
 def get_eval_loaders(
-        estimator: SklearnStylePytorchModel,
         dset: TabularDataset,
-        batch_size: int) -> Dict[Any, torch.utils.data.DataLoader]:
+        batch_size: int,
+        model_name: Optional[str] = None,
+        estimator: Optional[SklearnStylePytorchModel] = None,
+) -> Dict[Any, torch.utils.data.DataLoader]:
+    assert (model_name or estimator) and not (model_name and estimator), \
+        "provide either model_name or estimator, but not both."
     eval_loaders = {s: dset.get_dataloader(s, batch_size) for s in
                     dset.eval_split_names}
-    if estimator.domain_generalization:
+    if estimator.domain_generalization or is_domain_generalization_model_name(
+            model_name):
         train_eval_loaders = dset.get_domain_dataloaders("train", batch_size,
                                                          infinite=False)
         eval_loaders.update(train_eval_loaders)
-    elif estimator.domain_adaptation:
+    elif estimator.domain_adaptation or is_domain_adaptation_model_name(
+            model_name):
         raise NotImplementedError
     else:
         eval_loaders["train"] = dset.get_dataloader("train", batch_size)
@@ -109,8 +122,11 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
     print(f"[DEBUG] device is {device}")
     print(f"[DEBUG] tune_report_split is {tune_report_split}")
 
-    train_loaders = get_train_loaders(estimator, dset, config["batch_size"])
-    eval_loaders = get_eval_loaders(estimator, dset, config["batch_size"])
+    batch_size = config["batch_size"]
+    train_loaders = get_train_loaders(estimator=estimator,
+                                      dset=dset, batch_size=batch_size)
+    eval_loaders = get_eval_loaders(estimator=estimator,
+                                    dset=dset, batch_size=batch_size)
 
     loss_fn = config["criterion"]
 
