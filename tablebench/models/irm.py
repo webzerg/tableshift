@@ -72,4 +72,3 @@ class IRMModel(DomainGeneralizationModel):
         self.update_count += 1
         return {'loss': loss.item(), 'nll': nll.item(),
                 'penalty': penalty.item()}
-

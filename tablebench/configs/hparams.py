@@ -12,10 +12,10 @@ _DEFAULT_NN_SEARCH_SPACE = {
 }
 
 _deepcoral_search_space = {
-    **_DEFAULT_NN_SEARCH_SPACE,
-    # Tune s.t. CORAL loss is roughly of same order as the
-    # overall loss.
-    "loss_lambda": tune.loguniform(1e-5, 1),
+    # Same range as DomainBed, see
+    # https://github.com/facebookresearch/DomainBed/blob/main/domainbed
+    # /hparams_registry.py#L72
+    "mmd_gamma": tune.loguniform(1e-1, 1e1),
 }
 
 _dro_search_space = {
@@ -61,6 +61,14 @@ _mixup_search_space = {
     # /2ed9edf781fe4b336c2fb6ffe7ca8a7c6f994422/domainbed/hparams_registry.py
     # #L66
     "mixup_alpha": tune.uniform(10 ** -1, 10 ** 1)
+}
+
+_mmd_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    # Same range as DomainBed, see
+    # https://github.com/facebookresearch/DomainBed/blob/main/domainbed
+    # /hparams_registry.py#L72
+    "mmd_gamma": tune.loguniform(1e-1, 1e1),
 }
 
 _wcs_search_space = {

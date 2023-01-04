@@ -1,110 +1,147 @@
-from dataclasses import dataclass
-from typing import Mapping, Optional, Callable
+import copy
+from typing import Tuple
 
 import torch
-from torch.nn.functional import binary_cross_entropy_with_logits
-from tablebench.models.rtdl import MLPModel
-from tablebench.models.torchutils import unpack_batch, apply_model
-from tablebench.models.losses import CORALLoss
+import torch.nn.functional as F
+from torch import Tensor
+
+from tablebench.models.domain_generalization import DomainGeneralizationModel
+from tablebench.models.torchutils import apply_model
 from tablebench.models.torchutils import get_module_attr
 
 
-def domain_generalization_train_epoch(
-        model: MLPModel, optimizer: torch.optim.Optimizer,
-        criterion: CORALLoss,
-        id_train_loader: torch.utils.data.DataLoader,
-        ood_train_loader: torch.utils.data.DataLoader,
-        device):
-    model.train()
-    running_loss = 0.0
-    n_train = 0
+class AbstractMMD(DomainGeneralizationModel):
+    """
+    Perform ERM while matching the pair-wise domain feature distributions
+    using MMD (abstract class).
 
-    # use the pre-activation, pre-dropout output of the linear layer of final block
-    block_num = len(get_module_attr(model, "blocks")) - 1
-    layer = "linear"
-    # The key used to find the activations in the dictionary.
-    activations_key = f'block{block_num}{layer}'
+    Adapted from DomainBench.algorithms.AbstractMMD.
+    """
 
-    activation = {}
+    def __init__(self, gaussian: bool, **hparams):
+        self.config = copy.deepcopy(hparams)
 
-    def get_activation():
-        """Utility function to fetch an activation."""
+        super().__init__(**hparams)
+        if gaussian:
+            self.kernel_type = "gaussian"
+        else:
+            self.kernel_type = "mean_cov"
 
-        def hook(model, input, output):
-            activation[activations_key] = output.detach()
+    def my_cdist(self, x1, x2):
+        x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
+        x2_norm = x2.pow(2).sum(dim=-1, keepdim=True)
+        res = torch.addmm(x2_norm.transpose(-2, -1),
+                          x1,
+                          x2.transpose(-2, -1), alpha=-2).add_(x1_norm)
+        return res.clamp_min_(1e-30)
 
-        return hook
+    def gaussian_kernel(self, x, y, gamma=[0.001, 0.01, 0.1, 1, 10, 100,
+                                           1000]):
+        D = self.my_cdist(x, y)
+        K = torch.zeros_like(D)
 
-    if hasattr(model,
-               "module"):  # Case: distributed module; access the module explicitly.
-        model.module.blocks[block_num].linear.register_forward_hook(
-            get_activation())
-    else:  # Case: standard module.
-        model.blocks[block_num].linear.register_forward_hook(get_activation())
+        for g in gamma:
+            K.add_(torch.exp(D.mul(-g)))
 
-    # TODO(jpgard): restart one iterator if there are still batches in the other.
-    raise NotImplementedError
-    for id_batch, ood_batch in zip(id_train_loader, ood_train_loader):
-        inputs_id, labels_id, _, _ = unpack_batch(id_batch)
-        inputs_ood, _, _, _ = unpack_batch(ood_batch)
+        return K
 
-        if len(inputs_id) != len(inputs_ood):
-            print(f"Inconsistent batch sizes for CORAL loss ({len(inputs_id)}"
-                  f"vs {len(inputs_ood)}; this can occur in the final batch."
-                  f"Skipping.")
-            continue
+    def mmd(self, x, y):
+        if self.kernel_type == "gaussian":
+            Kxx = self.gaussian_kernel(x, x).mean()
+            Kyy = self.gaussian_kernel(y, y).mean()
+            Kxy = self.gaussian_kernel(x, y).mean()
+            return Kxx + Kyy - 2 * Kxy
+        else:
+            mean_x = x.mean(0, keepdim=True)
+            mean_y = y.mean(0, keepdim=True)
+            cent_x = x - mean_x
+            cent_y = y - mean_y
+            cova_x = (cent_x.t() @ cent_x) / (len(x) - 1)
+            cova_y = (cent_y.t() @ cent_y) / (len(y) - 1)
 
-        if len(inputs_id) == 1 or len(inputs_ood) == 1:
-            # Skip size-1 batches
-            continue
+            mean_diff = (mean_x - mean_y).pow(2).mean()
+            cova_diff = (cova_x - cova_y).pow(2).mean()
 
-        inputs_id = inputs_id.float().to(device)
-        labels_id = labels_id.float().to(device)
-        inputs_ood = inputs_ood.float().to(device)
+            return mean_diff + cova_diff
 
-        # zero the parameter gradients
-        optimizer.zero_grad()
+    def update(self, minibatches, unlabeled=None):
+        objective = 0
+        penalty = 0
+        nmb = len(minibatches)
 
-        # forward + backward + optimize
-        outputs_id = apply_model(model, inputs_id).squeeze()
-        activations_id = activation[activations_key]
-        _ = apply_model(model, inputs_ood).squeeze()
-        activations_ood = activation[activations_key]
+        # Set up feature extraction hooks
 
-        # Normalize CORAL loss by the batch size, so its scale is
-        # batch size-independent.
-        coral_loss = criterion(activations_id, activations_ood) / len(
-            activations_id)
-        ce_loss = binary_cross_entropy_with_logits(input=outputs_id,
-                                                   target=labels_id)
-        loss = ce_loss + model.loss_lambda * coral_loss
+        # Use the pre-activation, pre-dropout output of the linear layer of final block
+        block_num = len(get_module_attr(self, "blocks")) - 1
+        layer = "linear"
+        # The key used to find the activations in the dictionary.
+        activations_key = f'block{block_num}{layer}'
 
-        loss.backward()
-        optimizer.step()
+        activation = {}
 
-        # print statistics
-        running_loss += loss.item()
-        n_train += len(inputs_id)
+        def get_activation():
+            """Utility function to fetch an activation."""
 
-    return running_loss / n_train
+            def hook(self, input, output):
+                activation[activations_key] = output.detach()
+
+            return hook
+
+        if hasattr(self, "module"):
+            # Case: distributed module; access the module explicitly.
+            self.module.blocks[block_num].linear.register_forward_hook(
+                get_activation())
+        else:  # Case: standard module.
+            self.blocks[block_num].linear.register_forward_hook(
+                get_activation())
+
+        def _get_outputs_and_activations(inputs) -> Tuple[Tensor, Tensor]:
+            """Apply model and return the (outputs,activations) tuple."""
+            outputs = apply_model(self, inputs).squeeze()
+            activations = activation[activations_key]
+            return outputs, activations
+
+        outputs_and_activations = [_get_outputs_and_activations(x) for x, _ in
+                                   minibatches]
+
+        outputs = [x[0] for x in outputs_and_activations]
+        features = [x[1] for x in outputs_and_activations]
+        targets = [yi for _, yi in minibatches]
+
+        for i in range(nmb):
+            objective += F.cross_entropy(outputs[i], targets[i])
+            for j in range(i + 1, nmb):
+                penalty += self.mmd(features[i], features[j])
+
+        objective /= nmb
+        if nmb > 1:
+            penalty /= (nmb * (nmb - 1) / 2)
+
+        self.optimizer.zero_grad()
+        (objective + (self.mmd_gamma * penalty)).backward()
+        self.optimizer.step()
+
+        if torch.is_tensor(penalty):
+            penalty = penalty.item()
+
+        return {'loss': objective.item(), 'penalty': penalty}
 
 
-# TODO(jpgard): implement this in a way that takes a generic class, or maybe
-#  a function that produces a model?
-class DeepCoralModel(MLPModel):
-    def __init__(self, loss_lambda, **kwargs):
-        self.loss_lambda = loss_lambda
-        MLPModel.__init__(self, **kwargs)
+class MMDModel(AbstractMMD):
+    """
+    MMD using Gaussian kernel; via DomainBench.
+    """
 
-    def train_epoch(self, train_loaders: torch.utils.data.DataLoader,
-                    loss_fn: Callable,
-                    device: str,
-                    eval_loaders: Optional[
-                        Mapping[str, torch.utils.data.DataLoader]] = None,
-                    ood_loader_key="ood_validation",
-                    ):
-        """Run a single epoch of model training."""
+    def __init__(self, mmd_gamma: float, gaussian=True, **hparams):
+        self.mmd_gamma = mmd_gamma
+        super().__init__(**hparams, gaussian=gaussian)
 
-        domain_generalization_train_epoch(self, self.optimizer, loss_fn,
-                                          train_loaders,
-                                          eval_loaders[ood_loader_key], device)
+
+class DeepCoralModel(AbstractMMD):
+    """
+    MMD using mean and covariance difference; via DomainBench.
+    """
+
+    def __init__(self, mmd_gamma: float, gaussian=False, **hparams):
+        self.mmd_gamma = mmd_gamma
+        super().__init__(**hparams, gaussian=gaussian)

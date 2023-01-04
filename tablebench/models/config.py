@@ -17,7 +17,7 @@ _DEFAULT_CONFIGS = frozendict({
     "deepcoral":
         {"num_layers": 4,
          "d_hidden": 512,
-         "loss_lambda": 0.01,
+         "mmd_gamma": 0.01,
          "dropouts": 0.},
     "dro":
         {"num_layers": 2,
@@ -63,6 +63,11 @@ _DEFAULT_CONFIGS = frozendict({
          "d_hidden": 256,
          "dropouts": 0.,
          "mixup_alpha": 0.4},
+    "mmd":
+        {"num_layers": 4,
+         "d_hidden": 512,
+         "mmd_gamma": 0.01,
+         "dropouts": 0.},
     "resnet":
         {"n_blocks": 2,
          "dropout_first": 0.2,
