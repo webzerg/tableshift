@@ -12,6 +12,7 @@ from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experi
 from tablebench.datasets.experiment_configs import ExperimentConfig
 from tablebench.core.utils import make_uid, timestamp_as_int
 
+_DEFAULT_RAY_TMP_DIR_IF_EXISTS = "/scratch/jpgard/ray"
 
 def get_dataset(expt_config: ExperimentConfig, dataset_config: TabularDatasetConfig,
                 use_cached: bool) -> Union[TabularDataset, CachedDataset]:
@@ -42,11 +43,11 @@ def main(experiment: str, cache_dir: str,
          no_tune: bool,
          num_samples: int,
          results_dir: str,
+         ray_tmp_dir: str,
          search_alg: str,
          tune_split: str = "validation",
          max_concurrent_trials=2,
          num_workers=1,
-         early_stop=True,
          use_cached: bool = False,
          scheduler=None,
          gpu_per_worker: float = 1.0,
@@ -72,6 +73,13 @@ def main(experiment: str, cache_dir: str,
         experiment = "_debug"
         num_samples = 1
         models = ("mlp", "xgb")
+
+    # Workaround to set temp dir automatically for local server
+    if os.path.exists(_DEFAULT_RAY_TMP_DIR_IF_EXISTS):
+        ray_tmp_dir = _DEFAULT_RAY_TMP_DIR_IF_EXISTS
+        print(
+            f"[INFO] detected directory {_DEFAULT_RAY_TMP_DIR_IF_EXISTS}; "
+            f"setting this to ray temporary directory.")
 
     print(f"DEBUG torch.cuda.is_available(): {torch.cuda.is_available()}")
 
@@ -136,6 +144,7 @@ def main(experiment: str, cache_dir: str,
             metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
             tune_config = RayExperimentConfig(
                 max_concurrent_trials=max_concurrent_trials,
+                ray_tmp_dir=ray_tmp_dir,
                 num_workers=num_workers,
                 num_samples=num_samples,
                 tune_metric_name=metric_name,
@@ -146,7 +155,8 @@ def main(experiment: str, cache_dir: str,
                 gpu_per_worker=gpu_per_worker,
             ) if not no_tune else None
 
-            results = run_ray_tune_experiment(dset=dset, model_name=model_name, tune_config=tune_config, debug=debug)
+            results = run_ray_tune_experiment(dset=dset, model_name=model_name,
+                                              tune_config=tune_config, debug=debug)
 
             df = fetch_postprocessed_results_df(results)
             df["estimator"] = model_name
@@ -200,6 +210,12 @@ if __name__ == "__main__":
                         help="Number of hparam samples to take in tuning "
                              "sweep. Set to -1 and set time_budget_hrs to allow for"
                              "unlimited runs within the specified time budget.")
+    parser.add_argument("--ray_tmp_dir", default=None, type=str,
+                        help="Set the root temporary path for ray. If not "
+                             "specified, uses the default location of /tmp/ray."
+                             "See https://docs.ray.io/en/latest/ray-core"
+                             "/configure.html#logging-and-debugging for more "
+                             "info.")
     parser.add_argument("--results_dir", default="./domain_shift_results",
                         help="where to write results. CSVs will be written to "
                              "experiment-specific subdirectories within this "

@@ -65,6 +65,7 @@ class RayExperimentConfig:
     such as `ScalingConfig`, which consumes the num_workers."""
     max_concurrent_trials: int
     mode: str
+    ray_tmp_dir: str = None
     num_workers: int = 1
     num_samples: int = 1
     tune_metric_name: str = "metric"
@@ -211,6 +212,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     This defines the trainers, tuner, and other associated objects, runs the
     tuning experiment, and returns the ray ResultGrid object.
     """
+    # Explicitly initialize ray in order to set the temp dir.
+    ray.init(_temp_dir=tune_config.ray_tmp_dir)
 
     dset_train_domains = dset.get_domains("train")
 

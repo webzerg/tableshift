@@ -1,14 +1,19 @@
 import argparse
+import os
 
 from tablebench.core import CachedDataset
-from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment, \
+from tablebench.models.ray_utils import RayExperimentConfig, \
+    run_ray_tune_experiment, \
     accuracy_metric_name_and_mode_for_model, \
     fetch_postprocessed_results_df
 from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.core import TabularDataset, TabularDatasetConfig
 
+_DEFAULT_RAY_TMP_DIR_IF_EXISTS = "/scratch/jpgard/ray"
+
 
 def main(experiment: str, uid: str, model_name: str, cache_dir: str,
+         ray_tmp_dir: str,
          debug: bool,
          no_tune: bool, num_samples: int, search_alg: str,
          use_cached: bool,
@@ -16,6 +21,11 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          num_workers=1,
          gpu_per_worker: float = 1.0,
          scheduler: str = None):
+    # Workaround to set temp dir automatically for local server
+    if os.path.exists(_DEFAULT_RAY_TMP_DIR_IF_EXISTS):
+        ray_tmp_dir = _DEFAULT_RAY_TMP_DIR_IF_EXISTS
+        print(f"[INFO] detected directory {_DEFAULT_RAY_TMP_DIR_IF_EXISTS}; "
+              f"setting this to ray temporary directory.")
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
@@ -41,6 +51,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
 
     tune_config = RayExperimentConfig(
         max_concurrent_trials=max_concurrent_trials,
+        ray_tmp_dir=ray_tmp_dir,
         num_workers=num_workers,
         num_samples=num_samples,
         tune_metric_name=metric_name,
@@ -87,15 +98,24 @@ if __name__ == "__main__":
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
+    parser.add_argument("--ray_tmp_dir", default=None, type=str,
+                        help="Set the root temporary path for ray. If not "
+                             "specified, uses the default location of /tmp/ray."
+                             "See https://docs.ray.io/en/latest/ray-core"
+                             "/configure.html#logging-and-debugging for more "
+                             "info.")
     parser.add_argument("--scheduler", choices=(None, "asha", "median"),
                         default=None,
                         help="Scheduler to use for hyperparameter optimization."
-                             "See https://docs.ray.io/en/latest/tune/api_docs/schedulers.html .")
-    parser.add_argument("--search_alg", default="hyperopt", choices=["hyperopt", "random"],
+                             "See https://docs.ray.io/en/latest/tune/api_docs"
+                             "/schedulers.html .")
+    parser.add_argument("--search_alg", default="hyperopt",
+                        choices=["hyperopt", "random"],
                         help="Ray search alg to use for hyperparameter tuning.")
-    parser.add_argument("--uid",
-                        default="diabetes_readmissiondomain_split_varname_admission_type_iddomain_split_ood_value_1",
-                        help="UID for experiment to run. Overridden when debug=True.")
+    parser.add_argument(
+        "--uid",
+        default="diabetes_readmissiondomain_split_varname_admission_type_iddomain_split_ood_value_1",
+        help="UID for experiment to run. Overridden when debug=True.")
     parser.add_argument("--use_cached", default=False, action="store_true",
                         help="whether to use cached data.")
     args = parser.parse_args()
