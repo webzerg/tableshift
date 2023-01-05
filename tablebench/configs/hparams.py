@@ -138,6 +138,7 @@ search_space = {
     "lightgbm": _lightgbm_search_space,
     "mixup": _mixup_search_space,
     "mlp": _DEFAULT_NN_SEARCH_SPACE,
+    "mmd": _mmd_search_space,
     "resnet": _resnet_search_space,
     "wcs": _wcs_search_space,
     "xgb": _xgb_search_space,
