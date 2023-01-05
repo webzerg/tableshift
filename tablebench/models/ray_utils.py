@@ -240,12 +240,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
         for epoch in range(n_epochs):
             print(f"[DEBUG] starting epoch {epoch} with model {model_name}")
-            # TODO(jpgard): update this logic.
-
-            #
-            # eval_batches = {
-            #     split: session.get_dataset_shard(split).iter_torch_batches(
-            #         batch_size=config["batch_size"]) for split in dset.splits}
 
             assert isinstance(model, SklearnStylePytorchModel)
             if model.domain_generalization:
@@ -262,21 +256,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 uda_loader = None
 
             train_loss = model.train_epoch(train_loaders, criterion,
-                                           device=device, uda_loader=None)
-            # if isinstance(model, DeepCoralModel):  # Case: Domain Generalization training.
-            #     # Fetch a separate iterable for the OOD validation data;
-            #     # ech iterator can only be consumed once and the iterator
-            #     # in eval_batches is needed for evaluation.
-            #     ood_dataset_batches = session.get_dataset_shard(
-            #         "ood_validation").iter_torch_batches(batch_size=config["batch_size"])
-            #
-            #     train_loss = domain_generalization_train_epoch(
-            #         model, optimizer, criterion, train_dataset_batches,
-            #         ood_dataset_batches, device=device)
-            #
-            # else:  # Case: standard training loop.
-            #     train_loss = train_epoch(model, optimizer, criterion,
-            #                              train_dataset_batches, device=device)
+                                           device=device, uda_loader=uda_loader)
 
             # Log the metrics for this epoch
             metrics = ray_evaluate(model, eval_loaders)
