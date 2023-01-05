@@ -116,8 +116,7 @@ EXPERIMENT_CONFIGS = {
             # A42     181
             # A40     234
             # A43     280
-            domain_split_ood_values=["A40", "A41", "A42", "A44", "A410",
-                                  "A45", "A46", "A48"]
+            domain_split_ood_values=["A44", "A410", "A45", "A46", "A48"]
         ),
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
