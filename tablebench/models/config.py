@@ -76,7 +76,12 @@ _DEFAULT_CONFIGS = frozendict({
          "hidden_factor": 1,
          "d_main": 128,
          "d_hidden": 256},
-
+    "vrex":
+        {"num_layers": 4,
+         "d_hidden": 512,
+         "vrex_penalty_anneal_iters": 1,
+         "vrex_lambda": 0.01,
+         "dropouts": 0.},
 })
 
 

@@ -12,6 +12,7 @@ _DEFAULT_NN_SEARCH_SPACE = {
 }
 
 _deepcoral_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
     # Same range as DomainBed, see
     # https://github.com/facebookresearch/DomainBed/blob/main/domainbed
     # /hparams_registry.py#L72
@@ -128,6 +129,12 @@ _ft_transformer_search_space = {
     "d_token": tune.choice([64, 128, 256, 512])
 }
 
+_vrex_search_space = {
+    **_DEFAULT_NN_SEARCH_SPACE,
+    "vrex_lambda": tune.loguniform(1e-1, 1e5),
+    "vrex_penalty_anneal_iters": tune.loguniform(1, 1e4),
+}
+
 search_space = {
     "deepcoral": _deepcoral_search_space,
     "dro": _dro_search_space,
@@ -140,6 +147,7 @@ search_space = {
     "mlp": _DEFAULT_NN_SEARCH_SPACE,
     "mmd": _mmd_search_space,
     "resnet": _resnet_search_space,
+    "vrex": _vrex_search_space,
     "wcs": _wcs_search_space,
     "xgb": _xgb_search_space,
 }
