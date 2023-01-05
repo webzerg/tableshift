@@ -53,7 +53,8 @@ _DEFAULT_CONFIGS = frozendict({
          "d_hidden": 256,
          "dropouts": 0.,
          "irm_lambda": 1e-2,
-         "irm_penalty_anneal_iters": 500},
+         # set irm_penalty_anneal_iters s.t. optimizer resets after 1 update
+         "irm_penalty_anneal_iters": 1},
     "mlp":
         {"num_layers": 2,
          "d_hidden": 256,
