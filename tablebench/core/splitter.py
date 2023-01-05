@@ -3,53 +3,9 @@ from dataclasses import dataclass
 from typing import Sequence, Mapping, Any, List, Optional, Tuple
 
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 import numpy as np
-from sklearn.utils import indexable
-from sklearn.utils.validation import _num_samples
-from sklearn.model_selection._split import _validate_shuffle_split, \
-    StratifiedShuffleSplit, ShuffleSplit
-
-
-def train_test_split(
-        *arrays,
-        test_size=None,
-        train_size=None,
-        random_state=None,
-        shuffle=True,
-        stratify=None):
-    """Fork of sklearn.model_selection.train_test_split that returns indices."""
-    n_arrays = len(arrays)
-    if n_arrays == 0:
-        raise ValueError("At least one array required as input")
-
-    arrays = indexable(*arrays)
-
-    n_samples = _num_samples(arrays[0])
-    n_train, n_test = _validate_shuffle_split(
-        n_samples, test_size, train_size, default_test_size=0.25
-    )
-
-    if shuffle is False:
-        if stratify is not None:
-            raise ValueError(
-                "Stratified train/test split is not implemented for shuffle=False"
-            )
-
-        train = np.arange(n_train)
-        test = np.arange(n_train, n_train + n_test)
-
-    else:
-        if stratify is not None:
-            CVClass = StratifiedShuffleSplit
-        else:
-            CVClass = ShuffleSplit
-
-        cv = CVClass(test_size=n_test, train_size=n_train,
-                     random_state=random_state)
-
-        train, test = next(cv.split(X=arrays[0], y=stratify))
-    return train, test
 
 
 def concat_columns(data: pd.DataFrame) -> pd.DataFrame:
@@ -60,17 +16,20 @@ def concat_columns(data: pd.DataFrame) -> pd.DataFrame:
     return data.agg(lambda x: ''.join(x.values.astype(str)), axis=1).T
 
 
-def _stratify(labels, groups):
-    """Make a stratification vector by concatenating label and (optional) groups.
-
-    This ensures that splitting happens approximately uniformly over
-    labels and sensitive subgroups.
+def idx_where_in(x: pd.Series, vals: Sequence[Any]) -> np.ndarray:
+    """Return a vector of the numeric indices i where X[i] in vals.
     """
-    strata = labels
-    if groups is not None:
-        strata = pd.concat((strata, groups), axis=1)
-    strata = concat_columns(strata)
-    return strata
+    assert isinstance(vals, list) or isinstance(vals, tuple)
+    idxs_bool = x.isin(vals)
+    return np.nonzero(idxs_bool.values)[0]
+
+
+def idx_where_not_in(x: pd.Series, vals: Sequence[Any]) -> np.ndarray:
+    """Return a vector of the numeric indices i where X[i] not in vals.
+    """
+    assert isinstance(vals, list) or isinstance(vals, tuple)
+    idxs_bool = ~x.isin(vals)
+    return np.nonzero(idxs_bool.values)[0]
 
 
 @dataclass
@@ -112,13 +71,10 @@ class FixedSplitter(Splitter):
         test_idxs = np.nonzero((data["Split"] == "test").values)[0]
         train_val_idxs = np.nonzero((data["Split"] == "train").values)[0]
 
-        stratify = _stratify(labels, groups)
-
         train_idxs, val_idxs = train_test_split(
-            data.iloc[train_val_idxs],
+            train_val_idxs,
             train_size=(1 - self.val_size),
-            random_state=self.random_state,
-            stratify=stratify.iloc[train_val_idxs])
+            random_state=self.random_state)
 
         del train_val_idxs
         return {"train": train_idxs, "validation": val_idxs, "test": test_idxs}
@@ -151,18 +107,16 @@ class RandomSplitter(Splitter):
                  groups: pd.DataFrame = None, *args, **kwargs
                  ) -> Mapping[str, List[int]]:
         _check_input_indices(data)
-        stratify = _stratify(labels, groups)
 
+        idxs = data.index.tolist()
         train_val_idxs, test_idxs = train_test_split(
-            data,
+            idxs,
             test_size=self.test_size,
-            random_state=self.random_state,
-            stratify=stratify)
+            random_state=self.random_state)
         train_idxs, val_idxs = train_test_split(
-            data.iloc[train_val_idxs],
+            train_val_idxs,
             train_size=self.train_size / (self.train_size + self.val_size),
-            random_state=self.random_state,
-            stratify=stratify.iloc[train_val_idxs])
+            random_state=self.random_state)
         del train_val_idxs
         return {"train": train_idxs, "validation": val_idxs, "test": test_idxs}
 
@@ -194,42 +148,27 @@ class DomainSplitter(Splitter):
             "domain_split_ood_values must be an iterable type; got type {}".format(
                 type(self.domain_split_ood_values))
 
-        def _idx_where_in(x: pd.Series, vals: Sequence[Any],
-                          negate=False) -> np.ndarray:
-            """Return a vector of the numeric indices i where X[i] in vals.
-
-            If negate, return the vector of indices i where X[i] not in vals."""
-            assert isinstance(vals, list) or isinstance(vals, tuple)
-            idxs_bool = x.isin(vals)
-            idxs_in = np.nonzero(idxs_bool.values)[0]
-            if negate:
-                return ~idxs_in
-            else:
-                return idxs_in
-
         ood_vals = self.domain_split_ood_values
 
         # Fetch the out-of-domain indices.
-        ood_idxs = _idx_where_in(domain_vals, ood_vals)
+        ood_idxs = idx_where_in(domain_vals, ood_vals)
 
         # Fetch the in-domain indices; these are either the explicitly-specified
         # in-domain values, or any values not in the OOD values.
 
         if self.domain_split_id_values is not None:
             # Check that there is no overlap between train/test domains.
-            assert not len(
-                set(self.domain_split_id_values).intersection(
-                    set(ood_vals)))
+            assert not set(self.domain_split_id_values).intersection(
+                set(ood_vals))
 
-            id_idxs = _idx_where_in(domain_vals, self.domain_split_id_values)
+            id_idxs = idx_where_in(domain_vals, self.domain_split_id_values)
             if not len(id_idxs):
                 raise ValueError(
                     f"No ID observations with {self.domain_split_varname} "
                     f"values {self.domain_split_id_values}; are the values of "
                     f"same type as the column type of {domain_vals.dtype}?")
         else:
-            id_idxs = _idx_where_in(domain_vals, ood_vals,
-                                    negate=True)
+            id_idxs = idx_where_not_in(domain_vals, ood_vals)
             if not len(id_idxs):
                 raise ValueError(
                     f"No ID observations with {self.domain_split_varname} "
@@ -243,29 +182,31 @@ class DomainSplitter(Splitter):
                 f" as the column type of {domain_vals.dtype}? Examples of "
                 f"values in {self.domain_split_varname}: {vals[:10]}")
 
-        stratify = _stratify(labels, groups)
+        assert not set(id_idxs).intersection(ood_idxs), "sanity check for " \
+                                                        "nonoverlapping " \
+                                                        "domain split"
+        assert not set(domain_vals.iloc[id_idxs]) \
+            .intersection(domain_vals.iloc[ood_idxs]), "sanity check for no " \
+                                                       "domain leakage"
 
         train_idxs, id_valid_eval_idxs = train_test_split(
-            data.iloc[id_idxs],
-            test_size=(self.val_size + self.id_test_size),
-            random_state=self.random_state,
-            stratify=stratify.iloc[id_idxs])
+            id_idxs, test_size=(self.val_size + self.id_test_size),
+            random_state=self.random_state)
 
         valid_idxs, id_test_idxs = train_test_split(
-            data.loc[id_valid_eval_idxs],
+            id_valid_eval_idxs,
             test_size=self.id_test_size / (self.val_size + self.id_test_size),
-            random_state=self.random_state,
-            stratify=stratify.iloc[id_valid_eval_idxs])
+            random_state=self.random_state)
 
         outputs = {"train": train_idxs, "validation": valid_idxs,
                    "id_test": id_test_idxs}
 
+        # Out-of-distribution splits
         if self.ood_val_size:
             ood_test_idxs, ood_valid_idxs = train_test_split(
-                data.loc[ood_idxs],
+                ood_idxs,
                 test_size=self.ood_val_size,
-                random_state=self.random_state,
-                stratify=stratify.iloc[ood_idxs])
+                random_state=self.random_state)
             outputs["ood_test"] = ood_test_idxs
             outputs["ood_validation"] = ood_valid_idxs
 

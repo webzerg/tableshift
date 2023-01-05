@@ -217,8 +217,7 @@ domain_shift_experiment_configs = {
     "_debug": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "german"},
         domain_split_varname="purpose",
-        domain_split_ood_values=[["A40", "A41", "A42", "A43", "A44", "A410",
-                                  "A45", "A46", "A48"]],
+        domain_split_ood_values=[["A44", "A410", "A45", "A46", "A48"]],
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(),
