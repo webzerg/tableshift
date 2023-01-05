@@ -58,6 +58,7 @@ class TestDomainSplitter:
         # Check that output size is same as input
         assert sum(len(x) for x in splits.values()) == len(data)
 
-        # Check that every index is in output
-        all_idxs = set(idx for split_idxs in splits.values() for idx in split_idxs)
+        # Check that every index is somewhere in splits
+        all_idxs = set(idx for split_idxs in splits.values()
+                       for idx in split_idxs)
         assert all_idxs == set(data.index.tolist())
