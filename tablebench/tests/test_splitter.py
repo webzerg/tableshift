@@ -54,3 +54,10 @@ class TestDomainSplitter:
         assert not set(train_domains).intersection(set(ood_test_domains))
         assert not set(val_domains).intersection(set(ood_val_domains))
         assert not set(id_test_domains).intersection(set(ood_test_domains))
+
+        # Check that output size is same as input
+        assert sum(len(x) for x in splits.values()) == len(data)
+
+        # Check that every index is in output
+        all_idxs = set(idx for split_idxs in splits.values() for idx in split_idxs)
+        assert all_idxs == set(data.index.tolist())
