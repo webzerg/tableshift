@@ -97,7 +97,7 @@ class AbstractMMD(DomainGeneralizationModel):
 
         def _get_outputs_and_activations(inputs) -> Tuple[Tensor, Tensor]:
             """Apply model and return the (outputs,activations) tuple."""
-            outputs = apply_model(self, inputs).squeeze()
+            outputs = apply_model(self, inputs).squeeze(1)
             activations = activation[activations_key]
             return outputs, activations
 

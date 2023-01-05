@@ -14,6 +14,18 @@ from torch.nn import functional as F
 # tablebench.configs.config.py
 
 _DEFAULT_CONFIGS = frozendict({
+    "dann": {
+        "num_layers": 2,
+        "d_hidden": 256,
+        "dropouts": 0.,
+        'lr_d': 0.01,
+        'weight_decay_d': 0.01,
+        'lr_g': 0.01,
+        'weight_decay_g': 0.01,
+        'd_steps_per_g_step': 2,
+        'grad_penalty': 0.01,
+        'loss_lambda': 0.01,
+    },
     "deepcoral":
         {"num_layers": 4,
          "d_hidden": 512,
@@ -109,12 +121,17 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
     else:
         config["criterion"] = F.binary_cross_entropy_with_logits
 
-    if is_pytorch_model_name(model):
+    if is_pytorch_model_name(model) and model != "dann":
         # Note: very small batch size is needed for domain shift
         # when in debug mode.
         config.update({"batch_size": 4,
                        "lr": 0.01,
                        "weight_decay": 0.01,
+                       "n_epochs": 1})
+    elif is_pytorch_model_name(model):
+        # Case: DANN model; lr and weight_decay set per-model (for disc and
+        # classifier separately).
+        config.update({"batch_size": 4,
                        "n_epochs": 1})
 
     return config

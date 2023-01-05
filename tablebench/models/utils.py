@@ -6,6 +6,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 from tablebench.models.compat import OPTIMIZER_ARGS
 from tablebench.models.coral import DeepCoralModel, MMDModel
+from tablebench.models.dann import DANNModel
 from tablebench.models.dro import GroupDROModel
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.irm import IRMModel
@@ -16,7 +17,23 @@ from tablebench.models.rex import VRExModel
 
 
 def get_estimator(model, d_out=1, **kwargs):
-    if model == "deepcoral":
+    if model == "dann":
+        return DANNModel(d_in=kwargs["d_in"],
+                         d_layers=[kwargs["d_hidden"]] * kwargs[
+                             "num_layers"],
+                         d_out=d_out,
+                         dropouts=kwargs["dropouts"],
+                         activation=kwargs["activation"],
+                         lr_d=kwargs["lr_d"],
+                         weight_decay_d=kwargs["weight_decay_d"],
+                         lr_g=kwargs["lr_g"],
+                         weight_decay_g=kwargs["weight_decay_g"],
+                         d_steps_per_g_step=kwargs["d_steps_per_g_step"],
+                         grad_penalty=kwargs["grad_penalty"],
+                         loss_lambda=kwargs["loss_lambda"],
+                         )
+
+    elif model == "deepcoral":
         return DeepCoralModel(d_in=kwargs["d_in"],
                               d_layers=[kwargs["d_hidden"]] * kwargs[
                                   "num_layers"],
