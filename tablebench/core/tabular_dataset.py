@@ -385,10 +385,12 @@ class CachedDataset:
         self.name = name
         self.target = None
         self.domain_label_colname = None
+        self.domain_label_values = None
         self.group_feature_names = None
         self.feature_names = None
         self.X_shape = None
         self.splits: List = None
+        self.schema = None
 
         self._load_info_from_cache()
 
@@ -412,10 +414,19 @@ class CachedDataset:
             setattr(self, k, v)
 
         with open(os.path.join(self.base_dir, "schema.pickle"), "rb") as f:
-            schema = pickle.load(f)
+            self.schema = pickle.load(f)
 
-    def get_ray(self, split, num_partitions=64):
+    def get_domains(self, split) -> List[str]:
+        """Fetch a list of the cached domains."""
         dir = os.path.join(self.base_dir, split)
+        domains = os.listdir(dir)
+        return sorted(domains)
+
+    def get_ray(self, split, domain=None, num_partitions=64):
+        if domain:  # Match only the specified domain
+            dir = os.path.join(self.base_dir, split, domain)
+        else:  # Match any domain
+            dir = os.path.join(self.base_dir, split, "*")
         fileglob = os.path.join(dir, "*.csv")
         files = glob.glob(fileglob)
         assert len(files), f"no files detected for split {split} " \
