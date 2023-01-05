@@ -9,9 +9,10 @@ from tablebench.models.coral import DeepCoralModel, MMDModel
 from tablebench.models.dro import GroupDROModel
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.irm import IRMModel
+from tablebench.models.mixup import MixUpModel
 from tablebench.models.rtdl import ResNetModel, MLPModel, FTTransformerModel
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
-from tablebench.models.mixup import MixUpModel
+from tablebench.models.rex import VRExModel
 
 
 def get_estimator(model, d_out=1, **kwargs):
@@ -122,6 +123,17 @@ def get_estimator(model, d_out=1, **kwargs):
             d_out=d_out,
             **{k: kwargs[k] for k in OPTIMIZER_ARGS},
         )
+
+    elif model == "vrex":
+        return VRExModel(
+            d_in=kwargs["d_in"],
+            d_layers=[kwargs["d_hidden"]] * kwargs["num_layers"],
+            d_out=d_out,
+            dropouts=kwargs["dropouts"],
+            activation=kwargs["activation"],
+            vrex_penalty_anneal_iters=kwargs["vrex_penalty_anneal_iters"],
+            vrex_lambda=kwargs["vrex_lambda"],
+            **{k: kwargs[k] for k in OPTIMIZER_ARGS})
 
     elif model == "wcs":
         # Weighted Covariate Shift classifier.
