@@ -28,14 +28,15 @@ def _cache_experiment(expt_config: ExperimentConfig, cache_dir, overwrite: bool)
 
 
 def main(cache_dir, experiment, overwrite: bool, domain_shift_experiment=None):
-    assert not (experiment and domain_shift_experiment), "specify either experiment or domain_shift_experiment, " \
-                                                         "but not both. "
+    assert (experiment or domain_shift_experiment) and\
+           not (experiment and domain_shift_experiment), \
+        "specify either experiment or domain_shift_experiment, but not both."
+
     if experiment:
         expt_config = EXPERIMENT_CONFIGS[experiment]
         _cache_experiment(expt_config, cache_dir, overwrite=overwrite)
-
-    else:
-        assert domain_shift_experiment
+        print("caching tasks complete!")
+        return
 
     domain_shift_expt_config = domain_shift_experiment_configs[domain_shift_experiment]
 
