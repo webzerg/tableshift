@@ -2,11 +2,14 @@
 import argparse
 
 from tablebench.core import TabularDataset, TabularDatasetConfig
-from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS, ExperimentConfig
+from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS, \
+    ExperimentConfig
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core.utils import make_uid
 
-def _cache_experiment(expt_config: ExperimentConfig, cache_dir, overwrite: bool):
+
+def _cache_experiment(expt_config: ExperimentConfig, cache_dir,
+                      overwrite: bool):
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
     tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
     assert "name" in tabular_dataset_kwargs
@@ -28,7 +31,7 @@ def _cache_experiment(expt_config: ExperimentConfig, cache_dir, overwrite: bool)
 
 
 def main(cache_dir, experiment, overwrite: bool, domain_shift_experiment=None):
-    assert (experiment or domain_shift_experiment) and\
+    assert (experiment or domain_shift_experiment) and \
            not (experiment and domain_shift_experiment), \
         "specify either experiment or domain_shift_experiment, but not both."
 
@@ -38,15 +41,16 @@ def main(cache_dir, experiment, overwrite: bool, domain_shift_experiment=None):
         print("caching tasks complete!")
         return
 
-    domain_shift_expt_config = domain_shift_experiment_configs[domain_shift_experiment]
+    domain_shift_expt_config = domain_shift_experiment_configs[
+        domain_shift_experiment]
 
     for expt_config in domain_shift_expt_config.as_experiment_config_iterator():
-        # try:
-        _cache_experiment(expt_config, cache_dir, overwrite=overwrite)
-        # except Exception as e:
-        #     print(f"exception when caching experiment with ood values "
-        #           f"{expt_config.splitter.domain_split_ood_values}: {e}")
-        #     continue
+        try:
+            _cache_experiment(expt_config, cache_dir, overwrite=overwrite)
+        except Exception as e:
+            print(f"exception when caching experiment with ood values "
+                  f"{expt_config.splitter.domain_split_ood_values}: {e}")
+            continue
     print("caching tasks complete!")
 
 
