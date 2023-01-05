@@ -1,11 +1,11 @@
-from typing import Optional, Mapping
+from typing import Optional, Mapping, Dict, Any, Callable
 
 import torch
+from torch.utils.data import DataLoader
 
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.rtdl import MLPModel
 from tablebench.models.torchutils import unpack_batch, apply_model
-from tablebench.models.losses import GroupDROLoss
 
 
 class GroupDROModel(MLPModel, SklearnStylePytorchModel):
@@ -15,7 +15,8 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
         assert n_groups > 0, "require nonzero n_groups."
         self.group_weights_step_size = torch.Tensor([group_weights_step_size])
         # initialize adversarial weights
-        self.group_weights = torch.nn.Parameter(torch.full([n_groups], 1. / n_groups))
+        self.group_weights = torch.nn.Parameter(
+            torch.full([n_groups], 1. / n_groups))
 
     def to(self, device):
         super().to(device)
@@ -23,12 +24,19 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
             setattr(self, attr, getattr(self, attr).to(device))
         return self
 
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
-                    loss_fn: GroupDROLoss,
+    def train_epoch(self,
+                    train_loaders: Dict[Any, DataLoader],
+                    loss_fn: Callable,
                     device: str,
-                    other_loaders: Optional[
-                        Mapping[str, torch.utils.data.DataLoader]] = None
-                    ):
+                    uda_loader: Optional[DataLoader] = None,
+                    eval_loaders: Optional[Mapping[str, DataLoader]] = None,
+                    # Terminate after this many steps if reached before end
+                    # of epoch.
+                    max_examples_per_epoch: Optional[int] = None
+                    ) -> float:
+        assert len(train_loaders.values()) == 1
+        train_loader = list(train_loaders.values())[0]
+
         for iteration, batch in enumerate(train_loader):
             x_batch, y_batch, _, d_batch = unpack_batch(batch)
             self.train()

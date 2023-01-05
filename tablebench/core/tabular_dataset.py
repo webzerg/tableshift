@@ -5,13 +5,14 @@ import json
 import math
 import os
 import pickle
-from typing import Optional, Tuple, Union, List
+from typing import Optional, Tuple, Union, List, Dict, Any
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 import ray.data
 import torch
+from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 
 from .splitter import Splitter, DomainSplitter
@@ -20,6 +21,22 @@ from .tasks import get_task_config
 from .features import PreprocessorConfig
 from .metrics import metrics_by_group
 from .utils import make_uid
+from tablebench.third_party.domainbed import InfiniteDataLoader
+
+
+def _make_dataloader_from_dataframes(
+        data, batch_size: int, shuffle: bool,
+        infinite=False) -> DataLoader:
+    """Construct a (shuffled) DataLoader from a DataFrame."""
+    data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
+    tds = torch.utils.data.TensorDataset(*data)
+    if infinite:
+        loader = InfiniteDataLoader(dataset=tds, batch_size=batch_size)
+    else:
+        loader = DataLoader(
+            dataset=tds, batch_size=batch_size,
+            shuffle=shuffle)
+    return loader
 
 
 @dataclass
@@ -72,6 +89,11 @@ class TabularDataset(ABC):
     def X_shape(self):
         """Shape of the data matrix for training."""
         return [None, len(self.feature_names)]
+
+    @property
+    def n_train(self) -> int:
+        """Fetch the number of training observations."""
+        return len(self.splits["train"])
 
     @property
     def n_domains(self) -> int:
@@ -212,21 +234,38 @@ class TabularDataset(ABC):
         #  e.g. numeric vs. categorical features, where this is needed.
         return self._get_split_xygd(split)
 
-    def get_dataloader(self, split, batch_size=2048, device='cpu',
-                       shuffle=True) -> torch.utils.data.DataLoader:
+    def get_domain_dataloaders(
+            self, split, batch_size=2048,
+            shuffle=True, infinite=True) -> Dict[Any, DataLoader]:
+        """Fetch a dict of {domain_id:DataLoader}."""
+        loaders = {}
+        split_data = self._get_split_xygd(split)
+        assert self.n_domains, "sanity check for a domain-split dataset"
+
+        print("[DEBUG] domain value counts:\n{}".format(
+            split_data[3].value_counts()))
+
+        for domain in sorted(split_data[3].unique()):
+            # Boolean vector where True indicates observations in the domain.
+            idxs = split_data[3] == domain
+            assert idxs.sum() >= batch_size, \
+                "sanity check at least one full batch per domain."
+
+            split_domain_data = [df[idxs] for df in split_data]
+            split_loader = _make_dataloader_from_dataframes(
+                split_domain_data, batch_size, shuffle, infinite=infinite)
+            loaders[domain] = split_loader
+        return loaders
+
+    def get_dataloader(self, split, batch_size=2048,
+                       shuffle=True, infinite=False) -> DataLoader:
         """Fetch a dataloader yielding (X, y, G, d) tuples."""
         data = self._get_split_xygd(split)
         if not self.domain_label_colname:
             # Drop the empty domain labels.
             data = data[:-1]
-        device = torch.device(device)
-        data = tuple(map(lambda x: torch.tensor(x.values).float(), data))
-        tds = torch.utils.data.TensorDataset(*data)
-        _collate_fn = lambda x: tuple(t.to(device) for t in default_collate(x))
-        return torch.utils.data.DataLoader(
-            dataset=tds, batch_size=batch_size,
-            shuffle=shuffle,
-            collate_fn=_collate_fn)
+        return _make_dataloader_from_dataframes(data, batch_size, shuffle,
+                                                infinite=infinite)
 
     def get_dataset_baseline_metrics(self, split):
 
@@ -288,17 +327,34 @@ class TabularDataset(ABC):
         uid = make_uid(self.name, self.splitter)
 
         base_dir = os.path.join(self.config.cache_dir, uid)
+
+        def initialize_dir(dirname):
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+
         for split in self.splits:
             outdir = os.path.join(base_dir, split)
             print(f"[INFO] caching task {uid} to {outdir}")
-            if not os.path.exists(outdir):
-                os.makedirs(outdir)
+            initialize_dir(outdir)
             df = self._get_split_df(split)
 
-            num_shards = math.ceil(len(df) / rows_per_shard)
-            for i in range(num_shards):
-                fp = os.path.join(outdir, f"{split}_{i:05d}.csv")
-                df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard].to_csv(fp, index=False)
+            def write_shards(df, dirname):
+                num_shards = math.ceil(len(df) / rows_per_shard)
+                for i in range(num_shards):
+                    fp = os.path.join(dirname, f"{split}_{i:05d}.csv")
+                    df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard] \
+                        .to_csv(fp, index=False)
+
+            if self.domain_label_colname:
+                # Write to {split}/{domain_value}/{shard_filename.csv}
+                for domain in sorted(df[self.domain_label_colname].unique()):
+                    df_ = df[df[self.domain_label_colname] == domain]
+                    domain_dir = os.path.join(outdir, str(domain))
+                    initialize_dir(domain_dir)
+                    write_shards(df_, domain_dir)
+            else:
+                # Write to {split}/{shard_filename.csv}
+                write_shards(df, outdir)
 
         # write metadata
         schema = self._df.dtypes.to_dict()
@@ -308,10 +364,14 @@ class TabularDataset(ABC):
         ds_info = {
             'target': self.target,
             'domain_label_colname': self.domain_label_colname,
+            'domain_label_values': self._df[
+                self.domain_label_colname].unique().tolist() \
+                if self.domain_label_colname else None,
             'group_feature_names': self.group_feature_names,
             'feature_names': self.feature_names,
             'X_shape': self.X_shape,
-            'splits': list(self.splits.keys())
+            'splits': list(self.splits.keys()),
+            **{f'n_{s}': len(self.splits[s]) for s in self.splits},
         }
         with open(os.path.join(base_dir, "info.json"), "w") as f:
             f.write(json.dumps(ds_info))
@@ -326,10 +386,12 @@ class CachedDataset:
         self.name = name
         self.target = None
         self.domain_label_colname = None
+        self.domain_label_values = None
         self.group_feature_names = None
         self.feature_names = None
         self.X_shape = None
         self.splits: List = None
+        self.schema = None
 
         self._load_info_from_cache()
 
@@ -353,14 +415,24 @@ class CachedDataset:
             setattr(self, k, v)
 
         with open(os.path.join(self.base_dir, "schema.pickle"), "rb") as f:
-            schema = pickle.load(f)
+            self.schema = pickle.load(f)
 
-    def get_ray(self, split, num_partitions=64):
+    def get_domains(self, split) -> List[str]:
+        """Fetch a list of the cached domains."""
         dir = os.path.join(self.base_dir, split)
+        domains = os.listdir(dir)
+        return sorted(domains)
+
+    def get_ray(self, split, domain=None, num_partitions=64):
+        if domain:  # Match only the specified domain
+            dir = os.path.join(self.base_dir, split, domain)
+        else:  # Match any domain
+            dir = os.path.join(self.base_dir, split, "*")
         fileglob = os.path.join(dir, "*.csv")
         files = glob.glob(fileglob)
         assert len(files), f"no files detected for split {split} " \
                            f"matching {fileglob}"
-        return ray.data\
-            .read_csv(files, meta_provider=ray.data.datasource.FastFileMetadataProvider() )\
+        return ray.data \
+            .read_csv(files,
+                      meta_provider=ray.data.datasource.FastFileMetadataProvider()) \
             .repartition(num_partitions)

@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from typing import Sequence, Optional, Any, Iterator, Tuple
 from tablebench.core import Grouper, PreprocessorConfig, DomainSplitter
 from tablebench.core.utils import sliding_window
-from tablebench.datasets import ACS_REGIONS, ACS_STATE_LIST, ACS_YEARS, BRFSS_STATE_LIST, \
+from tablebench.datasets import ACS_REGIONS, ACS_STATE_LIST, ACS_YEARS, \
+    BRFSS_STATE_LIST, \
     BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS, \
     ANES_REGIONS, MIMIC_EXTRACT_SHARED_FEATURES, MIMIC_EXTRACT_STATIC_FEATURES
 from tablebench.datasets.experiment_configs import ExperimentConfig
@@ -37,7 +38,8 @@ class DomainShiftExperimentConfig:
     domain_split_id_values: Optional[Sequence[Any]] = None
 
     def as_experiment_config_iterator(
-            self, val_size=0.1, ood_val_size=0.1, id_test_size=0.1, random_state=DEFAULT_RANDOM_STATE
+            self, val_size=0.1, ood_val_size=0.1, id_test_size=0.1,
+            random_state=DEFAULT_RANDOM_STATE
     ) -> Iterator[ExperimentConfig]:
         for i, tgt in enumerate(self.domain_split_ood_values):
             if self.domain_split_id_values is not None:
@@ -200,11 +202,24 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(),
     ),
 
+    # Counts by domain are below. We hold out all of the smallest
+    # domains to avoid errors with very small domains during dev.
+    # A48       9
+    # A44      12
+    # A410     12
+    # A45      22
+    # A46      50
+    # A49      97
+    # A41     103
+    # A42     181
+    # A40     234
+    # A43     280
     "_debug": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "communities_and_crime"},
-        domain_split_varname="state",
-        domain_split_ood_values=[CANDC_STATE_LIST[:30]],
-        grouper=Grouper({"Race": [1, ], "income_level_above_median": [1, ]},
+        tabular_dataset_kwargs={"name": "german"},
+        domain_split_varname="purpose",
+        domain_split_ood_values=[["A40", "A41", "A42", "A43", "A44", "A410",
+                                  "A45", "A46", "A48"]],
+        grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(),
     ),
@@ -298,7 +313,8 @@ domain_shift_experiment_configs = {
     "mimic_extract_los_3_ins": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={'task': 'los_3', 'name': 'mimic_extract_los_3'},
         domain_split_varname="insurance",
-        domain_split_ood_values=_to_nested(["Medicare", "Medicaid", "Government", "Self Pay"]),
+        domain_split_ood_values=_to_nested(
+            ["Medicare", "Medicaid", "Government", "Self Pay"]),
         grouper=Grouper({"gender": ['M'], }, drop=False),
         # We passthrough all non-static columns because we use MIMIC-extract's default
         # preprocessing/imputation and do not wish to modify it for these features
@@ -306,12 +322,15 @@ domain_shift_experiment_configs = {
         # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
-                                 if f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),
+                                 if
+                                 f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),
 
     "mimic_extract_mort_hosp_ins": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={'task': 'mort_hosp', 'name': 'mimic_extract_mort_hosp'},
+        tabular_dataset_kwargs={'task': 'mort_hosp',
+                                'name': 'mimic_extract_mort_hosp'},
         domain_split_varname="insurance",
-        domain_split_ood_values=_to_nested(["Medicare", "Medicaid", "Government", "Self Pay"]),
+        domain_split_ood_values=_to_nested(
+            ["Medicare", "Medicaid", "Government", "Self Pay"]),
         grouper=Grouper({"gender": ['M'], }, drop=False),
         # We passthrough all non-static columns because we use MIMIC-extract's default
         # preprocessing/imputation and do not wish to modify it for these features
@@ -319,5 +338,6 @@ domain_shift_experiment_configs = {
         # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
-                                 if f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),
+                                 if
+                                 f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),
 }

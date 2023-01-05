@@ -104,9 +104,20 @@ EXPERIMENT_CONFIGS = {
             ood_val_size=0.25,
             random_state=43406,
             domain_split_varname="purpose",
-            # values: car(new), car(used), furniture/equipment
-            domain_split_ood_values=["A40", "A41", "A42",
-                                     "A43"]
+            # Counts by domain are below. We hold out all of the smallest
+            # domains to avoid errors with very small domains during dev.
+            # A48       9
+            # A44      12
+            # A410     12
+            # A45      22
+            # A46      50
+            # A49      97
+            # A41     103
+            # A42     181
+            # A40     234
+            # A43     280
+            domain_split_ood_values=["A40", "A41", "A42", "A43", "A44", "A410",
+                                     "A45", "A46", "A48"]
         ),
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),

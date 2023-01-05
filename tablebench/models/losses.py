@@ -57,19 +57,6 @@ class DomainGeneralizationLoss:
     """A class to represent losses for domain generalization."""
 
 
-@dataclass
-class CORALLoss(DomainGeneralizationLoss):
-
-    def __call__(self, activations_id, activations_ood):
-        assert activations_id.shape[1] == activations_ood.shape[1], \
-            f"got unexpected activations shapes: {activations_id.shape}, " \
-            f"{activations_ood.shape}"
-        d = activations_id.shape[1]
-        C_s = torch.cov(activations_id)
-        C_t = torch.cov(activations_ood)
-        const = 1 / (4 * d ** 2)
-        dist = torch.norm(C_s - C_t, p="fro") ** 2
-        return const * dist
 
 
 @dataclass

@@ -5,12 +5,13 @@ rtdl source: https://github.com/Yura52/rtdl
 """
 
 import copy
-from typing import Mapping, Optional, Callable, Any
+from typing import Optional, Callable, Any, Dict
 
 import numpy as np
 import rtdl
 import scipy
 import torch
+from torch.utils.data import DataLoader
 
 from tablebench.models.compat import SklearnStylePytorchModel, OPTIMIZER_ARGS
 from tablebench.models.training import train_epoch
@@ -18,15 +19,18 @@ from tablebench.models.training import train_epoch
 
 class SklearnStyleRTDLModel(SklearnStylePytorchModel):
 
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+    def train_epoch(self,
+                    train_loaders: Dict[Any, DataLoader],
                     loss_fn: Callable,
                     device: str,
-                    other_loaders: Optional[
-                        Mapping[str, torch.utils.data.DataLoader]] = None,
+                    uda_loader: Optional[DataLoader] = None,
+                    eval_loaders: Optional[Dict[str, DataLoader]] = None,
+                    max_examples_per_epoch: Optional[int] = None
                     ) -> float:
         """Run a single epoch of model training."""
-        return train_epoch(self, self.optimizer,
-                           loss_fn, train_loader, device=device)
+        assert len(train_loaders.values()) == 1
+        train_loader = list(train_loaders.values())[0]
+        return train_epoch(self, self.optimizer, loss_fn, train_loader, device)
 
     @torch.no_grad()
     def predict_proba(self, X):

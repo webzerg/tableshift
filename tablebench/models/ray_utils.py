@@ -23,17 +23,16 @@ from ray.tune.search.hyperopt import HyperOptSearch
 from tablebench.configs.hparams import search_space
 from tablebench.core import TabularDataset, CachedDataset
 from tablebench.models.compat import SklearnStylePytorchModel, \
-    is_pytorch_model_name
+    is_pytorch_model_name, is_domain_generalization_model_name
 from tablebench.models.config import get_default_config
 from tablebench.models.expgrad import ExponentiatedGradientTrainer
 from tablebench.models.torchutils import get_predictions_and_labels
-from tablebench.models.training import train_epoch
-from tablebench.models.optimizers import get_optimizer
 from tablebench.models.utils import get_estimator
-from tablebench.models.coral import DeepCoralModel, domain_generalization_train_epoch
 
 
-def accuracy_metric_name_and_mode_for_model(model_name: str, split="validation") -> Tuple[str, str]:
+def accuracy_metric_name_and_mode_for_model(model_name: str,
+                                            split="validation") -> Tuple[
+    str, str]:
     """Helper function to fetch the name for an accuracy-related metric for each model.
 
     This is necessary because some Ray Trainer types do not allow for custom naming of the metrics, and
@@ -49,7 +48,8 @@ def accuracy_metric_name_and_mode_for_model(model_name: str, split="validation")
         metric_name = f"{split}_accuracy"
         mode = "max"
     else:
-        raise NotImplementedError(f"cannot find accuracy metric name for model {model_name}")
+        raise NotImplementedError(
+            f"cannot find accuracy metric name for model {model_name}")
     return metric_name, mode
 
 
@@ -78,10 +78,12 @@ class RayExperimentConfig:
         print(f"[INFO] instantiating search alg of type {self.search_alg}")
         if self.search_alg == "hyperopt":
             return HyperOptSearch(metric=self.tune_metric_name,
-                                  mode=self.mode, random_state_seed=self.random_state)
+                                  mode=self.mode,
+                                  random_state_seed=self.random_state)
         elif self.search_alg == "random":
-            return tune.search.basic_variant.BasicVariantGenerator(max_concurrent=self.max_concurrent_trials,
-                                                                   random_state=self.random_state)
+            return tune.search.basic_variant.BasicVariantGenerator(
+                max_concurrent=self.max_concurrent_trials,
+                random_state=self.random_state)
         else:
             raise NotImplementedError
 
@@ -105,7 +107,8 @@ class RayExperimentConfig:
             raise NotImplementedError
 
 
-def make_ray_dataset(dset: Union[TabularDataset, CachedDataset], split, keep_domain_labels=False):
+def make_ray_dataset(dset: Union[TabularDataset, CachedDataset], split,
+                     keep_domain_labels=False):
     if isinstance(dset, CachedDataset):
         return dset.get_ray(split)
     else:
@@ -127,21 +130,21 @@ def get_ray_checkpoint(model):
         return TorchCheckpoint.from_state_dict(model.state_dict())
 
 
-def ray_evaluate(model, splits: Dict[str, Any]) -> dict:
+def ray_evaluate(model, split_loaders: Dict[str, Any]) -> dict:
     """Run evaluation of a model.
 
-    splits should be a dict mapping split names to DataLoaders.
+    split_loaders should be a dict mapping split names to DataLoaders.
     """
-    device = train.torch.get_device()
+    dev = train.torch.get_device()
     model.eval()
     metrics = {}
-    for split in splits:
-        prediction_soft, target = get_predictions_and_labels(model, splits[split],
-                                                        device=device)
+    for split, loader in split_loaders.items():
+        prediction_soft, target = get_predictions_and_labels(model, loader, dev)
         prediction_hard = np.round(prediction_soft)
         acc = sklearn.metrics.accuracy_score(target, prediction_hard)
         auc_roc = sklearn.metrics.roc_auc_score(target, prediction_soft)
-        avg_prec = sklearn.metrics.average_precision_score(target, prediction_soft)
+        avg_prec = sklearn.metrics.average_precision_score(target,
+                                                           prediction_soft)
         metrics[f"{split}_accuracy"] = acc
         metrics[f"{split}_auc"] = auc_roc
         metrics[f"{split}_map"] = avg_prec
@@ -162,13 +165,15 @@ def _row_to_dict(row, X_names: List[str], y_name: str, G_names: List[str],
     return outputs
 
 
-def prepare_torch_datasets(split, dset: Union[TabularDataset, CachedDataset]):
+def prepare_dataset(split, dset: Union[TabularDataset, CachedDataset],
+                    domain: str = None) -> ray.data.Dataset:
+    """Prepare a Ray dataset for a specific split (and optional domain)."""
     keep_domain_labels = dset.domain_label_colname is not None
 
     if isinstance(dset, TabularDataset):
         ds = make_ray_dataset(dset, split, keep_domain_labels)
     elif isinstance(dset, CachedDataset):
-        ds = dset.get_ray(split)
+        ds = dset.get_ray(split, domain=domain)
     y_name = dset.target
     d_name = dset.domain_label_colname
     G_names = dset.group_feature_names
@@ -180,6 +185,23 @@ def prepare_torch_datasets(split, dset: Union[TabularDataset, CachedDataset]):
     return ds.map_batches(_map_fn, batch_format="pandas")
 
 
+def prepare_ray_datasets(dset: Union[TabularDataset, CachedDataset],
+                         split_by_domain: bool
+                         ) -> Dict[str, ray.data.Dataset]:
+    """Fetch a dict of {split:ray.data.Dataset} for each split."""
+    ray_dsets = {}
+
+    for split in dset.splits:
+        if split == "train" and split_by_domain:
+            # Case: training dataset needs to be split by domain, handled below.
+            for domain in dset.get_domains(split):
+                ray_dsets[f"{split}_{domain}"] = prepare_dataset(split, dset,
+                                                                 domain)
+        ray_dsets[split] = prepare_dataset(split, dset)
+
+    return ray_dsets
+
+
 def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                             model_name: str,
                             tune_config: RayExperimentConfig = None,
@@ -189,6 +211,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     This defines the trainers, tuner, and other associated objects, runs the
     tuning experiment, and returns the ray ResultGrid object.
     """
+
+    dset_train_domains = dset.get_domains("train")
 
     def train_loop_per_worker(config: Dict):
         """Function to be run by each TorchTrainer.
@@ -202,43 +226,53 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         model = train.torch.prepare_model(model)
 
         criterion = config["criterion"]
-        optimizer = get_optimizer(model, config)
 
         n_epochs = config["n_epochs"]
 
         if debug:
-            # In debug mode,  train only for 2 epochs (2, not 1, so that we can ensure DataLoaders are
-            # iterating properly).
+            # In debug mode,  train only for 2 epochs (2, not 1, so that we
+            # can ensure DataLoaders are iterating properly).
             n_epochs = 2
 
         device = train.torch.get_device()
 
+        def _prepare_dataset_shard(shardname, infinite=False):
+            """Get the dataset shard and, optionally, repeat infinitely."""
+            shard = session.get_dataset_shard(shardname)
+            if infinite:
+                print(f"[DEBUG] repeating shard {shardname} infinitely.")
+                shard = shard.repeat()
+            return shard.iter_torch_batches(batch_size=config["batch_size"])
+
         for epoch in range(n_epochs):
             print(f"[DEBUG] starting epoch {epoch} with model {model_name}")
 
-            train_dataset_batches = session.get_dataset_shard(
-                "train").iter_torch_batches(batch_size=config["batch_size"])
-            eval_batches = {
-                split: session.get_dataset_shard(split).iter_torch_batches(
-                    batch_size=config["batch_size"]) for split in dset.splits}
+            assert isinstance(model, SklearnStylePytorchModel)
+            if model.domain_generalization:
+                train_loaders = {s: _prepare_dataset_shard(f"train_{s}", True)
+                                 for s in dset_train_domains}
+                uda_loader = None
+                max_examples_per_epoch = dset.n_train
 
-            if isinstance(model, DeepCoralModel):  # Case: Domain Generalization training.
-                # Fetch a separate iterable for the OOD validation data;
-                # ech iterator can only be consumed once and the iterator
-                # in eval_batches is needed for evaluation.
-                ood_dataset_batches = session.get_dataset_shard(
-                    "ood_validation").iter_torch_batches(batch_size=config["batch_size"])
 
-                train_loss = domain_generalization_train_epoch(
-                    model, optimizer, criterion, train_dataset_batches,
-                    ood_dataset_batches, device=device)
+            elif model.domain_adaptation:
+                raise NotImplementedError
+            else:
+                train_loaders = {"train": _prepare_dataset_shard("train")}
+                uda_loader = None
+                max_examples_per_epoch = None
 
-            else:  # Case: standard training loop.
-                train_loss = train_epoch(model, optimizer, criterion,
-                                         train_dataset_batches, device=device)
+            eval_loaders = {s: _prepare_dataset_shard(s) for s in
+                            ('validation', 'id_test', 'ood_test',
+                             'ood_validation')}
+
+            train_loss = model.train_epoch(
+                train_loaders, criterion,
+                device=device, uda_loader=uda_loader,
+                max_examples_per_epoch=max_examples_per_epoch)
 
             # Log the metrics for this epoch
-            metrics = ray_evaluate(model, eval_batches)
+            metrics = ray_evaluate(model, eval_loaders)
             metrics.update(dict(train_loss=train_loss))
             checkpoint = get_ray_checkpoint(model)
             session.report(metrics, checkpoint=checkpoint)
@@ -250,7 +284,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     # Construct the Trainer object that will be passed to each worker.
     if is_pytorch_model_name(model_name):
 
-        datasets = {split: prepare_torch_datasets(split, dset) for split in dset.splits}
+        split_by_domain = is_domain_generalization_model_name(model_name)
+        datasets = prepare_ray_datasets(dset, split_by_domain)
 
         use_gpu = torch.cuda.is_available()
         trainer = TorchTrainer(
@@ -259,7 +294,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             datasets=datasets,
             scaling_config=ScalingConfig(
                 num_workers=tune_config.num_workers,
-                resources_per_worker={"GPU": tune_config.gpu_per_worker} if use_gpu else None,
+                resources_per_worker={
+                    "GPU": tune_config.gpu_per_worker} if use_gpu else None,
                 use_gpu=use_gpu))
         # Hyperparameter search space; note that the scaling_config can also
         # be tuned but is fixed here.
@@ -356,7 +392,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     return results
 
 
-def fetch_postprocessed_results_df(results: ray.tune.ResultGrid) -> pd.DataFrame:
+def fetch_postprocessed_results_df(
+        results: ray.tune.ResultGrid) -> pd.DataFrame:
     """Fetch a DataFrame and clean up the names of columns so they align across models.
 
     This function accounts for the fact that some Trainers in ray produce results that have the right

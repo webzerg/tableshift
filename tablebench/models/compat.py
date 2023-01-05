@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Optional, Mapping, Union, Callable
+from typing import Optional, Mapping, Union, Callable, Any, Dict
 
 import numpy as np
 import os
@@ -9,6 +9,7 @@ from ray.air import session
 from ray.air.checkpoint import Checkpoint
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
 
 from tablebench.models.torchutils import evaluate
 from tablebench.models.optimizers import get_optimizer
@@ -26,6 +27,15 @@ def append_by_key(from_dict: dict, to_dict: Union[dict, defaultdict]) -> dict:
 class SklearnStylePytorchModel(ABC, nn.Module):
     """A pytorch model with an sklearn-style interface."""
 
+    def __init__(self):
+        super().__init__()
+
+        # Indicator for domain generalization model
+        self.domain_generalization = False
+
+        # Indicator for domain adaptation model
+        self.domain_adaptation = False
+
     def _init_optimizer(self):
         """(re)initialize the optimizer."""
         opt_config = {k: self.config[k] for k in OPTIMIZER_ARGS}
@@ -41,20 +51,20 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         """sklearn-compatible probability prediction function."""
         raise
 
-    def evaluate(self, train_loader, other_loaders, device):
-        split_scores = {"train": evaluate(self, train_loader, device)}
-        if other_loaders:
-            for split, loader in other_loaders.items():
-                split_score = evaluate(self, loader, device)
-                split_scores[split] = split_score
-        return split_scores
+    def evaluate(self, eval_loaders: Dict[str, DataLoader], device):
+        return {str(split): evaluate(self, loader, device)
+                for split, loader in eval_loaders.items()}
 
     @abstractmethod
-    def train_epoch(self, train_loader: torch.utils.data.DataLoader,
+    def train_epoch(self,
+                    train_loaders: Dict[Any, DataLoader],
                     loss_fn: Callable,
                     device: str,
-                    other_loaders: Optional[
-                        Mapping[str, torch.utils.data.DataLoader]] = None
+                    uda_loader: Optional[DataLoader] = None,
+                    eval_loaders: Optional[Mapping[str, DataLoader]] = None,
+                    # Terminate after this many steps if reached before end
+                    # of epoch.
+                    max_examples_per_epoch: Optional[int] = None
                     ) -> float:
         """Conduct one epoch of training and return the loss."""
         raise
@@ -70,25 +80,25 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         checkpoint = Checkpoint.from_directory("model")
         return checkpoint
 
-    def fit(self,
-            train_loader: torch.utils.data.DataLoader,
+    def fit(self, train_loaders: Dict[Any, DataLoader],
             loss_fn,
             device: str,
             n_epochs=1,
-            other_loaders: Optional[
-                Mapping[str, torch.utils.data.DataLoader]] = None,
-            tune_report_split: Optional[str] = None) -> dict:
+            eval_loaders: Optional[Dict[str, DataLoader]] = None,
+            tune_report_split: Optional[str] = None,
+            max_examples_per_epoch: Optional[int] = None) -> dict:
         fit_metrics = defaultdict(list)
 
         if tune_report_split:
-            assert tune_report_split in list(other_loaders.keys()) + ["train"]
+            assert tune_report_split in list(eval_loaders.keys()) + ["train"]
 
         for epoch in range(1, n_epochs + 1):
-            self.train_epoch(train_loader=train_loader,
+            self.train_epoch(train_loaders=train_loaders,
                              loss_fn=loss_fn,
-                             other_loaders=other_loaders,
-                             device=device)
-            metrics = self.evaluate(train_loader, other_loaders, device=device)
+                             eval_loaders=eval_loaders,
+                             device=device,
+                             max_examples_per_epoch=max_examples_per_epoch)
+            metrics = self.evaluate(eval_loaders, device=device)
             log_str = f'Epoch {epoch:03d} ' + ' | '.join(
                 f"{k} score: {v:.4f}" for k, v in metrics.items())
             print(log_str)
@@ -106,9 +116,20 @@ class SklearnStylePytorchModel(ABC, nn.Module):
         return fit_metrics
 
 
+DOMAIN_GENERALIZATION_MODEL_NAMES = ["deepcoral", "irm", "mixup", "mmd", ]
+DOMAIN_ADAPTATION_MODEL_NAMES = []
 SKLEARN_MODEL_NAMES = ("expgrad", "histgbm", "lightgbm", "wcs", "xgb")
-PYTORCH_MODEL_NAMES = ("deepcoral", "dro", "ft_transformer", "group_dro",
-                       "irm", "mixup", "mlp", "resnet")
+PYTORCH_MODEL_NAMES = ["dro", "ft_transformer", "group_dro", "mlp", "resnet"] \
+                      + DOMAIN_GENERALIZATION_MODEL_NAMES \
+                      + DOMAIN_ADAPTATION_MODEL_NAMES
+
+
+def is_domain_generalization_model_name(model_name: str) -> bool:
+    return model_name in DOMAIN_GENERALIZATION_MODEL_NAMES
+
+
+def is_domain_adaptation_model_name(model_name: str) -> bool:
+    return model_name in DOMAIN_ADAPTATION_MODEL_NAMES
 
 
 def is_pytorch_model_name(model: str) -> bool:

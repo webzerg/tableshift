@@ -5,7 +5,7 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from tablebench.models.compat import OPTIMIZER_ARGS
-from tablebench.models.coral import DeepCoralModel
+from tablebench.models.coral import DeepCoralModel, MMDModel
 from tablebench.models.dro import GroupDROModel
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.irm import IRMModel
@@ -22,8 +22,8 @@ def get_estimator(model, d_out=1, **kwargs):
                               d_out=d_out,
                               dropouts=kwargs["dropouts"],
                               activation=kwargs["activation"],
-                              loss_lambda=kwargs["loss_lambda"],
-                              **{k: kwargs[k] for k in OPTIMIZER_ARGS}, )
+                              mmd_gamma=kwargs["mmd_gamma"],
+                              **{k: kwargs[k] for k in OPTIMIZER_ARGS})
     elif model == "expgrad":
         return ExponentiatedGradient(**kwargs)
     elif model == "ft_transformer":
@@ -97,8 +97,17 @@ def get_estimator(model, d_out=1, **kwargs):
                         d_out=d_out,
                         dropouts=kwargs["dropouts"],
                         activation=kwargs["activation"],
-                        **{k: kwargs[k] for k in OPTIMIZER_ARGS},
-                        )
+                        **{k: kwargs[k] for k in OPTIMIZER_ARGS})
+
+    elif model == "mmd":
+        return MMDModel(d_in=kwargs["d_in"],
+                        d_layers=[kwargs["d_hidden"]] * kwargs[
+                            "num_layers"],
+                        d_out=d_out,
+                        dropouts=kwargs["dropouts"],
+                        activation=kwargs["activation"],
+                        mmd_gamma=kwargs["mmd_gamma"],
+                        **{k: kwargs[k] for k in OPTIMIZER_ARGS})
     elif model == "resnet":
         d_hidden = kwargs["d_main"] * kwargs["hidden_factor"]
         return ResNetModel(

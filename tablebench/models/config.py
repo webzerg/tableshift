@@ -3,7 +3,7 @@ from frozendict import frozendict
 
 from tablebench.core import TabularDataset
 from tablebench.models.compat import is_pytorch_model_name
-from tablebench.models.losses import GroupDROLoss, CORALLoss, DROLoss
+from tablebench.models.losses import GroupDROLoss, DROLoss
 from torch.nn import functional as F
 
 # Default configs for testing models. These are not tuned
@@ -17,7 +17,7 @@ _DEFAULT_CONFIGS = frozendict({
     "deepcoral":
         {"num_layers": 4,
          "d_hidden": 512,
-         "loss_lambda": 0.01,
+         "mmd_gamma": 0.01,
          "dropouts": 0.},
     "dro":
         {"num_layers": 2,
@@ -53,7 +53,8 @@ _DEFAULT_CONFIGS = frozendict({
          "d_hidden": 256,
          "dropouts": 0.,
          "irm_lambda": 1e-2,
-         "irm_penalty_anneal_iters": 500},
+         # set irm_penalty_anneal_iters s.t. optimizer resets after 1 update
+         "irm_penalty_anneal_iters": 1},
     "mlp":
         {"num_layers": 2,
          "d_hidden": 256,
@@ -63,6 +64,11 @@ _DEFAULT_CONFIGS = frozendict({
          "d_hidden": 256,
          "dropouts": 0.,
          "mixup_alpha": 0.4},
+    "mmd":
+        {"num_layers": 4,
+         "d_hidden": 512,
+         "mmd_gamma": 0.01,
+         "dropouts": 0.},
     "resnet":
         {"n_blocks": 2,
          "dropout_first": 0.2,
@@ -85,10 +91,7 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
         config.update({"n_num_features": dset.X_shape[1]})
 
     # Models that use non-cross-entropy training objectives.
-    if model == "deepcoral":
-        config["criterion"] = CORALLoss()
-
-    elif model == "dro":
+    if model == "dro":
         config["criterion"] = DROLoss(size=config["size"],
                                       reg=config["reg"],
                                       geometry=config["geometry"],
@@ -102,7 +105,9 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
         config["criterion"] = F.binary_cross_entropy_with_logits
 
     if is_pytorch_model_name(model):
-        config.update({"batch_size": 64,
+        # Note: very small batch size is needed for domain shift
+        # when in debug mode.
+        config.update({"batch_size": 4,
                        "lr": 0.01,
                        "weight_decay": 0.01,
                        "n_epochs": 1})

@@ -1,12 +1,12 @@
-import os
-from typing import Any
+from typing import Any, Dict, Optional
 
 from frozendict import frozendict
 from ray.air import session
 import torch
 
 from tablebench.core import TabularDataset
-from tablebench.models.compat import SklearnStylePytorchModel
+from tablebench.models.compat import SklearnStylePytorchModel, \
+    is_domain_adaptation_model_name, is_domain_generalization_model_name
 from tablebench.models.expgrad import ExponentiatedGradient
 from tablebench.models.wcs import WeightedCovariateShiftClassifier
 from tablebench.models.torchutils import unpack_batch, apply_model
@@ -38,7 +38,7 @@ def train_epoch(model, optimizer, criterion, train_loader,
         optimizer.zero_grad()
 
         # forward + backward + optimize
-        outputs = apply_model(model, inputs).squeeze()
+        outputs = apply_model(model, inputs).squeeze(1)
         if isinstance(criterion, GroupDROLoss):
             # Case: loss requires domain labels, plus group weights + step size.
             domains = domains.float().to(device)
@@ -69,29 +69,75 @@ def train_epoch(model, optimizer, criterion, train_loader,
     return running_loss / n_train
 
 
+def get_train_loaders(
+        dset: TabularDataset,
+        batch_size: int,
+        model_name: Optional[str] = None,
+        estimator: Optional[SklearnStylePytorchModel] = None,
+) -> Dict[Any, torch.utils.data.DataLoader]:
+    assert (model_name or estimator) and not (model_name and estimator), \
+        "provide either model_name or estimator, but not both."
+    if estimator.domain_generalization or is_domain_generalization_model_name(
+            model_name):
+        train_loaders = dset.get_domain_dataloaders("train", batch_size)
+    elif estimator.domain_adaptation or is_domain_adaptation_model_name(
+            model_name):
+        raise NotImplementedError
+    else:
+        train_loaders = {"train": dset.get_dataloader("train", batch_size)}
+    return train_loaders
+
+
+def get_eval_loaders(
+        dset: TabularDataset,
+        batch_size: int,
+        model_name: Optional[str] = None,
+        estimator: Optional[SklearnStylePytorchModel] = None,
+) -> Dict[Any, torch.utils.data.DataLoader]:
+    assert (model_name or estimator) and not (model_name and estimator), \
+        "provide either model_name or estimator, but not both."
+    eval_loaders = {s: dset.get_dataloader(s, batch_size) for s in
+                    dset.eval_split_names}
+    if estimator.domain_generalization or is_domain_generalization_model_name(
+            model_name):
+        train_eval_loaders = dset.get_domain_dataloaders("train", batch_size,
+                                                         infinite=False)
+        eval_loaders.update(train_eval_loaders)
+    elif estimator.domain_adaptation or is_domain_adaptation_model_name(
+            model_name):
+        raise NotImplementedError
+    else:
+        eval_loaders["train"] = dset.get_dataloader("train", batch_size)
+    return eval_loaders
+
+
 def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
                    device: str,
                    config=PYTORCH_DEFAULTS,
                    tune_report_split: str = None):
     """Helper function to train a pytorch estimator."""
     print(f"[DEBUG] config is {config}")
+    print(f"[DEBUG] estimator is of type {type(estimator)}")
+    print(f"[DEBUG] dset name is {dset.name}")
     print(f"[DEBUG] device is {device}")
     print(f"[DEBUG] tune_report_split is {tune_report_split}")
 
-    train_loader = dset.get_dataloader("train", config["batch_size"],
-                                       device=device)
-    eval_loaders = {
-        s: dset.get_dataloader(s, config["batch_size"], device=device) for s in
-        dset.eval_split_names}
+    batch_size = config["batch_size"]
+    train_loaders = get_train_loaders(estimator=estimator,
+                                      dset=dset, batch_size=batch_size)
+    eval_loaders = get_eval_loaders(estimator=estimator,
+                                    dset=dset, batch_size=batch_size)
 
     loss_fn = config["criterion"]
 
     estimator.to(device)
-    estimator.fit(train_loader, loss_fn,
+
+    estimator.fit(train_loaders, loss_fn,
                   n_epochs=config["n_epochs"],
                   device=device,
-                  other_loaders=eval_loaders,
-                  tune_report_split=tune_report_split)
+                  eval_loaders=eval_loaders,
+                  tune_report_split=tune_report_split,
+                  max_examples_per_epoch=dset.n_train)
     return estimator
 
 
