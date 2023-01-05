@@ -212,6 +212,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     tuning experiment, and returns the ray ResultGrid object.
     """
 
+    dset_train_domains = dset.get_domains("train")
+
     def train_loop_per_worker(config: Dict):
         """Function to be run by each TorchTrainer.
 
@@ -228,35 +230,46 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         n_epochs = config["n_epochs"]
 
         if debug:
-            # In debug mode,  train only for 2 epochs (2, not 1, so that we can ensure DataLoaders are
-            # iterating properly).
+            # In debug mode,  train only for 2 epochs (2, not 1, so that we
+            # can ensure DataLoaders are iterating properly).
             n_epochs = 2
 
         device = train.torch.get_device()
 
-        def _prepare_dataset_shard(shard):
-            return session.get_dataset_shard(shard).iter_torch_batches(
-                batch_size=config["batch_size"])
+        def _prepare_dataset_shard(shardname, infinite=False):
+            """Get the dataset shard and, optionally, repeat infinitely."""
+            shard = session.get_dataset_shard(shardname)
+            if infinite:
+                print(f"[DEBUG] repeating shard {shardname} infinitely.")
+                shard = shard.repeat()
+            return shard.iter_torch_batches(batch_size=config["batch_size"])
 
         for epoch in range(n_epochs):
             print(f"[DEBUG] starting epoch {epoch} with model {model_name}")
 
             assert isinstance(model, SklearnStylePytorchModel)
             if model.domain_generalization:
-                # do something
-                raise NotImplementedError
+                train_loaders = {s: _prepare_dataset_shard(f"train_{s}", True)
+                                 for s in dset_train_domains}
+                uda_loader = None
+                max_examples_per_epoch = dset.n_train
+
 
             elif model.domain_adaptation:
                 raise NotImplementedError
             else:
                 train_loaders = {"train": _prepare_dataset_shard("train")}
-                eval_loaders = {s: _prepare_dataset_shard(s) for s in
-                                ('validation', 'id_test', 'ood_test',
-                                 'ood_validation')}
                 uda_loader = None
+                max_examples_per_epoch = None
 
-            train_loss = model.train_epoch(train_loaders, criterion,
-                                           device=device, uda_loader=uda_loader)
+            eval_loaders = {s: _prepare_dataset_shard(s) for s in
+                            ('validation', 'id_test', 'ood_test',
+                             'ood_validation')}
+
+            train_loss = model.train_epoch(
+                train_loaders, criterion,
+                device=device, uda_loader=uda_loader,
+                max_examples_per_epoch=max_examples_per_epoch)
 
             # Log the metrics for this epoch
             metrics = ray_evaluate(model, eval_loaders)
@@ -271,7 +284,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     # Construct the Trainer object that will be passed to each worker.
     if is_pytorch_model_name(model_name):
 
-        # datasets = {split: prepare_torch_dataset(split, dset) for split in dset.splits}
         split_by_domain = is_domain_generalization_model_name(model_name)
         datasets = prepare_ray_datasets(dset, split_by_domain)
 
