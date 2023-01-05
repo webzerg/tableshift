@@ -6,21 +6,27 @@ import pandas as pd
 import torch
 
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
-from tablebench.core import TabularDataset, TabularDatasetConfig, DomainSplitter, CachedDataset
-from tablebench.models.ray_utils import RayExperimentConfig, run_ray_tune_experiment, fetch_postprocessed_results_df, \
+from tablebench.core import TabularDataset, TabularDatasetConfig, \
+    DomainSplitter, CachedDataset
+from tablebench.models.ray_utils import RayExperimentConfig, \
+    run_ray_tune_experiment, fetch_postprocessed_results_df, \
     accuracy_metric_name_and_mode_for_model
 from tablebench.datasets.experiment_configs import ExperimentConfig
 from tablebench.core.utils import make_uid, timestamp_as_int
 
 _DEFAULT_RAY_TMP_DIR_IF_EXISTS = "/scratch/jpgard/ray"
 
-def get_dataset(expt_config: ExperimentConfig, dataset_config: TabularDatasetConfig,
+
+def get_dataset(expt_config: ExperimentConfig,
+                dataset_config: TabularDatasetConfig,
                 use_cached: bool) -> Union[TabularDataset, CachedDataset]:
     name = expt_config.tabular_dataset_kwargs["name"]
     if use_cached:
         uid = make_uid(name, expt_config.splitter)
-        print(f"[INFO] using cached dataset for uid {uid} at {dataset_config.cache_dir}")
-        dset = CachedDataset(cache_dir=dataset_config.cache_dir, name=name, uid=uid)
+        print(f"[INFO] using cached dataset for uid {uid} "
+              f"at {dataset_config.cache_dir}")
+        dset = CachedDataset(cache_dir=dataset_config.cache_dir, name=name,
+                             uid=uid)
         return dset
     else:
         try:
@@ -33,8 +39,8 @@ def get_dataset(expt_config: ExperimentConfig, dataset_config: TabularDatasetCon
             return dset
         except ValueError as ve:
             # Case: split is too small.
-            print(f"[WARNING] error initializing dataset for expt {name} "
-                  f"with {expt_config.splitter.domain_split_varname} == {tgt}: {ve}")
+            print(f"[WARNING] error initializing dataset for expt {name} with "
+                  f"{expt_config.splitter.domain_split_varname} {ve}")
             return None
 
 
@@ -54,7 +60,6 @@ def main(experiment: str, cache_dir: str,
          gpu_models_only: bool = False,
          cpu_models_only: bool = False,
          time_budget_hrs: float = None):
-
     _gpu_models = ["mlp", "resnet", "ft_transformer"]
     _cpu_models = ["xgb", "lightgbm"]
 
@@ -121,19 +126,24 @@ def main(experiment: str, cache_dir: str,
                                dataset_config=dataset_config,
                                use_cached=use_cached)
         except Exception as e:
-            # This exception is raised e.g. when one or more of the target domains
-            # is not cached, for example if it does not contain multiple labels
-            # or there was another exception during caching; we gracefully skip it.
-            print(f"[WARNING] Exception fetching dataset with src={src}, tgt={tgt}: {e}; "
-                  f"this is probably due to one or more OOD values that were excluded"
-                  f"from the cache due to data issues. Skipping.")
+            # This exception is raised e.g. when one or more of the target
+            # domains is not cached, for example if it does not contain
+            # multiple labels or there was another exception during caching;
+            # we gracefully skip it.
+            print(
+                f"[WARNING] Exception fetching dataset with src={src}, "
+                f"tgt={tgt}: {e}; this is probably due to one or more OOD "
+                f"values that were excluded from the cache due to data "
+                f"issues. Skipping.")
             continue
 
         uid = make_uid(experiment, expt_config.splitter)
 
         if use_cached and not dset.is_cached():
-            print(f"[INFO] skipping dataset {dset.name}; not cached. This may not be a problem and be due to an "
-                  f"invalid domain split (i.e. a domain split with only one target label).")
+            print(
+                f"[INFO] skipping dataset {dset.name}; not cached. This may "
+                f"not be a problem and be due to an invalid domain split ("
+                f"i.e. a domain split with only one target label).")
             continue
 
         for model_name in models:
@@ -141,7 +151,8 @@ def main(experiment: str, cache_dir: str,
             print(f'training model {model_name} for experiment uid {uid}')
             print('#' * 100)
 
-            metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
+            metric_name, mode = accuracy_metric_name_and_mode_for_model(
+                model_name)
             tune_config = RayExperimentConfig(
                 max_concurrent_trials=max_concurrent_trials,
                 ray_tmp_dir=ray_tmp_dir,
@@ -156,28 +167,34 @@ def main(experiment: str, cache_dir: str,
             ) if not no_tune else None
 
             results = run_ray_tune_experiment(dset=dset, model_name=model_name,
-                                              tune_config=tune_config, debug=debug)
+                                              tune_config=tune_config,
+                                              debug=debug)
 
             df = fetch_postprocessed_results_df(results)
             df["estimator"] = model_name
-            # df["task"] = str(dset.name),
-            df["domain_split_varname"] = expt_config.splitter.domain_split_varname
+            df["domain_split_varname"] = \
+                expt_config.splitter.domain_split_varname
             df["domain_split_ood_values"] = str(tgt)
             if src is not None:
                 df["domain_split_id_values"] = str(src)
 
             print(df)
-            try:  # We don't want the script to fail just if .get_best_result() fails.
+            try:
+                # Case: We don't want the script to fail just if
+                # .get_best_result() fails.
                 best_result = results.get_best_result()
                 print("Best trial config: {}".format(best_result.config))
                 print("Best trial result: {}".format(best_result))
             except:
                 pass
 
-            df.to_csv(os.path.join(expt_results_dir, f"tune_results_{uid}_{model_name}.csv"), index=False)
+            df.to_csv(os.path.join(expt_results_dir,
+                                   f"tune_results_{uid}_{model_name}.csv"),
+                      index=False)
             iterates.append(df)
 
-    fp = os.path.join(expt_results_dir, f"tune_results_{experiment}_{start_time}_full.csv")
+    fp = os.path.join(expt_results_dir,
+                      f"tune_results_{experiment}_{start_time}_full.csv")
     print(f"[INFO] writing results to {fp}")
     pd.concat(iterates).to_csv(fp, index=False)
     print(f"[INFO] completed domain shift experiment {experiment}!")
@@ -220,7 +237,8 @@ if __name__ == "__main__":
                         help="where to write results. CSVs will be written to "
                              "experiment-specific subdirectories within this "
                              "directory.")
-    parser.add_argument("--search_alg", default="hyperopt", choices=["hyperopt", "random"],
+    parser.add_argument("--search_alg", default="hyperopt",
+                        choices=["hyperopt", "random"],
                         help="Ray search alg to use for hyperparameter tuning.")
     parser.add_argument("--scheduler", choices=(None, "asha", "median"),
                         default="asha",
