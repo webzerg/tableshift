@@ -16,19 +16,6 @@ def concat_columns(data: pd.DataFrame) -> pd.DataFrame:
     return data.agg(lambda x: ''.join(x.values.astype(str)), axis=1).T
 
 
-def _stratify(labels, groups):
-    """Make a stratification vector by concatenating label and (optional) groups.
-
-    This ensures that splitting happens approximately uniformly over
-    labels and sensitive subgroups.
-    """
-    strata = labels
-    if groups is not None:
-        strata = pd.concat((strata, groups), axis=1)
-    strata = concat_columns(strata)
-    return strata
-
-
 def idx_where_in(x: pd.Series, vals: Sequence[Any]) -> np.ndarray:
     """Return a vector of the numeric indices i where X[i] in vals.
     """
@@ -84,13 +71,10 @@ class FixedSplitter(Splitter):
         test_idxs = np.nonzero((data["Split"] == "test").values)[0]
         train_val_idxs = np.nonzero((data["Split"] == "train").values)[0]
 
-        stratify = _stratify(labels, groups)
-
         train_idxs, val_idxs = train_test_split(
-            data.iloc[train_val_idxs],
+            train_val_idxs,
             train_size=(1 - self.val_size),
-            random_state=self.random_state,
-            stratify=stratify.iloc[train_val_idxs])
+            random_state=self.random_state)
 
         del train_val_idxs
         return {"train": train_idxs, "validation": val_idxs, "test": test_idxs}
@@ -123,18 +107,16 @@ class RandomSplitter(Splitter):
                  groups: pd.DataFrame = None, *args, **kwargs
                  ) -> Mapping[str, List[int]]:
         _check_input_indices(data)
-        stratify = _stratify(labels, groups)
 
+        idxs = data.index.tolist()
         train_val_idxs, test_idxs = train_test_split(
-            data,
+            idxs,
             test_size=self.test_size,
-            random_state=self.random_state,
-            stratify=stratify)
+            random_state=self.random_state)
         train_idxs, val_idxs = train_test_split(
-            data.iloc[train_val_idxs],
+            train_val_idxs,
             train_size=self.train_size / (self.train_size + self.val_size),
-            random_state=self.random_state,
-            stratify=stratify.iloc[train_val_idxs])
+            random_state=self.random_state)
         del train_val_idxs
         return {"train": train_idxs, "validation": val_idxs, "test": test_idxs}
 
