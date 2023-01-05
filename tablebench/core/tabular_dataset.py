@@ -323,7 +323,7 @@ class TabularDataset(ABC):
         else:
             return False
 
-    def to_sharded(self, rows_per_shard=8192):
+    def to_sharded(self, rows_per_shard=4096):
         uid = make_uid(self.name, self.splitter)
 
         base_dir = os.path.join(self.config.cache_dir, uid)
@@ -334,7 +334,7 @@ class TabularDataset(ABC):
 
         for split in self.splits:
             outdir = os.path.join(base_dir, split)
-            print(f"[INFO] caching task {uid} to {outdir}")
+            print(f"[INFO] caching task {uid} split {split} to {outdir}")
             initialize_dir(outdir)
             df = self._get_split_df(split)
 
