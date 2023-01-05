@@ -5,6 +5,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tablebench.models.rtdl import MLPModel
+from tablebench.models.torchutils import unpack_batch
 
 
 class DomainGeneralizationModel(MLPModel):
@@ -32,8 +33,8 @@ class DomainGeneralizationModel(MLPModel):
         train_minibatches_iterator = zip(*loaders)
 
         def _prepare_batch(batch) -> Tuple[Tensor, Tensor]:
-            x_batch, y_batch = batch[:2]
-            return x_batch.to(device), y_batch.to(device)
+            x_batch, y_batch, _, _ = unpack_batch(batch)
+            return x_batch.float().to(device), y_batch.float().to(device)
 
         loss = None
         examples_seen = 0
