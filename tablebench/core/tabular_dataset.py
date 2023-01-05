@@ -370,7 +370,8 @@ class TabularDataset(ABC):
             'group_feature_names': self.group_feature_names,
             'feature_names': self.feature_names,
             'X_shape': self.X_shape,
-            'splits': list(self.splits.keys())
+            'splits': list(self.splits.keys()),
+            **{f'n_{s}': len(self.splits[s]) for s in self.splits},
         }
         with open(os.path.join(base_dir, "info.json"), "w") as f:
             f.write(json.dumps(ds_info))
