@@ -132,3 +132,8 @@ class DANNModel(DomainGeneralizationModel):
 
     def predict(self, x):
         return apply_model(self, x)
+
+    def to(self, device):
+        super().to(device)
+        self.discriminator = self.discriminator.to(device)
+        return self
