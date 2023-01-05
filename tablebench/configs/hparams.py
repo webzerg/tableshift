@@ -1,4 +1,5 @@
 from ray import tune
+from tablebench.models.compat import OPTIMIZER_ARGS
 
 # Superset of https://arxiv.org/pdf/2106.11959.pdf, Table 15,
 # in order to cover hparams for other searches that derive from this space.
@@ -9,6 +10,22 @@ _DEFAULT_NN_SEARCH_SPACE = {
     "num_layers": tune.randint(1, 8),
     "dropouts": tune.uniform(0., 0.5),
     "weight_decay": tune.loguniform(1e-6, 1.)
+}
+
+_dann_search_space = {
+    **{k: v for k, v in _DEFAULT_NN_SEARCH_SPACE.items()
+       if k not in OPTIMIZER_ARGS},
+    # Below parameters all use the specified grid from DomainBed.
+    # G (classifier) hyperparameters
+    "lr_g": _DEFAULT_NN_SEARCH_SPACE["lr"],
+    "weight_decay_g": _DEFAULT_NN_SEARCH_SPACE["weight_decay"],
+    # D (discriminator) hyperparameters
+    "lr_d": _DEFAULT_NN_SEARCH_SPACE["lr"],
+    "weight_decay_d": _DEFAULT_NN_SEARCH_SPACE["weight_decay"],
+    # Adversarial training parameters
+    "d_steps_per_g_step": tune.loguniform(1, 2 ** 3, base=2),
+    "grad_penalty": tune.loguniform(1e-2, 1e1),
+    "loss_lambda": tune.loguniform(1e-2, 1e2),
 }
 
 _deepcoral_search_space = {
@@ -136,6 +153,7 @@ _vrex_search_space = {
 }
 
 search_space = {
+    "dann": _dann_search_space,
     "deepcoral": _deepcoral_search_space,
     "dro": _dro_search_space,
     "expgrad": _expgrad_search_space,
