@@ -40,7 +40,7 @@ class IRMModel(DomainGeneralizationModel):
     def update(self, minibatches, unlabeled=None):
 
         penalty_weight = (
-            self.hparams['irm_lambda']
+            self.irm_lambda
             if self.update_count >= self.irm_penalty_anneal_iters
             else 1.0)
         nll = 0.
