@@ -18,6 +18,10 @@ def concat_columns(data: pd.DataFrame) -> pd.DataFrame:
 
 def idx_where_in(x: pd.Series, vals: Sequence[Any]) -> np.ndarray:
     """Return a vector of the numeric indices i where X[i] in vals.
+
+    Note that this function does not differentiate between different numeric
+    types; i.e. if [1] (and integer) is in vals and x_j is 1.0 (a float),
+     the jth index will be included in the output.
     """
     assert isinstance(vals, list) or isinstance(vals, tuple)
     idxs_bool = x.isin(vals)
@@ -26,6 +30,8 @@ def idx_where_in(x: pd.Series, vals: Sequence[Any]) -> np.ndarray:
 
 def idx_where_not_in(x: pd.Series, vals: Sequence[Any]) -> np.ndarray:
     """Return a vector of the numeric indices i where X[i] not in vals.
+
+    See note in idx_where_in regarding numeric types.
     """
     assert isinstance(vals, list) or isinstance(vals, tuple)
     idxs_bool = ~x.isin(vals)
