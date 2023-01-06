@@ -25,5 +25,4 @@ dependencies:
     - lightgbm_ray
     - h5py
     - tables
-    - pytest
 

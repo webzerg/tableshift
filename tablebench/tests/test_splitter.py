@@ -1,4 +1,4 @@
-import pytest
+import unittest
 import pandas as pd
 import numpy as np
 
@@ -7,7 +7,7 @@ from tablebench.core.splitter import DomainSplitter
 np.random.seed(54329)
 
 
-class TestDomainSplitter:
+class TestDomainSplitter(unittest.TestCase):
 
     def test_disjoint_splits(self):
         ood_vals = ["a"]
@@ -41,24 +41,24 @@ class TestDomainSplitter:
         ood_test_domains = data.iloc[splits["ood_test"]]["domain"]
 
         # Check that OOD splits only contain OOD values
-        assert np.all(ood_test_domains.isin(ood_vals))
-        assert np.all(ood_val_domains.isin(ood_vals))
+        self.assertTrue(np.all(ood_test_domains.isin(ood_vals)))
+        self.assertTrue(np.all(ood_val_domains.isin(ood_vals)))
 
         # Check that ID splits do not contain any OOD values
-        assert not np.any(train_domains.isin(ood_vals))
-        assert not np.any(val_domains.isin(ood_vals))
-        assert not np.any(id_test_domains.isin(ood_vals))
+        self.assertFalse(np.any(train_domains.isin(ood_vals)))
+        self.assertFalse(np.any(val_domains.isin(ood_vals)))
+        self.assertFalse(np.any(id_test_domains.isin(ood_vals)))
 
         # Check for proper partitioning of id/ood
         assert set(train_domains) == set(id_test_domains)
-        assert not set(train_domains).intersection(set(ood_test_domains))
-        assert not set(val_domains).intersection(set(ood_val_domains))
-        assert not set(id_test_domains).intersection(set(ood_test_domains))
+        self.assertTrue(set(train_domains).isdisjoint(set(ood_test_domains)))
+        self.assertTrue(set(val_domains).isdisjoint(set(ood_val_domains)))
+        self.assertTrue(set(id_test_domains).isdisjoint(set(ood_test_domains)))
 
         # Check that output size is same as input
-        assert sum(len(x) for x in splits.values()) == len(data)
+        self.assertEqual(sum(len(x) for x in splits.values()), len(data))
 
         # Check that every index is somewhere in splits
         all_idxs = set(idx for split_idxs in splits.values()
                        for idx in split_idxs)
-        assert all_idxs == set(data.index.tolist())
+        self.assertEqual(all_idxs, set(data.index.tolist()))
