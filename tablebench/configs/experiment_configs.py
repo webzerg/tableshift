@@ -76,9 +76,10 @@ EXPERIMENT_CONFIGS = {
     ),
 
     "brfss_diabetes": ExperimentConfig(
-        splitter=RandomSplitter(test_size=0.5, val_size=0.25,
-                                random_state=29746),
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+        splitter=DomainSplitter(val_size=0.1, id_test_size=0.1, random_state=29746,
+                                domain_split_varname="PRACE1",
+                                domain_split_ood_values=[1]),
+        grouper=Grouper({"SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]),
         tabular_dataset_kwargs={"years": BRFSS_YEARS},
     ),

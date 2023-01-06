@@ -26,7 +26,7 @@ def main(experiment, cache_dir, model, debug: bool):
                           preprocessor_config=expt_config.preprocessor_config,
                           **tabular_dataset_kwargs)
     estimator = get_estimator(model)
-    train(estimator, dset)
+    estimator = train(estimator, dset)
     return
 
 
