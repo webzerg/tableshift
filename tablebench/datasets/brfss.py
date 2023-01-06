@@ -46,7 +46,7 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
     Feature("MEDCOST", cat_dtype, na_values=(7, 9)),
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
-    Feature("PRACE1", float, na_values=(77, 99)),
+    Feature("PRACE1", float, na_values=(7, 8, 77, 99)),
     # Indicate sex of respondent.
     Feature("SEX", float),
 ])
@@ -297,9 +297,7 @@ def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame:
     df = df[_BRFSS_INPUT_FEATURES]
 
     # Sensitive columns
-    # Drop no preferred race/not answered/don't know/not sure
-    df = df[~(df["_PRACE1"].isin([7, 8, 77, 99]))]
-    df["_PRACE1"] = (df["_PRACE1"] == 1).astype(int)
+    # df["_PRACE1"] = (df["_PRACE1"] == 1).astype(int)
     df["SEX"] = (df["SEX"] - 1).astype(int)  # Map sex to male=0, female=1
 
     # PHYSHLTH, POORHLTH, MENTHLTH are measured in days, but need to

@@ -1,7 +1,7 @@
 import argparse
 from tablebench.core import TabularDataset, TabularDatasetConfig
 
-from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
+from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.utils import get_estimator
 from tablebench.models.training import train
 
@@ -26,7 +26,7 @@ def main(experiment, cache_dir, model, debug: bool):
                           preprocessor_config=expt_config.preprocessor_config,
                           **tabular_dataset_kwargs)
     estimator = get_estimator(model)
-    train(estimator, dset)
+    estimator = train(estimator, dset)
     return
 
 

@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-from typing import Sequence, Optional, Any, Iterator, Tuple
+from typing import Sequence, Optional, Any, Iterator
 from tablebench.core import Grouper, PreprocessorConfig, DomainSplitter
-from tablebench.core.utils import sliding_window
 from tablebench.datasets import ACS_REGIONS, ACS_STATE_LIST, ACS_YEARS, \
     BRFSS_STATE_LIST, \
     BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS, \
     ANES_REGIONS, MIMIC_EXTRACT_SHARED_FEATURES, MIMIC_EXTRACT_STATIC_FEATURES
-from tablebench.datasets.experiment_configs import ExperimentConfig
+from tablebench.configs.experiment_configs import ExperimentConfig
 
 DEFAULT_RANDOM_STATE = 264738
 
@@ -164,6 +163,14 @@ domain_shift_experiment_configs = {
         domain_split_varname="STATE",
         domain_split_ood_values=_to_nested(BRFSS_STATE_LIST),
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig()),
+
+    "brfss_diabetes_race": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_diabetes"},
+        domain_split_varname="PRACE1",
+        # Train on white nonhispanic; test on all other race identities.
+        domain_split_ood_values=[[0]],
+        grouper=Grouper({"SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
     "brfss_diabetes_year": DomainShiftExperimentConfig(
