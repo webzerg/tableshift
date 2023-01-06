@@ -12,6 +12,7 @@ from tqdm import tqdm
 from tablebench.core.discretization import KBinsDiscretizer
 from tablebench.core.utils import sub_illegal_chars
 
+
 def _contains_missing_values(df: pd.DataFrame) -> bool:
     return np.any(pd.isnull(df).values)
 
@@ -46,6 +47,22 @@ class Feature:
     # occur for this column in the output of the preprocess_fn, not after
     # casting to `kind`), because values after casting may be unpredictable.
     na_values: Tuple = field(default_factory=tuple)
+
+    def fillna(self, data: pd.Series) -> pd.Series:
+        """Apply the list of na_values, filling these values in data with np.nan."""
+        print(f"[DEBUG] replacing missing values of {self.na_values} "
+              f"for feature {self.name}")
+        # Handles case where na values have misspecified type (i.e. float vs. int);
+        # we would like the filling to be robust to these kinds of misspecification.
+        if not isinstance(data.dtype, cat_dtype):
+            na_values = np.array(self.na_values).astype(data.dtype)
+        else:
+            na_values = np.array(self.na_values)
+        return data.replace(na_values, np.nan)
+
+    def apply_dtype(self, data: pd.Series) -> pd.Series:
+        """Apply the specified dtype, casting if needed (and otherwise returning data)."""
+        return safe_cast(data, self.kind)
 
 
 @dataclass
@@ -114,14 +131,11 @@ class FeatureList:
 
             # Fill na values (before casting)
             if f.na_values:
-                print(f"[DEBUG] replacing missing values of {f.na_values} "
-                      f"for feature {f.name}")
-
-                df[f.name].replace(f.na_values, np.nan)
+                df[f.name] = f.fillna(df[f.name])
 
             # Cast to desired type
             if not _column_is_of_type(df[f.name], f.kind):
-                df[f.name] = safe_cast(df[f.name], f.kind)
+                df[f.name] = f.apply_dtype(df[f.name])
 
         # Drop any rows containing missing values.
         if _contains_missing_values(df):
