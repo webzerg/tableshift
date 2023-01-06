@@ -46,7 +46,7 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
     Feature("MEDCOST", cat_dtype, na_values=(7, 9)),
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
-    Feature("PRACE1", float, na_values=(7, 8, 77, 99)),
+    Feature("PRACE1", float, na_values=(7., 8., 77., 99.)),
     # Indicate sex of respondent.
     Feature("SEX", float),
 ])
