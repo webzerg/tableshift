@@ -39,13 +39,15 @@ class TestFeatureFillNA(unittest.TestCase):
         self.assertEqual(pd.isnull(data_na).sum(), 4)
 
     def test_fillna_categorical(self):
+        """Tests case of categorical feature with string na_values."""
         letters = list("abcdefg")
         data = pd.Categorical(letters * 2, categories=letters)
         feature = Feature("my_feature", cat_dtype, na_values=("a", "b"))
         data_na = feature.fillna(data)
         self.assertEqual(pd.isnull(data_na).sum(), 4)
 
-    def test_fillna_numeric_categorical(self):
+    def test_fillna_int_categorical(self):
+        """Tests case of categorical feature with int na_values."""
         numbers = list(range(5))
         data = pd.Categorical(numbers * 2, categories=numbers)
         feature = Feature("my_feature", cat_dtype, na_values=(2, 4))
