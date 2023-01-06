@@ -11,7 +11,7 @@ from tablebench.core import TabularDataset, TabularDatasetConfig, \
 from tablebench.models.ray_utils import RayExperimentConfig, \
     run_ray_tune_experiment, fetch_postprocessed_results_df, \
     accuracy_metric_name_and_mode_for_model
-from tablebench.datasets.experiment_configs import ExperimentConfig
+from tablebench.configs.experiment_configs import ExperimentConfig
 from tablebench.core.utils import make_uid, timestamp_as_int
 
 _DEFAULT_RAY_TMP_DIR_IF_EXISTS = "/scratch/jpgard/ray"

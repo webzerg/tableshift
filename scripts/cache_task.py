@@ -2,7 +2,7 @@
 import argparse
 
 from tablebench.core import TabularDataset, TabularDatasetConfig
-from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS, \
+from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS, \
     ExperimentConfig
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core.utils import make_uid

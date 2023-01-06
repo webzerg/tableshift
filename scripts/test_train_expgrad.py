@@ -1,6 +1,6 @@
 from tablebench.core import TabularDataset, TabularDatasetConfig
 
-from tablebench.datasets.experiment_configs import EXPERIMENT_CONFIGS
+from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.utils import get_estimator
 from tablebench.models.config import get_default_config
 
