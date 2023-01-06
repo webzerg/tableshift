@@ -169,7 +169,8 @@ domain_shift_experiment_configs = {
         tabular_dataset_kwargs={"name": "brfss_diabetes"},
         domain_split_varname="PRACE1",
         # Train on white nonhispanic; test on all other race identities.
-        domain_split_ood_values=[[0]],
+        domain_split_ood_values=[[2, 3, 4, 5, 6]],
+        domain_split_id_values=_to_nested([1,]),
         grouper=Grouper({"SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
