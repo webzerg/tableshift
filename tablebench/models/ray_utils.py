@@ -213,7 +213,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     tuning experiment, and returns the ray ResultGrid object.
     """
     # Explicitly initialize ray in order to set the temp dir.
-    ray.init(_temp_dir=tune_config.ray_tmp_dir)
+    ray.init(_temp_dir=tune_config.ray_tmp_dir, ignore_reinit_error=True)
 
     dset_train_domains = dset.get_domains("train")
 
@@ -391,7 +391,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             max_concurrent_trials=tune_config.max_concurrent_trials))
 
     results = tuner.fit()
-
+    ray.shutdown()
     return results
 
 
