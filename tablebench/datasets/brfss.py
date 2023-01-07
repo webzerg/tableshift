@@ -12,12 +12,13 @@ import re
 import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
+from tablebench.core.splitter import idx_where_not_in
 
 # Features present in every year of BRFSS
 BRFSS_GLOBAL_FEATURES = [
     'CHCOCNCR', 'CHCSCNCR', 'CHECKUP1', 'CVDSTRK3', 'EDUCA', 'EMPLOY1',
     'HIGH_BLOOD_PRESS', 'IYEAR', 'MARITAL', 'MEDCOST', 'MENTHLTH',
-    'PHYSHLTH', 'SEX', 'SMOKDAY2', 'SMOKE100', 'TOLDHI2', '_AGEG5YR',
+    'PHYSHLTH', 'SEX', 'SMOKDAY2', 'SMOKE100', '_AGEG5YR',
     '_BMI5', '_BMI5CAT', '_MICHD', '_PRACE1', '_RFBING5', '_STATE', '_TOTINDA']
 
 # While BRFSS exists for every year back several decades, feature alignment
@@ -99,7 +100,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype, na_values=(9,)),
     # Have you EVER been told by a doctor, nurse or other health
     # professional that your blood cholesterol is high?
-    Feature("TOLDHI2", cat_dtype, na_values=(7, 9)),
+    Feature("TOLDHI", cat_dtype, na_values=(7, 9)),
     ################ BMI/Obesity ################
     # Calculated Body Mass Index (BMI)
     Feature("BMI5", float),
@@ -184,7 +185,9 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # Covered in BRFSS_SHARED_FEATURES.
     ################ Social and economic factors ################
     # Income
-    Feature("INCOME", cat_dtype, na_values=(77, 99)),
+    Feature("POVERTY", int,
+            description="Binary indicator for whether an individuals' income falls"
+                        "below the 2021 poverty guideline for family of four."),
     # Type job status; related to early/late shifts which is a risk factor.
     Feature("EMPLOY1", cat_dtype, "Are you currently…?",
             na_values=(9,)),
@@ -254,6 +257,12 @@ BRFSS_CROSS_YEAR_FEATURE_MAPPING = {
     "HEALTH_COV": (
         "_HCVU651",  # 2015, 2017, 2019
         "_HCVU652",  # 2021
+    ),
+    # Question: Have you ever been told by a doctor, nurse or other
+    # health professional that your cholesterol is high?
+    "TOLDHI": (
+        "TOLDHI2",
+        "TOLDHI3"  # 2021
     )
 }
 
@@ -292,7 +301,7 @@ def align_brfss_features(df):
     return df
 
 
-def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame:
+def brfss_shared_preprocessing(df: pd.DataFrame) -> pd.DataFrame:
     """Shared preprocessing function for BRFSS data tasks."""
     df = df[_BRFSS_INPUT_FEATURES]
 
@@ -313,7 +322,7 @@ def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame:
     # (see notes under "BLANK" for that question in data dictionary);
     # create an indicator for these due to large fraction of missingness.
     df["SMOKDAY2"] = df["SMOKDAY2"].fillna("NOTASKED_MISSING").astype(str)
-    df["TOLDHI2"] = df["TOLDHI2"].fillna("NOTASKED_MISSING").astype(str)
+    df["TOLDHI"] = df["TOLDHI"].fillna("NOTASKED_MISSING").astype(str)
 
     # IYEAR is poorly coded, as e.g. "b'2015'"; here we parse it back to int.
     df["IYEAR"] = df["IYEAR"].apply(
@@ -327,7 +336,7 @@ def preprocess_brfss(df: pd.DataFrame, target_colname: str) -> pd.DataFrame:
 
 
 def preprocess_brfss_diabetes(df: pd.DataFrame):
-    df = preprocess_brfss(df, target_colname=BRFSS_DIABETES_FEATURES.target)
+    df = brfss_shared_preprocessing(df)
 
     df["DIABETES"].replace({2: 0, 3: 0, 4: 0}, inplace=True)
 
@@ -337,7 +346,7 @@ def preprocess_brfss_diabetes(df: pd.DataFrame):
 
 
 def preprocess_brfss_blood_pressure(df: pd.DataFrame) -> pd.DataFrame:
-    df = preprocess_brfss(df, BRFSS_BLOOD_PRESSURE_FEATURES.target)
+    df = brfss_shared_preprocessing(df)
 
     # Retain samples only 50+ years of age (to focus on highest-risk groups
     # for high BP; see:
@@ -349,8 +358,29 @@ def preprocess_brfss_blood_pressure(df: pd.DataFrame) -> pd.DataFrame:
     # * Dannenberg AL,  Garrison RJ, Kannel WB. Incidence of hypertension in the
     # Framingham Study. Am J Public Health.1988;78:676-679.
 
-    df = df[df["_AGEG5YR"] >= 7]
+    df = df[df["AGEG5YR"] >= 7]
+
+    # Create a binary indicator for poverty. This is based on the 2021 US poverty income guideline for a family of 4,
+    # which was $26,500. https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/prior-hhs-poverty
+    # -guidelines-federal-register-references/2021-poverty-guidelines#threshholds Note that we actually use a
+    # slightly lower threshold of 25,000 due to the response coding in BRFSS.
+
+    # Drop unknown/not responded income levels; otherwise comparison with nan values always returns False.
+    idxs = idx_where_not_in(df["INCOME"], (77, 99))
+    df = df.iloc[idxs]
+    df["POVERTY"] = (df["INCOME"] <= 4).astype(int)
+    df.drop(columns=["INCOME"], inplace=True)
 
     # Reset the index after preprocessing to ensure splitting happens
     # correctly (splitting assumes sequential indexing).
     return df.reset_index(drop=True)
+
+
+def preprocess_brfss(df, task: str):
+    assert task in ("diabetes", "blood_pressure")
+    if task == "diabetes":
+        return preprocess_brfss_diabetes(df)
+    elif task == "blood_pressure":
+        return preprocess_brfss_blood_pressure(df)
+    else:
+        raise NotImplementedError

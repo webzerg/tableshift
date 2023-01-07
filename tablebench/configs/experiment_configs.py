@@ -68,11 +68,13 @@ EXPERIMENT_CONFIGS = {
         tabular_dataset_kwargs={}),
 
     "brfss_blood_pressure": ExperimentConfig(
-        splitter=RandomSplitter(test_size=0.5, val_size=0.25,
-                                random_state=29746),
+        splitter=DomainSplitter(val_size=0.1, id_test_size=0.1, random_state=29746,
+                                domain_split_varname="POVERTY",
+                                domain_split_ood_values=[1],
+                                domain_split_id_values=[0, ]),
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]),
-        tabular_dataset_kwargs={"years": BRFSS_YEARS},
+        tabular_dataset_kwargs={"task": "blood_pressure", "years": BRFSS_YEARS},
     ),
 
     # "White nonhispanic" (in-domain) vs. all other race/ethnicity codes (OOD)
@@ -83,7 +85,7 @@ EXPERIMENT_CONFIGS = {
                                 domain_split_id_values=[1, ]),
         grouper=Grouper({"SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]),
-        tabular_dataset_kwargs={"years": BRFSS_YEARS},
+        tabular_dataset_kwargs={"task": "diabetes", "years": BRFSS_YEARS},
     ),
 
     "communities_and_crime": ExperimentConfig(

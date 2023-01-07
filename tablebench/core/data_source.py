@@ -18,7 +18,7 @@ from tablebench.datasets.acs_feature_mappings import get_feature_mapping
 from tablebench.datasets.adult import ADULT_RESOURCES, ADULT_FEATURE_NAMES, \
     preprocess_adult
 from tablebench.datasets.anes import preprocess_anes
-from tablebench.datasets.brfss import preprocess_brfss_diabetes, align_brfss_features
+from tablebench.datasets.brfss import preprocess_brfss, align_brfss_features
 from tablebench.datasets.communities_and_crime import CANDC_RESOURCES, \
     preprocess_candc, CANDC_INPUT_FEATURES
 from tablebench.datasets.compas import COMPAS_RESOURCES, preprocess_compas
@@ -201,13 +201,14 @@ class BRFSSDataSource(DataSource):
     components of the BRFSS questionnaire?"
     """
 
-    def __init__(self, preprocess_fn=preprocess_brfss_diabetes,
+    def __init__(self, task: str, preprocess_fn=preprocess_brfss,
                  years=(2021,), **kwargs):
         self.years = years
         resources = tuple([
             f"https://www.cdc.gov/brfss/annual_data/{y}/files/LLCP{y}XPT.zip"
             for y in self.years])
-        super().__init__(preprocess_fn=preprocess_fn, resources=resources,
+        _preprocess_fn = partial(preprocess_fn, task=task)
+        super().__init__(preprocess_fn=_preprocess_fn, resources=resources,
                          **kwargs)
 
     def _load_data(self) -> pd.DataFrame:
