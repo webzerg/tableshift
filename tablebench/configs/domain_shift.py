@@ -158,48 +158,59 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "brfss_diabetes_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_diabetes"},
-        domain_split_varname="STATE",
-        domain_split_ood_values=_to_nested(BRFSS_STATE_LIST),
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+    # "brfss_diabetes_st": DomainShiftExperimentConfig(
+    #     tabular_dataset_kwargs={"name": "brfss_diabetes"},
+    #     domain_split_varname="STATE",
+    #     domain_split_ood_values=_to_nested(BRFSS_STATE_LIST),
+    #     grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+    #     preprocessor_config=PreprocessorConfig()),
 
     "brfss_diabetes_race": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_diabetes"},
+        tabular_dataset_kwargs={"name": "brfss_diabetes", "task": "diabetes",
+                                "years": BRFSS_YEARS},
         domain_split_varname="PRACE1",
         # Train on white nonhispanic; test on all other race identities.
         domain_split_ood_values=[[2, 3, 4, 5, 6]],
-        domain_split_id_values=_to_nested([1,]),
+        domain_split_id_values=_to_nested([1, ]),
         grouper=Grouper({"SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+        preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]), ),
 
-    "brfss_diabetes_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_diabetes", "years": BRFSS_YEARS},
-        domain_split_varname="IYEAR",
-        domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
-                                 range(len(BRFSS_YEARS) - 1)],
-        domain_split_id_values=[[BRFSS_YEARS[i]] for i in
-                                range(len(BRFSS_YEARS) - 1)],
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-    "brfss_blood_pressure_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_blood_pressure"},
-        domain_split_varname="STATE",
-        domain_split_ood_values=_to_nested(BRFSS_STATE_LIST),
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+    # "brfss_diabetes_year": DomainShiftExperimentConfig(
+    #     tabular_dataset_kwargs={"name": "brfss_diabetes", "years": BRFSS_YEARS},
+    #     domain_split_varname="IYEAR",
+    #     domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
+    #                              range(len(BRFSS_YEARS) - 1)],
+    #     domain_split_id_values=[[BRFSS_YEARS[i]] for i in
+    #                             range(len(BRFSS_YEARS) - 1)],
+    #     grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+    #     preprocessor_config=PreprocessorConfig()),
+    # "brfss_blood_pressure_st": DomainShiftExperimentConfig(
+    #     tabular_dataset_kwargs={"name": "brfss_blood_pressure"},
+    #     domain_split_varname="STATE",
+    #     domain_split_ood_values=_to_nested(BRFSS_STATE_LIST),
+    #     grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+    #     preprocessor_config=PreprocessorConfig()),
 
-    "brfss_blood_pressure_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_blood_pressure",
+    # "brfss_blood_pressure_year": DomainShiftExperimentConfig(
+    #     tabular_dataset_kwargs={"name": "brfss_blood_pressure",
+    #                             "years": BRFSS_YEARS},
+    #     domain_split_varname="IYEAR",
+    #     domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
+    #                              range(len(BRFSS_YEARS) - 1)],
+    #     domain_split_id_values=[[BRFSS_YEARS[i]] for i in
+    #                             range(len(BRFSS_YEARS) - 1)],
+    #     grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
+    #     preprocessor_config=PreprocessorConfig()),
+
+    "brfss_blood_pressure_income": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_diabetes", "task": "blood_pressure",
                                 "years": BRFSS_YEARS},
-        domain_split_varname="IYEAR",
-        domain_split_ood_values=[BRFSS_YEARS[i + 1] for i in
-                                 range(len(BRFSS_YEARS) - 1)],
-        domain_split_id_values=[[BRFSS_YEARS[i]] for i in
-                                range(len(BRFSS_YEARS) - 1)],
-        grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+        domain_split_varname="POVERTY",
+        # Train on non-poverty observatins; test (OOD) on poverty observations
+        domain_split_ood_values=_to_nested([1, ]),
+        domain_split_id_values=_to_nested([0, ]),
+        grouper=Grouper({"SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]), ),
 
     "candc_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "communities_and_crime"},
