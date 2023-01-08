@@ -66,6 +66,7 @@ class RayExperimentConfig:
     max_concurrent_trials: int
     mode: str
     ray_tmp_dir: str = None
+    ray_local_dir: str = None
     num_workers: int = 1
     num_samples: int = 1
     tune_metric_name: str = "metric"
@@ -381,7 +382,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     tuner = Tuner(
         trainable=trainer,
         run_config=RunConfig(name="tableshift",
-                             local_dir="ray-results"),
+                             local_dir=tune_config.ray_local_dir),
         param_space=param_space,
         tune_config=tune.TuneConfig(
             search_alg=tune_config.get_search_alg(),

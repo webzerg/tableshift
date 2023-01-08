@@ -9,11 +9,13 @@ from tablebench.models.ray_utils import RayExperimentConfig, \
 from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.core import TabularDataset, TabularDatasetConfig
 
-_DEFAULT_RAY_TMP_DIR_IF_EXISTS = "/scratch/jpgard/ray"
+_DEFAULT_RAY_TMP_DIR_IF_EXISTS = "/projects/grail/jpgard/ray-scratch"
+_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS = "/projects/grail/jpgard/ray-results"
 
 
 def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          ray_tmp_dir: str,
+         ray_local_dir: str,
          debug: bool,
          no_tune: bool, num_samples: int, search_alg: str,
          use_cached: bool,
@@ -26,6 +28,10 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
         ray_tmp_dir = _DEFAULT_RAY_TMP_DIR_IF_EXISTS
         print(f"[INFO] detected directory {_DEFAULT_RAY_TMP_DIR_IF_EXISTS}; "
               f"setting this to ray temporary directory.")
+    if os.path.exists(_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS):
+        ray_local_dir = _DEFAULT_RAY_LOCAL_DIR_IF_EXISTS
+        print(f"[INFO] detected directory {_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS}; "
+              f"setting this to ray local directory.")
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
@@ -52,6 +58,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
     tune_config = RayExperimentConfig(
         max_concurrent_trials=max_concurrent_trials,
         ray_tmp_dir=ray_tmp_dir,
+        ray_local_dir=ray_local_dir,
         num_workers=num_workers,
         num_samples=num_samples,
         tune_metric_name=metric_name,
@@ -98,6 +105,9 @@ if __name__ == "__main__":
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
+    parser.add_argument("--ray_local_dir", default=None, type=str,
+                        help="Set the local_dir argument to ray RunConfig. This is a local "
+                             "directory where training results are saved to.")
     parser.add_argument("--ray_tmp_dir", default=None, type=str,
                         help="Set the root temporary path for ray. If not "
                              "specified, uses the default location of /tmp/ray."
