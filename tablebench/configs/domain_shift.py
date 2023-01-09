@@ -249,8 +249,8 @@ domain_shift_experiment_configs = {
     "nhanes_cholesterol_race": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"nhanes_task": "cholesterol", "years": NHANES_YEARS},
         domain_split_varname='RIDRETH_merged',
-        domain_split_ood_values=[1, 2, 4, 6, 7],
-        domain_split_id_values=[3],
+        domain_split_ood_values=[[1, 2, 4, 6, 7]],
+        domain_split_id_values=[[3]],
         # Group by male vs. all others
         grouper=Grouper({"RIAGENDR": ["1.0", ]}, drop=False),
         preprocessor_config=PreprocessorConfig(
@@ -261,7 +261,7 @@ domain_shift_experiment_configs = {
     "nhanes_lead_poverty": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"nhanes_task": "lead", "years": NHANES_YEARS},
         domain_split_varname='INDFMPIRBelowCutoff',
-        domain_split_ood_values=[1.],
+        domain_split_ood_values=[[1.]],
         # Race (non. hispanic white vs. all others; male vs. all others)
         grouper=Grouper({"RIDRETH_merged": [3, ], "RIAGENDR": ["1.0", ]},
                         drop=False),
