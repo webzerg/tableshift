@@ -69,7 +69,11 @@ class Feature:
         # Handles case where na values have misspecified type (i.e. float vs. int);
         # we would like the filling to be robust to these kinds of misspecification.
         if not isinstance(data.dtype, cat_dtype):
-            na_values = np.array(self.na_values).astype(data.dtype)
+            try:
+                na_values = np.array(self.na_values).astype(data.dtype)
+            except ValueError:
+                # Raised when some na_values cannot be cast to the target type
+                na_values = np.array(self.na_values)
         else:
             na_values = np.array(self.na_values)
         return data.replace(na_values, np.nan)

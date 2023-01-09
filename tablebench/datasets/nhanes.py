@@ -51,8 +51,9 @@ NHANES_LEAD_DATA_SOURCES_TO_USE = {
                       "Income"  # 2007 - 2017; prior to 2017 income questions are in Demographics.
                       ],
     "Laboratory": [
+        "Cadmium, Lead, Mercury, Cotinine & Nutritional Biochemistries",  # 1999
         "Cadmium, Lead, Total Mercury, Ferritin, Serum Folate, RBC Folate, "
-        "Vitamin B12, Homocysteine, Methylmalonic "  # 1999
+        "Vitamin B12, Homocysteine, Methylmalonic "
         "acid, Cotinine - Blood, Second Exam",  # 2001
         "Cadmium, Lead, & Total Mercury - Blood",  # 2003
         "Cadmium, Lead, & Total Mercury - Blood",  # 2005
@@ -200,6 +201,8 @@ def _postprocess_nhanes(df: pd.DataFrame, features) -> pd.DataFrame:
 
 
 def _merge_ridreth_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Create a single race/ethnicity feature by using 'RIDRETH3'
+    where available, else 'RIDRETH1'. """
     if ('RIDRETH3' in df.columns) and ('RIDRETH1' in df.columns):
         race_col = np.where(~np.isnan(df['RIDRETH3']), df['RIDRETH3'], df['RIDRETH1'])
         df.drop(columns=['RIDRETH3', 'RIDRETH1'], inplace=True)
@@ -229,15 +232,15 @@ def preprocess_nhanes_cholesterol(df: pd.DataFrame, threshold=160.):
 
 
 NHANES_LEAD_FEATURES = FeatureList(features=[
-    #
-    # # A ratio of family income to poverty guidelines.
-    # Feature('INDFMPIRleq1.3', float,
-    #         'Binary indicator for whether family PIR (poverty-income ratio)'
-    #         'is <= 1.3. The threshold of 1.3 is selected based on the categorization '
-    #         'in NHANES, where PIR <= 1.3 is the lowest level (see INDFMMPC feature).'),
-    #
-    # Feature("LBXBPB", float, "Blood lead (ug/dL)", is_target=True,
-    #         na_values=(".",)),
+
+    # A ratio of family income to poverty guidelines.
+    Feature('INDFMPIRBelowCutoff', float,
+            'Binary indicator for whether family PIR (poverty-income ratio)'
+            'is <= 1.3. The threshold of 1.3 is selected based on the categorization '
+            'in NHANES, where PIR <= 1.3 is the lowest level (see INDFMMPC feature).'),
+
+    Feature("LBXBPB", float, "Blood lead (ug/dL)", is_target=True,
+            na_values=(".",)),
 ], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
 
@@ -258,7 +261,7 @@ def preprocess_nhanes_lead(df: pd.DataFrame, threshold: float = 3.5):
     df = df[df['RIDAGEYR'] <= 18.]
 
     # Create the domain split variable for poverty-income ratio
-    df['INDFMPIRleq1.3'] = (df['INDFMPIR'] <= 1.3).astype(int)
+    df['INDFMPIRBelowCutoff'] = (df['INDFMPIR'] <= 1.3).astype(int)
     df.drop(columns=['INDFMPIR'])
 
     # Binarize the target

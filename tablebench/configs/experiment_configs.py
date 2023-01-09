@@ -198,16 +198,16 @@ EXPERIMENT_CONFIGS = {
             val_size=0.1,
             random_state=53079340,
             id_test_size=0.1,
-            domain_split_varname='INDFMPIRleq1.3',
+            domain_split_varname='INDFMPIRBelowCutoff',
             domain_split_ood_values=[1.]),
         # Race (non. hispanic white vs. all others; male vs. all others)
-        grouper=Grouper({"RIDRETH1": ["3.0", ], "RIAGENDR": ["1.0", ]},
+        grouper=Grouper({"RIDRETH_merged": [3, ], "RIAGENDR": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins"),
         # TODO(jpgard): switch to use all years.
-        tabular_dataset_kwargs={"nhanes_task": "lead", "years": [2017]}),
+        tabular_dataset_kwargs={"nhanes_task": "lead", "years": [1999]}),
 
     "physionet": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.05,
