@@ -177,28 +177,37 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
     "nhanes_cholesterol": ExperimentConfig(
-        splitter=RandomSplitter(test_size=0.5, val_size=0.25,
-                                random_state=29746),
-        # Race (non. hispanic white vs. all others; male vs. all others)
-        grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
-                        drop=False),
+        splitter=DomainSplitter(
+            val_size=0.1,
+            random_state=453879,
+            id_test_size=0.1,
+            domain_split_varname='RIDRETH_merged',
+            domain_split_ood_values=[1, 2, 4, 6, 7],
+            domain_split_id_values=[3],
+        ),
+        # Group by male vs. all others
+        grouper=Grouper({"RIAGENDR": ["1.0", ]}, drop=False),
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins"),
-        tabular_dataset_kwargs={"nhanes_task": "cholesterol"}),
+        # TODO(jpgard): switch to use all years.
+        tabular_dataset_kwargs={"nhanes_task": "cholesterol", "years": [1999]}),
 
     "nhanes_lead": ExperimentConfig(
-        splitter=RandomSplitter(test_size=0.5, val_size=0.25,
-                                random_state=229446),
+        splitter=DomainSplitter(
+            val_size=0.1,
+            random_state=53079340,
+            id_test_size=0.1,
+            domain_split_varname='INDFMPIRleq1.3',
+            domain_split_ood_values=[1.]),
         # Race (non. hispanic white vs. all others; male vs. all others)
-        grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
+        grouper=Grouper({"RIDRETH1": ["3.0", ], "RIAGENDR": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins"),
-        tabular_dataset_kwargs={
-            "nhanes_task": "lead",
-            "years": [2007, 2009, 2011, 2013, 2015, 2017]}),
+        # TODO(jpgard): switch to use all years.
+        tabular_dataset_kwargs={"nhanes_task": "lead", "years": [2017]}),
 
     "physionet": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.05,

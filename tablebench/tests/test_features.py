@@ -53,3 +53,12 @@ class TestFeatureFillNA(unittest.TestCase):
         feature = Feature("my_feature", cat_dtype, na_values=(2, 4))
         data_na = feature.fillna(data)
         self.assertEqual(pd.isnull(data_na).sum(), 4)
+
+    def test_fillna_int_object(self):
+        """Tests case of categorical feature with int na_values."""
+        letters = list("abcdefg")
+        raise NotImplementedError("incomplete.")
+        data = pd.Series(letters * 2).astype()
+        feature = Feature("my_feature", cat_dtype, na_values=("a", "b"))
+        data_na = feature.fillna(data)
+        self.assertEqual(pd.isnull(data_na).sum(), 4)

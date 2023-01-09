@@ -246,18 +246,25 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(),
     ),
 
-    "nhanes_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "nhanes_cholesterol"},
-        domain_split_varname="nhanes_year",
-        domain_split_ood_values=[NHANES_YEARS[i + 1] for i in
-                                 range(len(NHANES_YEARS) - 1)],
-        domain_split_id_values=[[NHANES_YEARS[i]] for i in
-                                range(len(NHANES_YEARS) - 1)],
+    "nhanes_cholesterol_race": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"nhanes_task": "cholesterol", "years": NHANES_YEARS},
+        domain_split_varname='WhiteNonHispanic',
+        domain_split_ood_values=[1, 2, 4, 6, 7],
+        domain_split_id_values=[3],
+        # Group by male vs. all others
+        grouper=Grouper({"RIAGENDR": ["1.0", ]}, drop=False),
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=["nhanes_year"],
+            numeric_features="kbins")
+    ),
+
+    "nhanes_lead_poverty": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"nhanes_task": "lead", "years": NHANES_YEARS},
+        domain_split_varname='INDFMPIRleq1.3',
+        domain_split_ood_values=[1.],
+        # Race (non. hispanic white vs. all others; male vs. all others)
         grouper=Grouper({"RIDRETH3": ["3.0", ], "RIAGENDR": ["1.0", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None),
-
     ),
 
     "physionet_set": DomainShiftExperimentConfig(
