@@ -1,5 +1,5 @@
 """
-Tests for Features and FeatureLists.
+Tests for Feature objects.
 
 To run tests: python -m unittest tablebench/tests/test_features.py -v
 """
@@ -8,7 +8,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from tablebench.core.features import Feature, FeatureList, cat_dtype
+from tablebench.core.features import Feature, cat_dtype
 
 
 class TestFeatureFillNA(unittest.TestCase):

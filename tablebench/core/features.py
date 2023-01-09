@@ -106,8 +106,10 @@ class FeatureList:
         return None
 
     def __add__(self, other):
-        self.features = list(set(self.features + other.features))
-        return self
+        if (self.target and other.target):
+            raise ValueError("cannot add two lists which both contain targets.")
+        return FeatureList(list(set(self.features + other.features)),
+                           documentation=self.documentation)
 
     def __iter__(self):
         yield from self.features
@@ -187,7 +189,8 @@ class PreprocessorConfig:
     domain_labels: str = "label_encode"
     feature_transformer: ColumnTransformer = None
     domain_label_transformer: LabelEncoder = None
-    passthrough_columns: Union[str, List[str]] = None  # Feature names to passthrough, or "all".
+    passthrough_columns: Union[
+        str, List[str]] = None  # Feature names to passthrough, or "all".
     # If "rows", drop rows containing na values, if "columns", drop columns
     # containing na values; if None do not do anything for missing values.
     dropna: Union[str, None] = "rows"
@@ -273,11 +276,13 @@ class PreprocessorConfig:
         """Postprocess the result of a ColumnTransformer."""
         transformed.columns = [c.replace("remainder__", "")
                                for c in transformed.columns]
-        transformed.columns = [sub_illegal_chars(c) for c in transformed.columns]
+        transformed.columns = [sub_illegal_chars(c) for c in
+                               transformed.columns]
 
         # By default transformed columns will be cast to 'object' dtype; we cast them
         # back to a numeric type.
-        transformed = _transformed_columns_to_numeric(transformed, "onehot_", np.int8)
+        transformed = _transformed_columns_to_numeric(transformed, "onehot_",
+                                                      np.int8)
         transformed = _transformed_columns_to_numeric(transformed, "scale_")
         # Cast the specified columns back to their original types
         if cast_dtypes:
@@ -329,7 +334,8 @@ class PreprocessorConfig:
         """Fit a feature_transformer and apply it to the input features."""
         print(f"[INFO] transforming columns")
         if self.passthrough_columns == "all":
-            print("[DEBUG] passthrough is 'all'; data will not be preprocessed by tableshift.")
+            print(
+                "[DEBUG] passthrough is 'all'; data will not be preprocessed by tableshift.")
             return data
         if self.passthrough_columns:
             passthrough_columns += self.passthrough_columns
@@ -359,7 +365,8 @@ class PreprocessorConfig:
 
         if domain_label_colname:
             # Case: fit the domain label transformer and apply it.
-            transformed.loc[:, domain_label_colname] = self.fit_transform_domain_labels(
+            transformed.loc[:,
+            domain_label_colname] = self.fit_transform_domain_labels(
                 transformed.loc[:, domain_label_colname])
 
         self._post_transform_summary(transformed)
