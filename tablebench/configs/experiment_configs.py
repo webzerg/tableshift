@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from tablebench.core import RandomSplitter, Grouper, PreprocessorConfig, \
     DomainSplitter, FixedSplitter, Splitter
-from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS
+from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS, NHANES_YEARS
 from tablebench.datasets.mimic_extract_feature_lists import \
     MIMIC_EXTRACT_SHARED_FEATURES
 from tablebench.datasets.mimic_extract import MIMIC_EXTRACT_STATIC_FEATURES
@@ -190,8 +190,7 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins"),
-        # TODO(jpgard): switch to use all years.
-        tabular_dataset_kwargs={"nhanes_task": "cholesterol", "years": [1999]}),
+        tabular_dataset_kwargs={"nhanes_task": "cholesterol", "years": NHANES_YEARS}),
 
     "nhanes_lead": ExperimentConfig(
         splitter=DomainSplitter(
@@ -206,8 +205,7 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins"),
-        # TODO(jpgard): switch to use all years.
-        tabular_dataset_kwargs={"nhanes_task": "lead", "years": [1999]}),
+        tabular_dataset_kwargs={"nhanes_task": "lead", "years": NHANES_YEARS}),
 
     "physionet": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.05,
