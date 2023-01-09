@@ -106,6 +106,8 @@ class FeatureList:
         return None
 
     def __add__(self, other):
+        if (self.target and other.target):
+            raise ValueError("cannot add two lists which both contain targets.")
         return FeatureList(list(set(self.features + other.features)),
                            documentation=self.documentation)
 
