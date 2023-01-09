@@ -265,6 +265,9 @@ domain_shift_experiment_configs = {
         # Race (non. hispanic white vs. all others; male vs. all others)
         grouper=Grouper({"RIDRETH_merged": [3, ], "RIAGENDR": ["1.0", ]},
                         drop=False),
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=["nhanes_year"],
+            numeric_features="kbins"),
     ),
 
     "physionet_set": DomainShiftExperimentConfig(
