@@ -36,6 +36,20 @@ def safe_cast(x: pd.Series, dtype):
                 return x.astype(float)
 
 
+def column_is_of_type(x: pd.Series, dtype) -> bool:
+    """Helper function to check whether column has specified dtype."""
+    if hasattr(dtype, "name"):
+        # Case: dtype is of categorical dtype; has a "name"
+        # attribute identical to the pandas dtype name for
+        # categorical data.
+        return x.dtype.name == dtype.name
+    else:
+        # Check if x is a subdtype of the more general type
+        # specified in dtype; this will not perform casting
+        # of identical subtypes (i.e. does not cast int64 to int).
+        return np.issubdtype(x.dtype, dtype)
+
+
 @dataclass(frozen=True)
 class Feature:
     name: str
@@ -55,7 +69,11 @@ class Feature:
         # Handles case where na values have misspecified type (i.e. float vs. int);
         # we would like the filling to be robust to these kinds of misspecification.
         if not isinstance(data.dtype, cat_dtype):
-            na_values = np.array(self.na_values).astype(data.dtype)
+            try:
+                na_values = np.array(self.na_values).astype(data.dtype)
+            except ValueError:
+                # Raised when some na_values cannot be cast to the target type
+                na_values = np.array(self.na_values)
         else:
             na_values = np.array(self.na_values)
         return data.replace(na_values, np.nan)
@@ -105,16 +123,6 @@ class FeatureList:
         if not passthrough_columns:
             passthrough_columns = []
 
-        def _column_is_of_type(x: pd.Series, dtype) -> bool:
-            """Helper function to check whether column has specified dtype."""
-            if hasattr(dtype, "name"):
-                # Case: dtype is of categorical dtype; has a "name"
-                # attribute identical to the pandas dtype name for
-                # categorical data.
-                return x.dtype.name == dtype.name
-            else:
-                return x.dtype == dtype.__name__
-
         drop_cols = list(set(x for x in df.columns
                              if x not in self.names
                              and x not in passthrough_columns))
@@ -134,7 +142,7 @@ class FeatureList:
                 df[f.name] = f.fillna(df[f.name])
 
             # Cast to desired type
-            if not _column_is_of_type(df[f.name], f.kind):
+            if not column_is_of_type(df[f.name], f.kind):
                 df[f.name] = f.apply_dtype(df[f.name])
 
         # Drop any rows containing missing values.

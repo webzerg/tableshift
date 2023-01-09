@@ -28,7 +28,7 @@ from tablebench.datasets.german import GERMAN_RESOURCES, preprocess_german
 from tablebench.datasets.mimic_extract import preprocess_mimic_extract, MIMIC_EXTRACT_STATIC_FEATURES
 from tablebench.datasets.mooc import preprocess_mooc
 from tablebench.datasets.nhanes import preprocess_nhanes_cholesterol, \
-    get_nhanes_data_sources, preprocess_nhanes_lead
+    get_nhanes_data_sources, preprocess_nhanes_lead, NHANES_YEARS
 from tablebench.datasets.physionet import preprocess_physionet
 
 
@@ -238,7 +238,7 @@ class NHANESDataSource(DataSource):
     def __init__(
             self,
             nhanes_task: str,
-            years: Optional[Sequence[int]] = None,
+            years: Sequence[int] = NHANES_YEARS,
             **kwargs):
         self.nhanes_task = nhanes_task
         self.years = years
@@ -279,11 +279,16 @@ class NHANESDataSource(DataSource):
         year_dfs = defaultdict(list)
 
         for f in files:
-            print(f"[DEBUG] reading {f}")
-            df = utils.read_xpt(f)
-            df.set_index("SEQN", inplace=True)
-            df_year = int(re.search(".*([0-9]{4})\\.XPT", f).group(1))
-            year_dfs[df_year].append(df)
+            year = int(re.search(".*([0-9]{4})\\.XPT", f).group(1))
+            if year in self.years:
+                print(f"[DEBUG] reading {f}")
+                df = utils.read_xpt(f)
+                try:
+                    df.set_index("SEQN", inplace=True)
+                except KeyError:
+                    # Some LLCP files only contain 'SEQNO' feature.
+                    df.set_index("SEQNO", inplace=True)
+                year_dfs[year].append(df)
 
         df_list = []
         for year in year_dfs.keys():
@@ -294,7 +299,7 @@ class NHANESDataSource(DataSource):
                 print(
                     f"[INFO] starting join of {len(dfs)} dataframes for {year}")
                 df = src_df.join(dfs[1:], how="outer")
-                df["nhanes_year"] = year
+                df["nhanes_year"] = int(year)
                 print("[INFO] finished joins")
                 df_list.append(df)
             except Exception as e:

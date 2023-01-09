@@ -6,6 +6,7 @@ from collections import defaultdict
 import json
 import os
 
+import numpy as np
 import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
@@ -23,22 +24,36 @@ NHANES_DATA_SOURCES = os.path.join(os.path.dirname(__file__),
 # are downloaded/read from disk, because NHANES contains a huge number of sources per year.
 
 NHANES_CHOLESTEROL_DATA_SOURCES_TO_USE = {
-    "Demographics": ["Demographic Variables and Sample Weights"],
-    "Questionnaire": ["Blood Pressure & Cholesterol",
-                      "Cardiovascular Health",
-                      "Diabetes",
-                      "Kidney Conditions - Urology",
-                      "Medical Conditions",
-                      "Osteoporosis", ],
-    "Laboratory": ["Cholesterol - LDL & Triglycerides"],
+    "Demographics": [
+        "Demographic Variables & Sample Weights",  # 1999 - 2003
+        "Demographic Variables and Sample Weights"],  # 2005- 2017
+    "Questionnaire": ["Blood Pressure & Cholesterol",  # All years
+                      "Cardiovascular Health",  # All years
+                      "Diabetes",  # All years
+                      "Kidney Conditions",  # 1999
+                      "Kidney Conditions - Urology",  # 2001 - 2017
+                      "Medical Conditions",  # All years
+                      "Osteoporosis",  # Not preset in 2011, 2015
+                      ],
+    "Laboratory": ["Cholesterol - LDL & Triglycerides",  # 1999 - 2003, 2007 - 2013
+                   "Cholesterol - LDL, Triglyceride & Apoliprotein (ApoB)",  # 2005
+                   "Cholesterol - Low - Density Lipoprotein (LDL) & Triglycerides",  # 2015
+                   "Cholesterol - Low-Density Lipoproteins (LDL) & Triglycerides"  # 2017
+                   ],
 }
 
 NHANES_LEAD_DATA_SOURCES_TO_USE = {
-    "Demographics": ["Demographic Variables and Sample Weights"],
+    "Demographics": [
+        "Demographic Variables & Sample Weights",  # 1999 - 2003
+        "Demographic Variables and Sample Weights"],  # 2005- 2017
+    # TODO(jpgard): fill in missing data sources for the below categories for lead.
     "Questionnaire": ["Diet Behavior & Nutrition",
-                      "Income"],
+                      "Income"  # 2007 - 2017; prior to 2017 income questions are in Demographics.
+                      ],
     "Laboratory": [
-        "Cadmium, Lead, Total Mercury, Ferritin, Serum Folate, RBC Folate, Vitamin B12, Homocysteine, Methylmalonic "
+        "Cadmium, Lead, Mercury, Cotinine & Nutritional Biochemistries",  # 1999
+        "Cadmium, Lead, Total Mercury, Ferritin, Serum Folate, RBC Folate, "
+        "Vitamin B12, Homocysteine, Methylmalonic "
         "acid, Cotinine - Blood, Second Exam",  # 2001
         "Cadmium, Lead, & Total Mercury - Blood",  # 2003
         "Cadmium, Lead, & Total Mercury - Blood",  # 2005
@@ -73,9 +88,12 @@ def get_nhanes_data_sources(task: str, years=None):
     return output
 
 
-NHANES_DEMOG_FEATURES = FeatureList(features=[
-    # In what country {were you/was SP} born?
-    Feature('DMDBORN4', cat_dtype),
+NHANES_SHARED_FEATURES = FeatureList(features=[
+    # Derived feature for survey year
+    Feature("nhanes_year", int, "Derived feature for year."),
+
+    Feature('DMDBORN4', cat_dtype, """In what country {were you/was SP} born? 1	Born in 50 US states or Washington, 
+    DC 2 Others""", na_values=(77, 99, ".")),
 
     # What is the highest grade or level of school {you have/SP has} completed
     # or the highest degree {you have/s/he has} received?
@@ -91,44 +109,13 @@ NHANES_DEMOG_FEATURES = FeatureList(features=[
     # Marital status
     Feature('DMDMARTL', cat_dtype),
 
-    # Total family income (reported as a range value in dollars)
-    Feature('INDFMIN2', cat_dtype),
-
-    # A ratio of family income to poverty guidelines.
-    Feature('INDFMPIR', float),
-
-    # Recode of reported race and Hispanic origin information,
-    # with Non-Hispanic Asian Category
-    Feature('RIDRETH3', cat_dtype),
+    Feature('RIDRETH_merged', int),
 
 ], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
-NHANES_LEAD_FEATURES = FeatureList(features=[
-    Feature("INDFMMPC", cat_dtype, "Family monthly poverty level index categories"),
-    Feature("DBQ390", cat_dtype,
-            "{Do you/Does SP} get these lunches free,"
-            " at a reduced price, or {do you/does he/she} pay full price?"),
-    Feature("LBXBPB", float, "Blood lead (ug/dL)", is_target=True,
-            na_values=(".",)),
-    # Derived feature for survey year
-    Feature("nhanes_year", int, "Derived feature for year."),
-])
-
 NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
-    # Derived feature for survey year
-    Feature("nhanes_year", int, "Derived feature for year."),
-    # Target: Direct LDL-Cholesterol (mg/dL). We use a threshold of 160mg/DL,
-    # based on the definition of Primary hypercholestemia in
-    # Blood Cholesterol: Executive Summary: A Report of the American College
-    # of Cardiology/American Heart Association Task Force on Clinical
-    # Practice Guidelines, DOI: 10.1161/CIR.0000000000000624 (cf. Table 6):
-    # "Primary hypercholesterolemia (LDL-C, 160–189 mg/dL)".
-    # We use the LBDLDL - LDL-Cholesterol, Friedewald (mg/dL) measurement,
-    # since the other measurement
-    # (LBDLDLM - LDL-Cholesterol, Martin-Hopkins (mg/dL))
-    # is not available for all years and the two have very strong correlation
-    # i.e. see this study: https://pubmed.ncbi.nlm.nih.gov/34881700/
-    Feature('LBDLDL', float, is_target=True),
+
+    Feature('LBDLDL', float, is_target=True, description='Direct LDL-Cholesterol (mg/dL)'),
 
     # Below we use the additional set of risk factors listed in the above report
     # (Table 6) **which can be asked in a questionnaire** (i.e. those which
@@ -136,12 +123,7 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
 
     ####### Risk Factor: Family history of ASCVD
 
-    # {Have you/Has SP} ever been told by a doctor or other health professional
-    # that {you have/s/he has} health conditions or a medical or family history
-    # that increases {your/his/her} risk for diabetes?
-    # (Note: no other questions about family health history, so we use this
-    # one, even though it is about diabetes).)
-    Feature('DIQ170', cat_dtype),
+    # No questions on this topic.
 
     ####### Risk Factor: Metabolic syndrome (increased waist circumference,
     # elevated triglycerides [>175 mg/dL], elevated blood pressure,
@@ -178,9 +160,10 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
     ####### Risk Factor: Chronic inflammatory conditions such as
     # psoriasis, RA, or HIV/AIDS
 
-    # {Have you/Has SP} ever been told by a doctor or other health care
-    # professional that {you/s/he} had psoriasis (sore-eye-asis)?
-    Feature('MCQ070', cat_dtype),
+    Feature('MCQ070', cat_dtype,
+            description="{Have you/Has SP} ever been told by a doctor or other health care "
+                        "professional that {you/s/he} had psoriasis (sore-eye-asis)?"
+                        "(note: not present after 2013)"),
 
     # Has a doctor or other health professional ever told {you/SP} that
     # {you/s/he} . . .had arthritis (ar-thry-tis)?
@@ -194,32 +177,71 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
 
     # Note: no questions on these.
 
-    #######  Risk Factor: High-risk race/ethnicities (eg, South Asian ancestry)
-    # Recode of reported race and Hispanic origin information,
-    # with Non-Hispanic Asian Category
-    Feature('RIDRETH3', cat_dtype),
+    # #######  Risk Factor: High-risk race/ethnicities (eg, South Asian ancestry)
+    # Covered in shared 'RIDRETH' feature
 ], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
 
-def preprocess_nhanes_cholesterol(df: pd.DataFrame, threshold=160.):
-    features = NHANES_CHOLESTEROL_FEATURES + NHANES_DEMOG_FEATURES
-    for f in features.names:
-        assert f in df.columns, f"data is missing column {f}"
-    df = df.loc[:, features.names]
-
-    # Drop observations with missing target
-    df = df.dropna(subset=[features.target])
-    # Binarize the target
-    df[features.target] = (df[features.target] >= threshold).astype(float)
-
-    # All features are categorical; we can fill missing values with "missing".
+def _postprocess_nhanes(df: pd.DataFrame, features) -> pd.DataFrame:
+    # Fill categorical missing values with "missing".
     for feature in features:
         name = feature.name
-        if name != NHANES_CHOLESTEROL_FEATURES.target and feature.kind == cat_dtype:
+        if name not in df.columns:
+            print(f"[WARNING] feature {feature.name} missing; filling with indicator;"
+                  f"this can happen when data is subset by years since some questions "
+                  f"are not asked in all survey years.")
+            df[name] = pd.Series(["MISSING"] * len(df))
+
+        elif name != features.target and feature.kind == cat_dtype:
+            print(f"[DEBUG] filling and casting categorical feature {name}")
             df[name] = df[name].fillna("MISSING").apply(str).astype("category")
 
     df.reset_index(drop=True, inplace=True)
     return df
+
+
+def _merge_ridreth_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Create a single race/ethnicity feature by using 'RIDRETH3'
+    where available, else 'RIDRETH1'. """
+    if ('RIDRETH3' in df.columns) and ('RIDRETH1' in df.columns):
+        race_col = np.where(~np.isnan(df['RIDRETH3']), df['RIDRETH3'], df['RIDRETH1'])
+        df.drop(columns=['RIDRETH3', 'RIDRETH1'], inplace=True)
+    elif 'RIDRETH3' in df.columns:
+        race_col = df['RIDRETH3']
+        df.drop(columns=['RIDRETH3'], inplace=True)
+    else:
+        race_col = df['RIDRETH1']
+        df.drop(columns=['RIDRETH1'], inplace=True)
+
+    df['RIDRETH_merged'] = race_col
+    return df
+
+
+def preprocess_nhanes_cholesterol(df: pd.DataFrame, threshold=160.):
+    features = NHANES_CHOLESTEROL_FEATURES + NHANES_SHARED_FEATURES
+    df = _merge_ridreth_features(df)
+
+    # Drop observations with missing target or missing domain split variable
+    df.dropna(subset=[features.target, 'RIDRETH_merged'], inplace=True)
+
+    # Binarize the target
+    df[features.target] = (df[features.target] >= threshold).astype(float)
+
+    df = _postprocess_nhanes(df, features=features)
+    return df
+
+
+NHANES_LEAD_FEATURES = FeatureList(features=[
+
+    # A ratio of family income to poverty guidelines.
+    Feature('INDFMPIRBelowCutoff', float,
+            'Binary indicator for whether family PIR (poverty-income ratio)'
+            'is <= 1.3. The threshold of 1.3 is selected based on the categorization '
+            'in NHANES, where PIR <= 1.3 is the lowest level (see INDFMMPC feature).'),
+
+    Feature("LBXBPB", float, "Blood lead (ug/dL)", is_target=True,
+            na_values=(".",)),
+], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
 
 def preprocess_nhanes_lead(df: pd.DataFrame, threshold: float = 3.5):
@@ -228,16 +250,22 @@ def preprocess_nhanes_lead(df: pd.DataFrame, threshold: float = 3.5):
     The value of 3.5 µg/dl is based on the CDC Blood Lead Reference Value
     (BLRF) https://www.cdc.gov/nceh/lead/prevention/blood-lead-levels.htm
     """
-    features = NHANES_LEAD_FEATURES + NHANES_DEMOG_FEATURES
-    df = df.loc[:, features.names]
+    features = NHANES_LEAD_FEATURES + NHANES_SHARED_FEATURES
+    target = NHANES_LEAD_FEATURES.target
+    df = _merge_ridreth_features(df)
 
-    # Drop observations with missing target
-    df = df.dropna(subset=[features.target])
+    # Drop observations with missing target and missing domain split
+    df = df.dropna(subset=[target, 'INDFMPIR', 'RIDAGEYR'])
 
     # Keep only children
     df = df[df['RIDAGEYR'] <= 18.]
 
-    # Binarize the target
-    df[features.target] = (df[features.target] >= threshold).astype(float)
+    # Create the domain split variable for poverty-income ratio
+    df['INDFMPIRBelowCutoff'] = (df['INDFMPIR'] <= 1.3).astype(int)
+    df.drop(columns=['INDFMPIR'])
 
+    # Binarize the target
+    df[target] = (df[target] >= threshold).astype(float)
+
+    df = _postprocess_nhanes(df, features=features)
     return df
