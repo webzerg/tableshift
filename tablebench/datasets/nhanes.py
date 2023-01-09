@@ -35,10 +35,14 @@ NHANES_CHOLESTEROL_DATA_SOURCES_TO_USE = {
                       "Medical Conditions",  # All years
                       "Osteoporosis",  # Not preset in 2011, 2015
                       ],
-    "Laboratory": ["Cholesterol - LDL & Triglycerides",  # 1999 - 2003, 2007 - 2013
-                   "Cholesterol - LDL, Triglyceride & Apoliprotein (ApoB)",  # 2005
-                   "Cholesterol - Low - Density Lipoprotein (LDL) & Triglycerides",  # 2015
-                   "Cholesterol - Low-Density Lipoproteins (LDL) & Triglycerides"  # 2017
+    "Laboratory": ["Cholesterol - LDL & Triglycerides",
+                   # 1999 - 2003, 2007 - 2013
+                   "Cholesterol - LDL, Triglyceride & Apoliprotein (ApoB)",
+                   # 2005
+                   "Cholesterol - Low - Density Lipoprotein (LDL) & Triglycerides",
+                   # 2015
+                   "Cholesterol - Low-Density Lipoproteins (LDL) & Triglycerides"
+                   # 2017
                    ],
 }
 
@@ -46,9 +50,10 @@ NHANES_LEAD_DATA_SOURCES_TO_USE = {
     "Demographics": [
         "Demographic Variables & Sample Weights",  # 1999 - 2003
         "Demographic Variables and Sample Weights"],  # 2005- 2017
-    # TODO(jpgard): fill in missing data sources for the below categories for lead.
     "Questionnaire": ["Diet Behavior & Nutrition",
-                      "Income"  # 2007 - 2017; prior to 2017 income questions are in Demographics.
+                      # Note: prior to 2017 income questions are in
+                      # Demographics file.
+                      "Income"
                       ],
     "Laboratory": [
         "Cadmium, Lead, Mercury, Cotinine & Nutritional Biochemistries",  # 1999
@@ -88,34 +93,10 @@ def get_nhanes_data_sources(task: str, years=None):
     return output
 
 
-NHANES_SHARED_FEATURES = FeatureList(features=[
-    # Derived feature for survey year
-    Feature("nhanes_year", int, "Derived feature for year."),
-
-    Feature('DMDBORN4', cat_dtype, """In what country {were you/was SP} born? 1	Born in 50 US states or Washington, 
-    DC 2 Others""", na_values=(77, 99, ".")),
-
-    # What is the highest grade or level of school {you have/SP has} completed
-    # or the highest degree {you have/s/he has} received?
-    Feature('DMDEDUC2', cat_dtype),
-
-    # Age in years of the participant at the time of screening. Individuals
-    # 80 and over are topcoded at 80 years of age.
-    Feature('RIDAGEYR', float),
-
-    # Gender of the participant.
-    Feature('RIAGENDR', cat_dtype),
-
-    # Marital status
-    Feature('DMDMARTL', cat_dtype),
-
-    Feature('RIDRETH_merged', int),
-
-], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
-
 NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
 
-    Feature('LBDLDL', float, is_target=True, description='Direct LDL-Cholesterol (mg/dL)'),
+    Feature('LBDLDL', float, is_target=True,
+            description='Direct LDL-Cholesterol (mg/dL)'),
 
     # Below we use the additional set of risk factors listed in the above report
     # (Table 6) **which can be asked in a questionnaire** (i.e. those which
@@ -130,44 +111,44 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
     # elevated glucose, and low HDL-C [<40 mg/dL in men; <50 in women
     # mg/dL] are factors; tally of 3 makes the diagnosis)
 
-    # {Have you/Has SP} ever been told by a doctor or other health professional
-    # that {you/s/he} had hypertension, also called high blood pressure?
-    Feature('BPQ020', cat_dtype),
+    Feature('BPQ020', cat_dtype, """{Have you/Has SP} ever been told by a 
+    doctor or other health professional # that {you/s/he} had hypertension, 
+    also called high blood pressure?"""),
 
-    # {Have you/Has SP} ever been told by a doctor or other health professional
-    # that {you have/SP has} any of the following: prediabetes, impaired
-    # fasting glucose, impaired glucose tolerance, borderline diabetes or
-    # that {your/her/his} blood sugar is higher than normal but not high enough
-    # to be called diabetes or sugar diabetes?
-    Feature('DIQ160', cat_dtype),
+    Feature('DIQ160', cat_dtype, """{Have you/Has SP} ever been told by a 
+    doctor or other health professional that {you have/SP has} any of the 
+    following: prediabetes, impaired fasting glucose, impaired glucose 
+    tolerance, borderline diabetes or that {your/her/his} blood sugar is 
+    higher than normal but not high enough to be called diabetes or sugar 
+    diabetes?"""),
 
-    # The next questions are about specific medical conditions.
-    # {Other than during pregnancy, {have you/has SP}/{Have you/Has SP}}
-    # ever been told by a doctor or health professional that
-    # {you have/{he/she/SP} has} diabetes or sugar diabetes?
-    Feature('DIQ010', cat_dtype),
+    Feature('DIQ010', cat_dtype, """{Other than during pregnancy, {have 
+    you/has SP}/{Have you/Has SP}} ever been told by a doctor or health 
+    professional that {you have/{he/she/SP} has} diabetes or sugar 
+    diabetes?"""),
 
     ####### Risk Factor: Chronic kidney disease
-    # In the past 12 months, {have you/has SP} received dialysis
-    # (either hemodialysis or peritoneal dialysis)?
-    Feature('KIQ025', cat_dtype),
 
-    # {Have you/Has SP} ever been told by a doctor or other health professional
-    # that {you/s/he} had weak or failing kidneys? Do not include kidney
-    # stones, bladder infections, or incontinence.
-    Feature('KIQ022', cat_dtype),
+    Feature('KIQ025', cat_dtype, """In the past 12 months, {have you/has SP} 
+    received dialysis (either hemodialysis or peritoneal dialysis)?"""),
+
+    Feature('KIQ022', cat_dtype, """{Have you/Has SP} ever been told by a 
+    doctor or other health professional that {you/s/he} had weak or failing 
+    kidneys? Do not include kidney stones, bladder infections, 
+    or incontinence."""),
 
     ####### Risk Factor: Chronic inflammatory conditions such as
     # psoriasis, RA, or HIV/AIDS
 
     Feature('MCQ070', cat_dtype,
-            description="{Have you/Has SP} ever been told by a doctor or other health care "
-                        "professional that {you/s/he} had psoriasis (sore-eye-asis)?"
-                        "(note: not present after 2013)"),
+            description="{Have you/Has SP} ever been told by a doctor or "
+                        "other health care professional that {you/s/he} had "
+                        "psoriasis ( sore-eye-asis)? (note: not present after "
+                        "2013)"),
 
-    # Has a doctor or other health professional ever told {you/SP} that
-    # {you/s/he} . . .had arthritis (ar-thry-tis)?
-    Feature('MCQ160B', cat_dtype),
+    Feature('MCQ160B', cat_dtype, """Has a doctor or other health 
+    professional ever told {you/SP} that {you/s/he} . . .had arthritis (
+    ar-thry-tis)?"""),
 
     # Note: no questions about HIV/AIDS.
 
@@ -181,15 +162,61 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
     # Covered in shared 'RIDRETH' feature
 ], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
+NHANES_LEAD_FEATURES = FeatureList(features=[
 
-def _postprocess_nhanes(df: pd.DataFrame, feature_list:FeatureList) -> pd.DataFrame:
+    # A ratio of family income to poverty guidelines.
+    Feature('INDFMPIRBelowCutoff', float,
+            'Binary indicator for whether family PIR (poverty-income ratio)'
+            'is <= 1.3. The threshold of 1.3 is selected based on the '
+            'categorization in NHANES, where PIR <= 1.3 is the lowest level ('
+            'see INDFMMPC feature).'),
+
+    Feature("LBXBPB", float, "Blood lead (ug/dL)", is_target=True,
+            na_values=(".",)),
+], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
+
+NHANES_SHARED_FEATURES = FeatureList(features=[
+    # Derived feature for survey year
+    Feature("nhanes_year", int, "Derived feature for year."),
+
+    Feature('DMDBORN4', cat_dtype, """In what country {were you/was SP} born? 
+    1	Born in 50 US states or Washington, DC 2 Others""",
+            na_values=(77, 99, ".")),
+
+    Feature('DMDEDUC2', cat_dtype, """What is the highest grade or level of 
+    school {you have/SP has} completed or the highest degree {you have/s/he 
+    has} received?"""),
+
+    Feature('RIDAGEYR', float, """Age in years of the participant at the time 
+    of screening. Individuals 80 and over are topcoded at 80 years of age."""),
+
+    Feature('RIAGENDR', cat_dtype, "Gender of the participant."),
+
+    Feature('DMDMARTL', cat_dtype, "Marital status"),
+
+    Feature('RIDRETH_merged', int, """Derived feature. This feature uses 
+    'RIDRETH3' (Recode of reported race and Hispanic origin information, 
+    with Non-Hispanic Asian Category) from years where it is available, 
+    and otherwise 'RIDRETH1' (Recode of reported race and Hispanic origin 
+    information). 'RIDRETH3' contains a superset of the values in 'RIDRETH1' 
+    but the shared values are coded identically; 'RIDRETH3' was only added to 
+    NHANES in 2011-2012 data year. See _merge_ridreth_features( ) below, 
+    and the NHANES documentation, e.g. 
+    https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/DEMO_J.htm#RIDRETH1 ."""),
+
+], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
+
+
+def _postprocess_nhanes(df: pd.DataFrame,
+                        feature_list: FeatureList) -> pd.DataFrame:
     # Fill categorical missing values with "missing".
     for feature in feature_list:
         name = feature.name
         if name not in df.columns:
-            print(f"[WARNING] feature {feature.name} missing; filling with indicator;"
-                  f"this can happen when data is subset by years since some questions "
-                  f"are not asked in all survey years.")
+            print(
+                f"[WARNING] feature {feature.name} missing; filling with "
+                f"indicator; this can happen when data is subset by years since"
+                f" some questions are not asked in all survey years.")
             df[name] = pd.Series(["MISSING"] * len(df))
 
         elif name != feature_list.target and feature.kind == cat_dtype:
@@ -204,7 +231,8 @@ def _merge_ridreth_features(df: pd.DataFrame) -> pd.DataFrame:
     """Create a single race/ethnicity feature by using 'RIDRETH3'
     where available, else 'RIDRETH1'. """
     if ('RIDRETH3' in df.columns) and ('RIDRETH1' in df.columns):
-        race_col = np.where(~np.isnan(df['RIDRETH3']), df['RIDRETH3'], df['RIDRETH1'])
+        race_col = np.where(~np.isnan(df['RIDRETH3']), df['RIDRETH3'],
+                            df['RIDRETH1'])
         df.drop(columns=['RIDRETH3', 'RIDRETH1'], inplace=True)
     elif 'RIDRETH3' in df.columns:
         race_col = df['RIDRETH3']
@@ -218,36 +246,19 @@ def _merge_ridreth_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def preprocess_nhanes_cholesterol(df: pd.DataFrame, threshold=160.):
-    features = NHANES_CHOLESTEROL_FEATURES + NHANES_SHARED_FEATURES
-    try:
-        assert "LBXBPB" not in features.names
-        assert 'INDFMPIRBelowCutoff' not in features.names
-    except AssertionError as ae:
-        print(ae)
-        import ipdb;ipdb.set_trace()
+    feature_list = NHANES_CHOLESTEROL_FEATURES + NHANES_SHARED_FEATURES
+    target = feature_list.target
+
     df = _merge_ridreth_features(df)
 
     # Drop observations with missing target or missing domain split variable
-    df.dropna(subset=[features.target, 'RIDRETH_merged'], inplace=True)
+    df.dropna(subset=[target, 'RIDRETH_merged'], inplace=True)
 
     # Binarize the target
-    df[features.target] = (df[features.target] >= threshold).astype(float)
+    df[target] = (df[target] >= threshold).astype(float)
 
-    df = _postprocess_nhanes(df, features=features)
+    df = _postprocess_nhanes(df, feature_list=feature_list)
     return df
-
-
-NHANES_LEAD_FEATURES = FeatureList(features=[
-
-    # A ratio of family income to poverty guidelines.
-    Feature('INDFMPIRBelowCutoff', float,
-            'Binary indicator for whether family PIR (poverty-income ratio)'
-            'is <= 1.3. The threshold of 1.3 is selected based on the categorization '
-            'in NHANES, where PIR <= 1.3 is the lowest level (see INDFMMPC feature).'),
-
-    Feature("LBXBPB", float, "Blood lead (ug/dL)", is_target=True,
-            na_values=(".",)),
-], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
 
 def preprocess_nhanes_lead(df: pd.DataFrame, threshold: float = 3.5):
@@ -256,7 +267,7 @@ def preprocess_nhanes_lead(df: pd.DataFrame, threshold: float = 3.5):
     The value of 3.5 µg/dl is based on the CDC Blood Lead Reference Value
     (BLRF) https://www.cdc.gov/nceh/lead/prevention/blood-lead-levels.htm
     """
-    features = NHANES_LEAD_FEATURES + NHANES_SHARED_FEATURES
+    feature_list = NHANES_LEAD_FEATURES + NHANES_SHARED_FEATURES
     target = NHANES_LEAD_FEATURES.target
     df = _merge_ridreth_features(df)
 
@@ -273,5 +284,5 @@ def preprocess_nhanes_lead(df: pd.DataFrame, threshold: float = 3.5):
     # Binarize the target
     df[target] = (df[target] >= threshold).astype(float)
 
-    df = _postprocess_nhanes(df, features=features)
+    df = _postprocess_nhanes(df, feature_list=feature_list)
     return df
