@@ -182,9 +182,9 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
 ], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
 
-def _postprocess_nhanes(df: pd.DataFrame, features) -> pd.DataFrame:
+def _postprocess_nhanes(df: pd.DataFrame, feature_list:FeatureList) -> pd.DataFrame:
     # Fill categorical missing values with "missing".
-    for feature in features:
+    for feature in feature_list:
         name = feature.name
         if name not in df.columns:
             print(f"[WARNING] feature {feature.name} missing; filling with indicator;"
@@ -192,7 +192,7 @@ def _postprocess_nhanes(df: pd.DataFrame, features) -> pd.DataFrame:
                   f"are not asked in all survey years.")
             df[name] = pd.Series(["MISSING"] * len(df))
 
-        elif name != features.target and feature.kind == cat_dtype:
+        elif name != feature_list.target and feature.kind == cat_dtype:
             print(f"[DEBUG] filling and casting categorical feature {name}")
             df[name] = df[name].fillna("MISSING").apply(str).astype("category")
 
