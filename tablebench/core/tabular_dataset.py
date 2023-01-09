@@ -228,10 +228,6 @@ class TabularDataset(ABC):
     def get_pandas(self, split) -> Tuple[
         DataFrame, Series, DataFrame, Optional[Series]]:
         """Fetch the (data, labels, groups, domains) for this TabularDataset."""
-
-        # TODO(jpgard): consider naming these outputs, or creating
-        #  a DataClass object to "hold" them. This will allow for easy access of
-        #  e.g. numeric vs. categorical features, where this is needed.
         return self._get_split_xygd(split)
 
     def get_domain_dataloaders(
