@@ -247,7 +247,8 @@ domain_shift_experiment_configs = {
     ),
 
     "nhanes_cholesterol_race": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"nhanes_task": "cholesterol", "years": NHANES_YEARS},
+        tabular_dataset_kwargs={"name": "nhanes_cholesterol",
+                                "nhanes_task": "cholesterol", "years": NHANES_YEARS},
         domain_split_varname='RIDRETH_merged',
         domain_split_ood_values=[[1, 2, 4, 6, 7]],
         domain_split_id_values=[[3]],
@@ -259,7 +260,8 @@ domain_shift_experiment_configs = {
     ),
 
     "nhanes_lead_poverty": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"nhanes_task": "lead", "years": NHANES_YEARS},
+        tabular_dataset_kwargs={"name": "nhanes_lead",
+                                "nhanes_task": "lead", "years": NHANES_YEARS},
         domain_split_varname='INDFMPIRBelowCutoff',
         domain_split_ood_values=[[1.]],
         # Race (non. hispanic white vs. all others; male vs. all others)
