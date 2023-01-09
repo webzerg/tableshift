@@ -219,6 +219,12 @@ def _merge_ridreth_features(df: pd.DataFrame) -> pd.DataFrame:
 
 def preprocess_nhanes_cholesterol(df: pd.DataFrame, threshold=160.):
     features = NHANES_CHOLESTEROL_FEATURES + NHANES_SHARED_FEATURES
+    try:
+        assert "LBXBPB" not in features.names
+        assert 'INDFMPIRBelowCutoff' not in features.names
+    except AssertionError as ae:
+        print(ae)
+        import ipdb;ipdb.set_trace()
     df = _merge_ridreth_features(df)
 
     # Drop observations with missing target or missing domain split variable
