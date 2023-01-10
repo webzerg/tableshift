@@ -223,7 +223,7 @@ if __name__ == "__main__":
                         help="GPUs per worker. Use fractional values < 1. "
                              "(e.g. --gpu_per_worker=0.5) in order"
                              "to allow multiple workers to share GPU.")
-    parser.add_argument("--num_samples", type=int, default=1,
+    parser.add_argument("--num_samples", type=int, default=100,
                         help="Number of hparam samples to take in tuning "
                              "sweep. Set to -1 and set time_budget_hrs to allow for"
                              "unlimited runs within the specified time budget.")
