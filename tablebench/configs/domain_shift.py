@@ -236,9 +236,14 @@ domain_shift_experiment_configs = {
     ),
 
     "heloc_burden": DomainShiftExperimentConfig(
+        # HELOC task, where target domain are various upper-quantile
+        # portions of the NetFractionRevolvingBurden feature.
         tabular_dataset_kwargs={"name": "heloc"},
-        domain_split_varname='HighBurden',
-        domain_split_ood_values=[[1]],
+        domain_split_varname='NetFractionRevolvingBurdenPercentile',
+        domain_split_ood_values=[
+            list(range(75, 101)), list(range(90, 101)),
+            list(range(95, 101)), list(range(99, 101))
+        ],
         grouper=None,
         preprocessor_config=PreprocessorConfig(),
     ),

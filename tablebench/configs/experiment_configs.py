@@ -147,11 +147,12 @@ EXPERIMENT_CONFIGS = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
     "heloc": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.01,
-                                id_test_size=0.1,
-                                random_state=43590,
-                                domain_split_varname='HighBurden',
-                                domain_split_ood_values=[1]),
+        splitter=DomainSplitter(
+            val_size=0.01,
+            id_test_size=0.1,
+            random_state=43590,
+            domain_split_varname='NetFractionRevolvingBurdenPercentile',
+            domain_split_ood_values=list(range(90, 101))),
         grouper=None,
         preprocessor_config=PreprocessorConfig(),
         tabular_dataset_kwargs={"name": "heloc"},

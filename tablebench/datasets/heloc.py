@@ -1,4 +1,5 @@
 import pandas as pd
+from scipy.stats import percentileofscore
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
@@ -40,9 +41,9 @@ HELOC_FEATURES = FeatureList(features=[
     price comparision shopping."""),
     # Feature('NetFractionRevolvingBurden', int, """Net Fraction Revolving
     # Burden. This is revolving balance divided by credit limit"""),
-    Feature('HighBurden', int, "Derived feature for whether "
-                               "'NetFractionRevolvingBurden' is greater"
-                               "than a specified threshold."),
+    Feature('NetFractionRevolvingBurdenPercentile', int,
+            "Derived feature ; integer-rounded percentile of the "
+            "'NetFractionRevolvingBurden' feature."),
     Feature('NetFractionInstallBurden', int, """Net Fraction Installment 
     Burden. This is installment balance divided by original loan amount"""),
     Feature('NumRevolvingTradesWBalance', int,
@@ -57,11 +58,13 @@ out the data agreement at https://community.fico.com/s/explainable-machine
 -learning-challenge """)
 
 
-def preprocess_heloc(df: pd.DataFrame,
-                     burden_threshold: float = 54.0) -> pd.DataFrame:
+def preprocess_heloc(df: pd.DataFrame) -> pd.DataFrame:
     # Transform target to integer
     target = HELOC_FEATURES.target
     df[target] = (df[target] == "Good").astype(int)
-    df['HighBurden'] = df['NetFractionRevolvingBurden'] >= burden_threshold
+    percentiles = percentileofscore(df['NetFractionRevolvingBurden'],
+                                    df['NetFractionRevolvingBurden'],
+                                    kind='weak')
+    df['NetFractionRevolvingBurdenPercentile'] = percentiles.astype(int)
     df.drop(columns=['NetFractionRevolvingBurden'], inplace=True)
     return df
