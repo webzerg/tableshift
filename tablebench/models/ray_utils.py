@@ -1,8 +1,7 @@
-import os
 from dataclasses import dataclass
 from functools import partial
-from math import floor
 import re
+import subprocess
 from typing import Dict, Any, List, Union, Tuple
 
 import fairlearn.reductions
@@ -393,6 +392,13 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
     results = tuner.fit()
     ray.shutdown()
+    try:
+        cmd = "kill -9 $(lsof +L1 /dev/shm | grep deleted | awk '{print $2}')"
+        print(f"[INFO] attempting to clean up files with {cmd}")
+        subprocess.call(cmd)
+    except Exception as e:
+        print(
+            f"[WARNING] exception running cleanup: {e}. Suggest running this command manually (due to Ray bug): {cmd}")
     return results
 
 
