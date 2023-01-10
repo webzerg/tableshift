@@ -70,14 +70,6 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "acsfoodstamps_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsfoodstamps",
-                                "acs_task": "acsfoodstamps"},
-        domain_split_varname="ST",
-        domain_split_ood_values=_to_nested(ACS_STATE_LIST),
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
     "acsfoodstamps_year": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsfoodstamps",
                                 "acs_task": "acsfoodstamps",
@@ -98,14 +90,6 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "acsincome_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsincome",
-                                "acs_task": "acsincome"},
-        domain_split_varname="ST",
-        domain_split_ood_values=_to_nested(ACS_STATE_LIST),
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
     "acsincome_year": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsincome",
                                 "acs_task": "acsincome",
@@ -118,14 +102,6 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "acspubcov_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acspubcov",
-                                "acs_task": "acspubcov"},
-        domain_split_varname="ST",
-        domain_split_ood_values=_to_nested(ACS_STATE_LIST),
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
     "acspubcov_year": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acspubcov",
                                 "acs_task": "acspubcov",
@@ -135,14 +111,6 @@ domain_shift_experiment_configs = {
                                  range(len(ACS_YEARS) - 1)],
         domain_split_id_values=[[ACS_YEARS[i]] for i in
                                 range(len(ACS_YEARS) - 1)],
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acsunemployment_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsunemployment",
-                                "acs_task": "acsunemployment"},
-        domain_split_varname="ST",
-        domain_split_ood_values=_to_nested(ACS_STATE_LIST),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
