@@ -25,7 +25,9 @@ from tablebench.datasets.compas import COMPAS_RESOURCES, preprocess_compas
 from tablebench.datasets.diabetes_readmission import \
     DIABETES_READMISSION_RESOURCES, preprocess_diabetes_readmission
 from tablebench.datasets.german import GERMAN_RESOURCES, preprocess_german
-from tablebench.datasets.mimic_extract import preprocess_mimic_extract, MIMIC_EXTRACT_STATIC_FEATURES
+from tablebench.datasets.heloc import preprocess_heloc
+from tablebench.datasets.mimic_extract import preprocess_mimic_extract, \
+    MIMIC_EXTRACT_STATIC_FEATURES
 from tablebench.datasets.mooc import preprocess_mooc
 from tablebench.datasets.nhanes import preprocess_nhanes_cholesterol, \
     get_nhanes_data_sources, preprocess_nhanes_lead, NHANES_YEARS
@@ -485,7 +487,8 @@ class PhysioNetDataSource(DataSource):
 
 class MIMICExtractDataSource(OfflineDataSource):
 
-    def __init__(self, task: str = "los_3", preprocess_fn=preprocess_mimic_extract,
+    def __init__(self, task: str = "los_3",
+                 preprocess_fn=preprocess_mimic_extract,
                  static_features=MIMIC_EXTRACT_STATIC_FEATURES.names, **kwargs):
         # Note: mean label values in overall dataset:
         # mort_hosp 0.106123
@@ -497,23 +500,29 @@ class MIMICExtractDataSource(OfflineDataSource):
             raise NotImplementedError(f"task {task} is not implemented.")
         self.task = task
         self.static_features = static_features
-        _preprocess_fn = partial(preprocess_fn, task=task, static_features=self.static_features)
+        _preprocess_fn = partial(preprocess_fn, task=task,
+                                 static_features=self.static_features)
         super().__init__(**kwargs, preprocess_fn=_preprocess_fn)
 
     def _load_data(self, gap_time_hrs=6, window_size_hrs=24) -> pd.DataFrame:
-        """Load the data and apply any shared MIMIC-extract preprocessing with default parameters."""
+        """Load the data and apply any shared MIMIC-extract preprocessing
+        with default parameters."""
 
         filename = os.path.join(self.cache_dir, 'all_hourly_data.h5')
-        assert os.path.exists(filename), f"file {filename} does not exist; see the TableShift instructions for " \
-                                         f"accessing/placing the MIMIC-extract dataset at the expected location." \
-                                         "The data file can be accessed at " \
-                                         "https://storage.googleapis.com/mimic_extract/all_hourly_data.h5 after " \
-                                         "obtaining access as described at https://github.com/MLforHealth/MIMIC_Extract"
+        assert os.path.exists(
+            filename), \
+            f"""file {filename} does not exist; see the TableShift 
+            instructions for  accessing/placing the MIMIC-extract dataset at 
+            the expected location. The data file can be accessed at 
+            https://storage.googleapis.com/mimic_extract/all_hourly_data.h5 
+            after  obtaining access as described at 
+            https://github.com/MLforHealth/MIMIC_Extract"""
         data_full_lvl2 = pd.read_hdf(filename, 'vitals_labs')
         statics = pd.read_hdf(filename, 'patients')
 
         # Extract/compute labels, retaining only the labels for the current task.
-        Ys = statics[statics.max_hours > window_size_hrs + gap_time_hrs][['mort_hosp', 'mort_icu', 'los_icu']]
+        Ys = statics[statics.max_hours > window_size_hrs + gap_time_hrs][
+            ['mort_hosp', 'mort_icu', 'los_icu']]
         Ys['los_3'] = Ys['los_icu'] > 3
         Ys['los_7'] = Ys['los_icu'] > 7
         Ys = Ys[[self.task]]
@@ -522,11 +531,37 @@ class MIMICExtractDataSource(OfflineDataSource):
         # MIMIC-default filtering: keep only those observations where labels are known; keep
         # only those observations within the window size.
         lvl2 = data_full_lvl2[
-            (data_full_lvl2.index.get_level_values('icustay_id').isin(set(Ys.index.get_level_values('icustay_id')))) &
-            (data_full_lvl2.index.get_level_values('hours_in') < window_size_hrs)]
+            (data_full_lvl2.index.get_level_values('icustay_id').isin(
+                set(Ys.index.get_level_values('icustay_id')))) &
+            (data_full_lvl2.index.get_level_values(
+                'hours_in') < window_size_hrs)]
 
         # Join data with labels and static features.
         df_out = lvl2.join(Ys, how="inner")
         df_out = df_out.join(statics[MIMIC_EXTRACT_STATIC_FEATURES.names])
         assert len(df_out) == len(lvl2), "Sanity check of labels join."
         return df_out
+
+
+class HELOCDataSource(OfflineDataSource):
+    """FICO Home Equity Line of Credit data source.
+
+    To obtain data access, visit
+    https://community.fico.com/s/explainable-machine-learning-challenge
+    """
+
+    def __init__(self, preprocess_fn=preprocess_heloc, **kwargs):
+        super().__init__(preprocess_fn=preprocess_fn, **kwargs)
+
+    def _load_data(self) -> pd.DataFrame:
+        filename = os.path.join(self.cache_dir, "heloc_dataset_v1.csv")
+        assert os.path.exists(
+            filename), \
+            f"""file {filename} does not exist; see the TableShift 
+            instructions for  accessing/placing the FICO HELOC dataset at the 
+            expected location. The data file can be accessed by filling out the
+            data access agreement at
+            https://community.fico.com/s/explainable-machine-learning-challenge
+            """
+        return pd.read_csv(filename)
+

@@ -68,7 +68,8 @@ EXPERIMENT_CONFIGS = {
         tabular_dataset_kwargs={}),
 
     "brfss_blood_pressure": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.1, id_test_size=0.1, random_state=29746,
+        splitter=DomainSplitter(val_size=0.1, id_test_size=0.1,
+                                random_state=29746,
                                 domain_split_varname="POVERTY",
                                 domain_split_ood_values=[1],
                                 domain_split_id_values=[0, ]),
@@ -79,7 +80,8 @@ EXPERIMENT_CONFIGS = {
 
     # "White nonhispanic" (in-domain) vs. all other race/ethnicity codes (OOD)
     "brfss_diabetes": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.1, id_test_size=0.1, random_state=29746,
+        splitter=DomainSplitter(val_size=0.1, id_test_size=0.1,
+                                random_state=29746,
                                 domain_split_varname="PRACE1",
                                 domain_split_ood_values=[2, 3, 4, 5, 6],
                                 domain_split_id_values=[1, ]),
@@ -144,7 +146,16 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
-
+    "heloc": ExperimentConfig(
+        splitter=DomainSplitter(val_size=0.01,
+                                id_test_size=0.1,
+                                random_state=43590,
+                                domain_split_varname='HighBurden',
+                                domain_split_ood_values=[1]),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(),
+        tabular_dataset_kwargs={"name": "heloc"},
+    ),
     "mimic_extract_los_3": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.05,
                                 id_test_size=0.2,
@@ -190,7 +201,8 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins"),
-        tabular_dataset_kwargs={"nhanes_task": "cholesterol", "years": NHANES_YEARS}),
+        tabular_dataset_kwargs={"nhanes_task": "cholesterol",
+                                "years": NHANES_YEARS}),
 
     "nhanes_lead": ExperimentConfig(
         splitter=DomainSplitter(
