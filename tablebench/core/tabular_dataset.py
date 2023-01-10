@@ -91,6 +91,13 @@ class TabularDataset(ABC):
         return [None, len(self.feature_names)]
 
     @property
+    def grouper_features(self):
+        if self.grouper is not None:
+            return self.grouper.features
+        else:
+            return []
+
+    @property
     def n_train(self) -> int:
         """Fetch the number of training observations."""
         return len(self.splits["train"])
@@ -118,8 +125,8 @@ class TabularDataset(ABC):
             assert self.domain_label_colname not in self._df[
                 self.feature_names].columns
 
-        if self.grouper.drop:
-            for c in self.grouper.features: assert c not in self._df[
+        if self.grouper and self.grouper.drop:
+            for c in self.grouper_features: assert c not in self._df[
                 self.feature_names].columns
         return
 
@@ -129,7 +136,7 @@ class TabularDataset(ABC):
         data = self.task_config.feature_list.apply_schema(
             data, passthrough_columns=["Split"])
         data = self.preprocessor_config._dropna(data)
-        data = self.grouper.transform(data)
+        data = self._apply_grouper(data)
         data = self._generate_splits(data)
         data = self._process_post_split(data)
         self._df = data
@@ -139,15 +146,22 @@ class TabularDataset(ABC):
 
         return
 
+    def _apply_grouper(self, data: pd.DataFrame):
+        """Apply the grouper, if one is used."""
+        if self.grouper is not None:
+            return self.grouper.transform(data)
+        else:
+            return data
+
     def _init_feature_names(self, data):
         """Set the (data, labels, groups, domain_labels) feature names."""
         target = self.task_config.feature_list.target
         data_features = set([x for x in data.columns
-                             if x not in self.grouper.features
+                             if x not in self.grouper_features
                              and x != target])
-        if not self.grouper.drop:
+        if self.grouper and (not self.grouper.drop):
             # Retain the group variables as features.
-            for x in self.grouper.features: data_features.add(x)
+            for x in self.grouper_features: data_features.add(x)
 
         if isinstance(self.splitter, DomainSplitter):
             domain_split_varname = self.splitter.domain_split_varname
@@ -162,7 +176,7 @@ class TabularDataset(ABC):
 
         self.feature_names = list(data_features)
         self.target = target
-        self.group_feature_names = self.grouper.features
+        self.group_feature_names = self.grouper_features
         self.domain_label_colname = domain_split_varname
 
         return
@@ -188,7 +202,7 @@ class TabularDataset(ABC):
 
         Conducts any processing required **after** splitting (e.g.
         normalization, drop features needed only for splitting)."""
-        passthrough_columns = self.grouper.features + [self.target]
+        passthrough_columns = self.grouper_features + [self.target]
 
         data = self.preprocessor_config.fit_transform(
             data,
