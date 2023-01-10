@@ -8,9 +8,8 @@ from tablebench.models.ray_utils import RayExperimentConfig, \
     fetch_postprocessed_results_df
 from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.core import TabularDataset, TabularDatasetConfig
-
-_DEFAULT_RAY_TMP_DIR_IF_EXISTS = "/projects/grail/jpgard/ray-scratch"
-_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS = "/projects/grail/jpgard/ray-results"
+from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
+    get_default_ray_local_dir
 
 
 def main(experiment: str, uid: str, model_name: str, cache_dir: str,
@@ -23,15 +22,12 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          num_workers=1,
          gpu_per_worker: float = 1.0,
          scheduler: str = None):
-    # Workaround to set temp dir automatically for local server
-    if os.path.exists(_DEFAULT_RAY_TMP_DIR_IF_EXISTS):
-        ray_tmp_dir = _DEFAULT_RAY_TMP_DIR_IF_EXISTS
-        print(f"[INFO] detected directory {_DEFAULT_RAY_TMP_DIR_IF_EXISTS}; "
-              f"setting this to ray temporary directory.")
-    if os.path.exists(_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS):
-        ray_local_dir = _DEFAULT_RAY_LOCAL_DIR_IF_EXISTS
-        print(f"[INFO] detected directory {_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS}; "
-              f"setting this to ray local directory.")
+
+    if not ray_tmp_dir:
+        ray_tmp_dir = get_default_ray_tmp_dir()
+    if not ray_local_dir:
+        ray_local_dir = get_default_ray_local_dir()
+
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
@@ -106,14 +102,22 @@ if __name__ == "__main__":
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
     parser.add_argument("--ray_local_dir", default=None, type=str,
-                        help="Set the local_dir argument to ray RunConfig. This is a local "
-                             "directory where training results are saved to.")
+                        help="""Set the local_dir argument to ray RunConfig. 
+                        This is a local  directory where training results are 
+                        saved to. If not specified, the script will first 
+                        look for any of the dirs specified in ray_configs.py, 
+                        and if none of those exist, it will use the Ray 
+                        default.""")
     parser.add_argument("--ray_tmp_dir", default=None, type=str,
-                        help="Set the root temporary path for ray. If not "
-                             "specified, uses the default location of /tmp/ray."
-                             "See https://docs.ray.io/en/latest/ray-core"
-                             "/configure.html#logging-and-debugging for more "
-                             "info.")
+                        help="""Set the the root temporary path for ray. This 
+                        is a local  directory where training results are 
+                        saved to. If not specified, the script will first 
+                        look for any of the dirs specified in ray_configs.py, 
+                        and if none of those exist, it will use the Ray 
+                        default of /tmp/ray. See 
+                        https://docs.ray.io/en/latest/ray-core 
+                        /configure.html#logging-and-debugging for more 
+                        info.""")
     parser.add_argument("--scheduler", choices=(None, "asha", "median"),
                         default=None,
                         help="Scheduler to use for hyperparameter optimization."

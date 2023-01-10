@@ -13,9 +13,8 @@ from tablebench.models.ray_utils import RayExperimentConfig, \
     accuracy_metric_name_and_mode_for_model
 from tablebench.configs.experiment_configs import ExperimentConfig
 from tablebench.core.utils import make_uid, timestamp_as_int
-
-_DEFAULT_RAY_TMP_DIR_IF_EXISTS = "/projects/grail/jpgard/ray-scratch"
-_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS = "/projects/grail/jpgard/ray-results"
+from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
+    get_default_ray_local_dir
 
 
 def get_dataset(expt_config: ExperimentConfig,
@@ -51,7 +50,7 @@ def main(experiment: str, cache_dir: str,
          num_samples: int,
          results_dir: str,
          ray_tmp_dir: str,
-         ray_local_dir:str,
+         ray_local_dir: str,
          search_alg: str,
          tune_split: str = "validation",
          max_concurrent_trials=2,
@@ -81,17 +80,10 @@ def main(experiment: str, cache_dir: str,
         num_samples = 1
         models = ("mlp", "xgb")
 
-    # Workaround to set temp dir automatically for local server
-    if os.path.exists(_DEFAULT_RAY_TMP_DIR_IF_EXISTS):
-        ray_tmp_dir = _DEFAULT_RAY_TMP_DIR_IF_EXISTS
-        print(
-            f"[INFO] detected directory {_DEFAULT_RAY_TMP_DIR_IF_EXISTS}; "
-            f"setting this to ray temporary directory.")
-
-    if os.path.exists(_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS):
-        ray_local_dir = _DEFAULT_RAY_LOCAL_DIR_IF_EXISTS
-        print(f"[INFO] detected directory {_DEFAULT_RAY_LOCAL_DIR_IF_EXISTS}; "
-              f"setting this to ray local directory.")
+    if not ray_tmp_dir:
+        ray_tmp_dir = get_default_ray_tmp_dir()
+    if not ray_local_dir:
+        ray_local_dir = get_default_ray_local_dir()
 
     print(f"DEBUG torch.cuda.is_available(): {torch.cuda.is_available()}")
 
@@ -236,14 +228,22 @@ if __name__ == "__main__":
                              "sweep. Set to -1 and set time_budget_hrs to allow for"
                              "unlimited runs within the specified time budget.")
     parser.add_argument("--ray_local_dir", default=None, type=str,
-                        help="Set the local_dir argument to ray RunConfig. This is a local "
-                             "directory where training results are saved to.")
+                        help="""Set the local_dir argument to ray RunConfig. 
+                            This is a local  directory where training results are 
+                            saved to. If not specified, the script will first 
+                            look for any of the dirs specified in ray_configs.py, 
+                            and if none of those exist, it will use the Ray 
+                            default.""")
     parser.add_argument("--ray_tmp_dir", default=None, type=str,
-                        help="Set the root temporary path for ray. If not "
-                             "specified, uses the default location of /tmp/ray."
-                             "See https://docs.ray.io/en/latest/ray-core"
-                             "/configure.html#logging-and-debugging for more "
-                             "info.")
+                        help="""Set the the root temporary path for ray. This 
+                        is a local  directory where training results are 
+                        saved to. If not specified, the script will first 
+                        look for any of the dirs specified in ray_configs.py, 
+                        and if none of those exist, it will use the Ray 
+                        default of /tmp/ray. See 
+                        https://docs.ray.io/en/latest/ray-core 
+                        /configure.html#logging-and-debugging for more 
+                        info.""")
     parser.add_argument("--results_dir", default="./domain_shift_results",
                         help="where to write results. CSVs will be written to "
                              "experiment-specific subdirectories within this "
