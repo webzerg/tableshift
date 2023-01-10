@@ -6,6 +6,7 @@ from .communities_and_crime import *
 from .compas import *
 from .diabetes_readmission import *
 from .german import *
+from .heloc import *
 from .mimic_extract import *
 from .mooc import *
 from .nhanes import *

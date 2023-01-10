@@ -58,6 +58,8 @@ _TASK_REGISTRY = {
                    DIABETES_READMISSION_FEATURES),
     "german":
         TaskConfig(GermanDataSource, GERMAN_FEATURES),
+    "heloc":
+        TaskConfig(HELOCDataSource, HELOC_FEATURES),
     "mimic_extract_los_3":
         TaskConfig(MIMICExtractDataSource, MIMIC_EXTRACT_LOS_3_FEATURES),
     "mimic_extract_mort_hosp":

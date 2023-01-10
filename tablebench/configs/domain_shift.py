@@ -32,7 +32,7 @@ class DomainShiftExperimentConfig:
     tabular_dataset_kwargs: dict
     domain_split_varname: str
     domain_split_ood_values: Sequence[Any]
-    grouper: Grouper
+    grouper: Optional[Grouper]
     preprocessor_config: PreprocessorConfig
     domain_split_id_values: Optional[Sequence[Any]] = None
 
@@ -166,17 +166,20 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=[[2, 3, 4, 5, 6]],
         domain_split_id_values=_to_nested([1, ]),
         grouper=Grouper({"SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]), ),
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=["IYEAR"]), ),
 
     "brfss_blood_pressure_income": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "brfss_blood_pressure", "task": "blood_pressure",
+        tabular_dataset_kwargs={"name": "brfss_blood_pressure",
+                                "task": "blood_pressure",
                                 "years": BRFSS_YEARS},
         domain_split_varname="POVERTY",
         # Train on non-poverty observations; test (OOD) on poverty observations
         domain_split_ood_values=_to_nested([1, ]),
         domain_split_id_values=_to_nested([0, ]),
         grouper=Grouper({"SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]), ),
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=["IYEAR"]), ),
 
     "candc_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "communities_and_crime"},
@@ -232,6 +235,19 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(min_frequency=0.01),
     ),
 
+    "heloc_burden": DomainShiftExperimentConfig(
+        # HELOC task, where target domain are various upper-quantile
+        # portions of the NetFractionRevolvingBurden feature.
+        tabular_dataset_kwargs={"name": "heloc"},
+        domain_split_varname='NetFractionRevolvingBurdenPercentile',
+        domain_split_ood_values=[
+            list(range(75, 101)), list(range(90, 101)),
+            list(range(95, 101)), list(range(99, 101))
+        ],
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(),
+    ),
+
     "mooc_course": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "mooc"},
         domain_split_varname="course_id",
@@ -248,7 +264,8 @@ domain_shift_experiment_configs = {
 
     "nhanes_cholesterol_race": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "nhanes_cholesterol",
-                                "nhanes_task": "cholesterol", "years": NHANES_YEARS},
+                                "nhanes_task": "cholesterol",
+                                "years": NHANES_YEARS},
         domain_split_varname='RIDRETH_merged',
         domain_split_ood_values=[[1, 2, 4, 6, 7]],
         domain_split_id_values=[[3]],
