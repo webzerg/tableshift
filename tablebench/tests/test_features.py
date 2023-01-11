@@ -8,6 +8,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
+from tablebench.core import features
 from tablebench.core.features import Feature, cat_dtype
 
 
@@ -54,11 +55,35 @@ class TestFeatureFillNA(unittest.TestCase):
         data_na = feature.fillna(data)
         self.assertEqual(pd.isnull(data_na).sum(), 4)
 
-    def test_fillna_int_object(self):
-        """Tests case of categorical feature with int na_values."""
+    # def test_fillna_int_object(self):
+    #     """Tests case of categorical feature with int na_values."""
+    #     letters = list("abcdefg")
+    #     raise NotImplementedError("incomplete.")
+    #     data = pd.Series(letters * 2).astype()
+    #     feature = Feature("my_feature", cat_dtype, na_values=("a", "b"))
+    #     data_na = feature.fillna(data)
+    #     self.assertEqual(pd.isnull(data_na).sum(), 4)
+
+
+class TestColumnIsOfType(unittest.TestCase):
+    def test_categorical_type_check(self):
         letters = list("abcdefg")
-        raise NotImplementedError("incomplete.")
-        data = pd.Series(letters * 2).astype()
-        feature = Feature("my_feature", cat_dtype, na_values=("a", "b"))
-        data_na = feature.fillna(data)
-        self.assertEqual(pd.isnull(data_na).sum(), 4)
+        numbers = list(range(5))
+        numeric_cat_data = pd.Series(
+            pd.Categorical(numbers * 2, categories=numbers))
+
+        string_cat_data = pd.Series(
+            pd.Categorical(letters * 2, categories=letters))
+
+        self.assertTrue(features.column_is_of_type(string_cat_data, cat_dtype))
+        self.assertTrue(features.column_is_of_type(numeric_cat_data, cat_dtype))
+        self.assertFalse(features.column_is_of_type(numeric_cat_data, int))
+        self.assertFalse(features.column_is_of_type(numeric_cat_data, float))
+
+    def test_numeric_type_check(self):
+        int_data = pd.Series(np.arange(10, dtype=int))
+        self.assertTrue(features.column_is_of_type(int_data, int))
+        self.assertFalse(features.column_is_of_type(int_data, float))
+        float_data = pd.Series(np.arange(10, dtype=float))
+        self.assertTrue(features.column_is_of_type(float_data, float))
+        self.assertFalse(features.column_is_of_type(float_data, int))

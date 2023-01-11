@@ -36,17 +36,22 @@ def safe_cast(x: pd.Series, dtype):
                 return x.astype(float)
 
 
+def _is_categorical(x: pd.Series):
+    return isinstance(x.dtype, cat_dtype) or isinstance(x, pd.Categorical)
+
+
 def column_is_of_type(x: pd.Series, dtype) -> bool:
     """Helper function to check whether column has specified dtype."""
     if hasattr(dtype, "name"):
-        # Case: dtype is of categorical dtype; has a "name"
-        # attribute identical to the pandas dtype name for
-        # categorical data.
-        return x.dtype.name == dtype.name
+        # Case: target dtype is of categorical dtype.
+        return (hasattr(x.dtype, "name")) and (x.dtype.name == dtype.name)
+    elif _is_categorical(x):
+        # Case: input data is of categorical dtype.
+        return dtype == cat_dtype
     else:
-        # Check if x is a subdtype of the more general type
-        # specified in dtype; this will not perform casting
-        # of identical subtypes (i.e. does not cast int64 to int).
+        # Check if x is a subdtype of the more general type specified in
+        # dtype; this will not perform casting of identical subtypes (i.e.
+        # does not cast int64 to int).
         return np.issubdtype(x.dtype, dtype)
 
 
