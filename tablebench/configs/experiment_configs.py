@@ -22,7 +22,8 @@ EXPERIMENT_CONFIGS = {
                                 random_state=29746),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"acs_task": "acsfoodstamps"}),
+        tabular_dataset_kwargs={"acs_task": "acsfoodstamps",
+                                "years": [2017, ]}),
 
     "acsincome": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.01, random_state=956523,
