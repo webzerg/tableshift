@@ -377,7 +377,7 @@ class ACSTaskConfig:
 
 ACS_TASK_CONFIGS = frozendict.frozendict({
     'income': ACSTaskConfig(**{
-        'features_to_use': ACS_INCOME_FEATURES,
+        'features_to_use': ACS_INCOME_FEATURES + ACS_SHARED_FEATURES,
         'group_transform': default_acs_group_transform,
         'postprocess': default_acs_postprocess,
         'preprocess': folktables.acs.adult_filter,
@@ -386,7 +386,7 @@ ACS_TASK_CONFIGS = frozendict.frozendict({
         'threshold': 56000,
     }),
     'pubcov': ACSTaskConfig(**{
-        'features_to_use': ACS_PUBCOV_FEATURES,
+        'features_to_use': ACS_PUBCOV_FEATURES + ACS_SHARED_FEATURES,
         'group_transform': default_acs_group_transform,
         'postprocess': default_acs_postprocess,
         'preprocess': folktables.acs.public_coverage_filter,
@@ -395,7 +395,7 @@ ACS_TASK_CONFIGS = frozendict.frozendict({
         'threshold': None,
     }),
     'unemployment': ACSTaskConfig(**{
-        'features_to_use': ACS_UNEMPLOYMENT_FEATURES,
+        'features_to_use': ACS_UNEMPLOYMENT_FEATURES + ACS_SHARED_FEATURES,
         'group_transform': default_acs_group_transform,
         'postprocess': default_acs_postprocess,
         'preprocess': unemployment_filter,
@@ -404,7 +404,7 @@ ACS_TASK_CONFIGS = frozendict.frozendict({
         'threshold': None,
     }),
     'foodstamps': ACSTaskConfig(**{
-        'features_to_use': ACS_FOODSTAMPS_FEATURES,
+        'features_to_use': ACS_FOODSTAMPS_FEATURES + ACS_SHARED_FEATURES,
         'group_transform': default_acs_group_transform,
         'postprocess': default_acs_postprocess,
         'preprocess': foodstamps_filter,
