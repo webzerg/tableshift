@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
+import gc
+import psutil
 import re
 import subprocess
 from typing import Dict, Any, List, Union, Tuple
@@ -27,6 +29,23 @@ from tablebench.models.config import get_default_config
 from tablebench.models.expgrad import ExponentiatedGradientTrainer
 from tablebench.models.torchutils import get_predictions_and_labels
 from tablebench.models.utils import get_estimator
+
+
+def auto_garbage_collect(pct=75.0):
+    """
+    auto_garbage_collection - Call the garbage collection if memory used is greater than 80% of total available
+    memory. This is called to deal with an issue in Ray not freeing up used memory. See
+    https://stackoverflow.com/a/60240396/5843188 pct - Default value of 80%.  Amount of memory in use that triggers
+    the garbage collection call.
+    """
+    memory_pct = psutil.virtual_memory().percent
+    if memory_pct >= pct:
+        print(f"[INFO] running garbage collection; memory used {psutil.virtual_memory().percent}% >= {pct} threshold.")
+        gc.collect()
+    else:
+        print(f"[INFO] not running garbage collection; "
+              f"memory used {psutil.virtual_memory().percent}% < {pct} threshold.")
+    return
 
 
 def accuracy_metric_name_and_mode_for_model(model_name: str,
@@ -212,6 +231,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     This defines the trainers, tuner, and other associated objects, runs the
     tuning experiment, and returns the ray ResultGrid object.
     """
+    auto_garbage_collect()
     # Explicitly initialize ray in order to set the temp dir.
     ray.init(_temp_dir=tune_config.ray_tmp_dir, ignore_reinit_error=True)
 
@@ -224,6 +244,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         single argument, named config, but it also requires the use of the
         model_name command-line flag.
         """
+        auto_garbage_collect()
         model = get_estimator(model_name, **config)
         assert isinstance(model, SklearnStylePytorchModel)
         model = train.torch.prepare_model(model)
@@ -392,6 +413,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
     results = tuner.fit()
     ray.shutdown()
+    auto_garbage_collect()
     try:
         cmd = "kill -9 $(lsof +L1 /dev/shm | grep deleted | awk '{print $2}')"
         print(f"[INFO] attempting to clean up files with {cmd}")
