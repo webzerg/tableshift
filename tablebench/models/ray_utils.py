@@ -31,7 +31,7 @@ from tablebench.models.torchutils import get_predictions_and_labels
 from tablebench.models.utils import get_estimator
 
 
-def auto_garbage_collect(pct=75.0):
+def auto_garbage_collect(pct=75.0, force=False):
     """
     auto_garbage_collection - Call the garbage collection if memory used is greater than 80% of total available
     memory. This is called to deal with an issue in Ray not freeing up used memory. See
@@ -39,8 +39,9 @@ def auto_garbage_collect(pct=75.0):
     the garbage collection call.
     """
     memory_pct = psutil.virtual_memory().percent
-    if memory_pct >= pct:
-        print(f"[INFO] running garbage collection; memory used {psutil.virtual_memory().percent}% >= {pct} threshold.")
+    if (memory_pct >= pct) or force:
+        print(f"[INFO] running garbage collection; memory used {psutil.virtual_memory().percent}% "
+              f">= {pct} threshold (force is {force}).")
         gc.collect()
     else:
         print(f"[INFO] not running garbage collection; "
@@ -413,7 +414,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
     results = tuner.fit()
     ray.shutdown()
-    auto_garbage_collect()
+    auto_garbage_collect(force=True)
     try:
         cmd = "kill -9 $(lsof +L1 /dev/shm | grep deleted | awk '{print $2}')"
         print(f"[INFO] attempting to clean up files with {cmd}")
