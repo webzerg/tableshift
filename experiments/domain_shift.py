@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Union
+from typing import Union, Optional
 
 import pandas as pd
 import torch
@@ -52,12 +52,12 @@ def main(experiment: str, cache_dir: str,
          ray_tmp_dir: str,
          ray_local_dir: str,
          search_alg: str,
-         tune_split: str = "validation",
          max_concurrent_trials=2,
          num_workers=1,
          use_cached: bool = False,
          scheduler=None,
          gpu_per_worker: float = 1.0,
+         cpu_per_worker: int = 1,
          gpu_models_only: bool = False,
          cpu_models_only: bool = False,
          time_budget_hrs: float = None):
@@ -163,6 +163,7 @@ def main(experiment: str, cache_dir: str,
                 time_budget_hrs=time_budget_hrs,
                 search_alg=search_alg,
                 scheduler=scheduler,
+                cpu_per_worker=cpu_per_worker,
                 gpu_per_worker=gpu_per_worker,
             ) if not no_tune else None
 
@@ -209,6 +210,9 @@ if __name__ == "__main__":
                         action="store_true",
                         help="whether to only use models that use CPU."
                              "Mutually exclusive of --gpu_models_only.")
+    parser.add_argument("--cpu_per_worker", default=0, type=int,
+                        help="Number of CPUs to provide per worker."
+                             "If not set, Ray defaults to 1.")
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Whether to run in debug mode. If True, various "
                              "truncations/simplifications are performed to "
@@ -227,6 +231,8 @@ if __name__ == "__main__":
                         help="Number of hparam samples to take in tuning "
                              "sweep. Set to -1 and set time_budget_hrs to allow for"
                              "unlimited runs within the specified time budget.")
+    parser.add_argument("--num_workers", type=int, default=1,
+                        help="Number of workers to use.")
     parser.add_argument("--ray_local_dir", default=None, type=str,
                         help="""Set the local_dir argument to ray RunConfig. 
                             This is a local  directory where training results are 

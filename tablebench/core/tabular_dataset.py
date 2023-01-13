@@ -110,6 +110,11 @@ class TabularDataset(ABC):
         else:
             return self._df[self.domain_label_colname].nunique()
 
+    def get_domains(self, split) -> List[str]:
+        """Fetch a list of the domains."""
+        split_df = self._get_split_df(split)
+        return split_df[self.domain_label_colname].unique()
+
     @property
     def eval_split_names(self) -> Tuple:
         """Fetch the names of the eval splits."""
