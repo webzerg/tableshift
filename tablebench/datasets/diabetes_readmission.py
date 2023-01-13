@@ -45,8 +45,8 @@ DIABETES_READMISSION_FEATURES = FeatureList(features=[
     neonatal aftercare 11:Expired 12:Still patient or expected to return for outpatient services 13:Hospice / home 
     14:Hospice / medical facility 15:Discharged/transferred within this institution to Medicare approved swing bed 
     16:Discharged/transferred/referred another institution for outpatient services 17:Discharged/transferred/referred 
-    to this institution for outpatient services 18:NULL 19:"Expired at home. Medicaid only: hospice." 20:"Expired in 
-    a medical facility. Medicaid only: hospice." 21:"Expired: place unknown. Medicaid only: hospice." 22:
+    to this institution for outpatient services 18:NULL 19:Expired at home. Medicaid only, hospice. 20:Expired in 
+    a medical facility. Medicaid only, hospice. 21:Expired: place unknown. Medicaid only, hospice. 22:
     Discharged/transferred to another rehab fac including rehab units of a hospital . 23:Discharged/transferred to a 
     long term care hospital. 24:Discharged/transferred to a nursing facility certified under Medicaid but not 
     certified under Medicare. 25:Not Mapped 26:Unknown/Invalid 30:Discharged/transferred to another Type of Health 
