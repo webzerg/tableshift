@@ -23,39 +23,46 @@ from ray.tune.search.hyperopt import HyperOptSearch
 
 from tablebench.configs.hparams import search_space
 from tablebench.core import TabularDataset, CachedDataset
-from tablebench.models.compat import SklearnStylePytorchModel, \
-    is_pytorch_model_name, is_domain_generalization_model_name
+from tablebench.models.compat import is_pytorch_model_name, \
+    is_domain_generalization_model_name
 from tablebench.models.config import get_default_config
 from tablebench.models.expgrad import ExponentiatedGradientTrainer
-from tablebench.models.torchutils import get_predictions_and_labels
+from tablebench.models.torchutils import get_predictions_and_labels, \
+    get_module_attr
 from tablebench.models.utils import get_estimator
 
 
 def auto_garbage_collect(pct=75.0, force=False):
     """
-    auto_garbage_collection - Call the garbage collection if memory used is greater than 80% of total available
-    memory. This is called to deal with an issue in Ray not freeing up used memory. See
-    https://stackoverflow.com/a/60240396/5843188 pct - Default value of 80%.  Amount of memory in use that triggers
-    the garbage collection call.
+    Call the garbage collection if memory used is greater than 80% of total
+    available memory. This is called to deal with an issue in Ray not freeing
+    up used memory. See https://stackoverflow.com/a/60240396/5843188
+
+    pct - Default value of 80%.  Amount of memory in use that triggers the
+    garbage collection call.
     """
     memory_pct = psutil.virtual_memory().percent
     if (memory_pct >= pct) or force:
-        print(f"[INFO] running garbage collection; memory used {psutil.virtual_memory().percent}% "
-              f">= {pct} threshold (force is {force}).")
+        print(
+            f"[INFO] running garbage collection; memory used "
+            f"{psutil.virtual_memory().percent}% "
+            f"; threshold is {pct}%; force is {force}.")
         gc.collect()
     else:
         print(f"[INFO] not running garbage collection; "
-              f"memory used {psutil.virtual_memory().percent}% < {pct} threshold.")
+              f"memory used {psutil.virtual_memory().percent}% < {pct} "
+              f"threshold.")
     return
 
 
 def accuracy_metric_name_and_mode_for_model(model_name: str,
                                             split="validation") -> Tuple[
     str, str]:
-    """Helper function to fetch the name for an accuracy-related metric for each model.
+    """Fetch the name for an accuracy-related metric for each model.
 
-    This is necessary because some Ray Trainer types do not allow for custom naming of the metrics, and
-    so we may need to minimize error <-> maximize accuracy depending on the trainer type.
+    This is necessary because some Ray Trainer types do not allow for custom
+    naming of the metrics, and so we may need to minimize error <-> maximize
+    accuracy depending on the trainer type.
     """
     if model_name == "xgb":
         metric_name = f"{split}-error"
@@ -94,6 +101,7 @@ class RayExperimentConfig:
     scheduler: str = None
     random_state: int = _DEFAULT_RANDOM_STATE  # random state for determinism in the search algorithm
     gpu_per_worker: float = 1.0  # set to fraction to allow multiple workers per GPU
+    cpu_per_worker: int = 1
 
     def get_search_alg(self):
         print(f"[INFO] instantiating search alg of type {self.search_alg}")
@@ -247,7 +255,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         """
         auto_garbage_collect()
         model = get_estimator(model_name, **config)
-        assert isinstance(model, SklearnStylePytorchModel)
         model = train.torch.prepare_model(model)
 
         criterion = config["criterion"]
@@ -272,15 +279,13 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         for epoch in range(n_epochs):
             print(f"[DEBUG] starting epoch {epoch} with model {model_name}")
 
-            assert isinstance(model, SklearnStylePytorchModel)
-            if model.domain_generalization:
+            if get_module_attr(model, "domain_generalization"):
                 train_loaders = {s: _prepare_dataset_shard(f"train_{s}", True)
                                  for s in dset_train_domains}
                 uda_loader = None
                 max_examples_per_epoch = dset.n_train
 
-
-            elif model.domain_adaptation:
+            elif get_module_attr(model, "domain_adaptation"):
                 raise NotImplementedError
             else:
                 train_loaders = {"train": _prepare_dataset_shard("train")}
@@ -291,10 +296,16 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                             ('validation', 'id_test', 'ood_test',
                              'ood_validation')}
 
-            train_loss = model.train_epoch(
-                train_loaders, criterion,
-                device=device, uda_loader=uda_loader,
-                max_examples_per_epoch=max_examples_per_epoch)
+            if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+                train_loss = model.module.train_epoch(
+                    train_loaders, criterion,
+                    device=device, uda_loader=uda_loader,
+                    max_examples_per_epoch=max_examples_per_epoch)
+            else:
+                train_loss = model.train_epoch(
+                    train_loaders, criterion,
+                    device=device, uda_loader=uda_loader,
+                    max_examples_per_epoch=max_examples_per_epoch)
 
             # Log the metrics for this epoch
             metrics = ray_evaluate(model, eval_loaders)
@@ -321,6 +332,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 num_workers=tune_config.num_workers,
                 resources_per_worker={
                     "GPU": tune_config.gpu_per_worker} if use_gpu else None,
+                _max_cpu_fraction_per_node=0.8,
                 use_gpu=use_gpu))
         # Hyperparameter search space; note that the scaling_config can also
         # be tuned but is fixed here.
@@ -336,7 +348,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                     dset.splits}
         scaling_config = ScalingConfig(
             num_workers=tune_config.num_workers,
-            use_gpu=False)
+            use_gpu=False,
+            resources_per_worker={"CPU": tune_config.cpu_per_worker},
+            _max_cpu_fraction_per_node=0.8)
         params = {
             # Note: tree_method must be gpu_hist if using GPU.
             "tree_method": "hist",
@@ -353,7 +367,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     elif model_name == "lightgbm":
         scaling_config = ScalingConfig(
             num_workers=tune_config.num_workers,
-            use_gpu=False)
+            use_gpu=False,
+            resources_per_worker={"CPU": tune_config.cpu_per_worker},
+            _max_cpu_fraction_per_node=0.8)
         datasets = {split: make_ray_dataset(dset, split) for split in
                     dset.splits}
         params = {"objective": "binary",

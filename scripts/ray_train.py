@@ -1,5 +1,6 @@
 import argparse
 import os
+from typing import Optional
 
 from tablebench.core import CachedDataset
 from tablebench.models.ray_utils import RayExperimentConfig, \
@@ -21,8 +22,8 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
          max_concurrent_trials=2,
          num_workers=1,
          gpu_per_worker: float = 1.0,
+         cpu_per_worker: int = 1,
          scheduler: str = None):
-
     if not ray_tmp_dir:
         ray_tmp_dir = get_default_ray_tmp_dir()
     if not ray_local_dir:
@@ -61,6 +62,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
         search_alg=search_alg,
         scheduler=scheduler,
         gpu_per_worker=gpu_per_worker,
+        cpu_per_worker=cpu_per_worker,
         mode=mode) if not no_tune else None
 
     results = run_ray_tune_experiment(dset=dset, model_name=model_name,
@@ -82,6 +84,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache_dir", default="tmp",
                         help="Directory to cache raw data files to.")
+    parser.add_argument("--cpu_per_worker", default=0, type=int,
+                        help="Number of CPUs to provide per worker."
+                             "If not set, Ray defaults to 1.")
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Whether to run in debug mode. If True, various "
                              "truncations/simplifications are performed to "
@@ -119,10 +124,10 @@ if __name__ == "__main__":
                         /configure.html#logging-and-debugging for more 
                         info.""")
     parser.add_argument("--scheduler", choices=(None, "asha", "median"),
-                        default=None,
+                        default="asha",
                         help="Scheduler to use for hyperparameter optimization."
-                             "See https://docs.ray.io/en/latest/tune/api_docs"
-                             "/schedulers.html .")
+                             "See https://docs.ray.io/en/latest/tune/api_docs/schedulers.html .")
+
     parser.add_argument("--search_alg", default="hyperopt",
                         choices=["hyperopt", "random"],
                         help="Ray search alg to use for hyperparameter tuning.")
