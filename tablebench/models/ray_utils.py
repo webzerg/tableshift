@@ -348,6 +348,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                     dset.splits}
         scaling_config = ScalingConfig(
             num_workers=tune_config.num_workers,
+            # Set trainer_resources as described in
+            # https://docs.ray.io/en/latest/train/gbdt.html#how-to-scale-out-training
+            trainer_resources={"CPU": 0},
             use_gpu=False,
             resources_per_worker={"CPU": tune_config.cpu_per_worker},
             _max_cpu_fraction_per_node=0.8)
@@ -367,6 +370,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     elif model_name == "lightgbm":
         scaling_config = ScalingConfig(
             num_workers=tune_config.num_workers,
+            # Set trainer_resources as described in
+            # https://docs.ray.io/en/latest/train/gbdt.html#how-to-scale-out-training
+            trainer_resources={"CPU": 0},
             use_gpu=False,
             resources_per_worker={"CPU": tune_config.cpu_per_worker},
             _max_cpu_fraction_per_node=0.8)
