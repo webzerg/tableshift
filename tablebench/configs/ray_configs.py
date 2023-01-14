@@ -1,9 +1,11 @@
 import os
 
 _DEFAULT_RAY_TMP_DIRS = ("/projects/grail/jpgard/ray-scratch",
-                         "/data1/home/jpgard/ray-scratch")
+                         "/data1/home/jpgard/ray-scratch",
+                         "/gscratch/scrubbed/jpgard/ray-scratch")
 _DEFAULT_RAY_LOCAL_DIRS = ("/projects/grail/jpgard/ray-results",
-                           "/data1/home/jpgard/ray-results")
+                           "/data1/home/jpgard/ray-results",
+                           "/gscratch/scrubbed/jpgard/ray-results")
 
 
 def get_default_ray_tmp_dir():
