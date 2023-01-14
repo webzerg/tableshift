@@ -90,28 +90,34 @@ def main(experiment: str, uid: str, cache_dir: str,
             cpu_per_worker=cpu_per_worker,
             mode=mode) if not no_tune else None
 
-        results = run_ray_tune_experiment(dset=dset, model_name=model_name,
-                                          tune_config=tune_config, debug=debug)
+        try:
+            results = run_ray_tune_experiment(dset=dset, model_name=model_name,
+                                              tune_config=tune_config,
+                                              debug=debug)
 
-        results_df = results.get_dataframe()
-        print(results_df)
-        if not debug:
-            fp = f"tune_results_{uid}_{model_name}_{search_alg}.csv"
-            print(f"[INFO] writing completed results to {fp}")
-            results_df.to_csv(fp, index=False)
+            results_df = results.get_dataframe()
+            print(results_df)
+            if not debug:
+                fp = f"tune_results_{uid}_{model_name}_{search_alg}.csv"
+                print(f"[INFO] writing completed results to {fp}")
+                results_df.to_csv(fp, index=False)
 
-        # call fetch_postprocessed() just to match the full training loop
-        df = fetch_postprocessed_results_df(results)
-        df["estimator"] = model_name
-        df["domain_split_varname"] = dset.domain_split_varname
-        df["domain_split_ood_values"] = str(dset.get_domains("ood_test"))
-        df["domain_split_id_values"] = str(dset.get_domains("id_test"))
-        df.to_csv(os.path.join(expt_results_dir,
-                               f"ray_train_results_{uid}_{model_name}.csv"),
-                  index=False)
-        iterates.append(df)
+            # call fetch_postprocessed() just to match the full training loop
+            df = fetch_postprocessed_results_df(results)
+            df["estimator"] = model_name
+            df["domain_split_varname"] = dset.domain_split_varname
+            df["domain_split_ood_values"] = str(dset.get_domains("ood_test"))
+            df["domain_split_id_values"] = str(dset.get_domains("id_test"))
+            df.to_csv(os.path.join(expt_results_dir,
+                                   f"ray_train_results_{uid}_{model_name}.csv"),
+                      index=False)
+            iterates.append(df)
 
-        print(df)
+            print(df)
+        except Exception as e:
+            print(f"[WARNING] exception training model {model_name}: {e}, "
+                  f"skipping")
+            continue
     fp = os.path.join(expt_results_dir,
                       f"tune_results_{experiment}_{start_time}_full.csv")
     print(f"[INFO] writing results to {fp}")
