@@ -2,6 +2,8 @@ import argparse
 import os
 from typing import Optional
 
+import pandas as pd
+
 from tablebench.core import CachedDataset
 from tablebench.models.ray_utils import RayExperimentConfig, \
     run_ray_tune_experiment, \
@@ -69,6 +71,7 @@ def main(experiment: str, uid: str, cache_dir: str,
                               **tabular_dataset_kwargs)
 
     expt_results_dir = os.path.join(results_dir, experiment, str(start_time))
+    if not os.path.exists(expt_results_dir): os.makedirs(expt_results_dir)
 
     iterates = []
     for model_name in models:
