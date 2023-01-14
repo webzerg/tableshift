@@ -35,6 +35,7 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
 
     if use_cached:
         print(f"[DEBUG] loading cached data from {cache_dir}")
+        assert uid is not None, "uid is required to use a cached dataset."
         dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
     else:
         expt_config = EXPERIMENT_CONFIGS[experiment]
@@ -133,7 +134,7 @@ if __name__ == "__main__":
                         help="Ray search alg to use for hyperparameter tuning.")
     parser.add_argument(
         "--uid",
-        default="diabetes_readmissiondomain_split_varname_admission_type_iddomain_split_ood_value_1",
+        default=None,
         help="UID for experiment to run. Overridden when debug=True.")
     parser.add_argument("--use_cached", default=False, action="store_true",
                         help="whether to use cached data.")
