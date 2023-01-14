@@ -145,7 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", default="mlp",
                         help="Model name to train. Not used if "
                              "--cpu_models_only or --gpu_models_only is used.")
-    parser.add_argument("--num_samples", type=int, default=1,
+    parser.add_argument("--num_samples", type=int, default=100,
                         help="Number of hparam samples to take in tuning "
                              "sweep.")
     parser.add_argument("--num_workers", type=int, default=1,
