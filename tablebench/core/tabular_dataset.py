@@ -443,11 +443,14 @@ class CachedDataset:
         with open(os.path.join(self.base_dir, "schema.pickle"), "rb") as f:
             self.schema = pickle.load(f)
 
-    def get_domains(self, split) -> List[str]:
+    def get_domains(self, split) -> Union[List[str], None]:
         """Fetch a list of the cached domains."""
         dir = os.path.join(self.base_dir, split)
-        domains = os.listdir(dir)
-        return sorted(domains)
+        if not os.path.exists(dir):
+            return None
+        else:
+            domains = os.listdir(dir)
+            return sorted(domains)
 
     def get_ray(self, split, domain=None, num_partitions=64):
         if domain:  # Match only the specified domain
