@@ -1,17 +1,13 @@
 from dataclasses import dataclass
 from typing import Sequence, Optional, Any, Iterator
+
+from tablebench.configs.experiment_defaults import DEFAULT_ID_TEST_SIZE, \
+    DEFAULT_OOD_VAL_SIZE, DEFAULT_ID_VAL_SIZE, DEFAULT_RANDOM_STATE
 from tablebench.core import Grouper, PreprocessorConfig, DomainSplitter
-from tablebench.datasets import ACS_REGIONS, ACS_STATE_LIST, ACS_YEARS, \
-    BRFSS_STATE_LIST, \
+from tablebench.datasets import ACS_REGIONS, ACS_YEARS, \
     BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS, \
     ANES_REGIONS, MIMIC_EXTRACT_SHARED_FEATURES, MIMIC_EXTRACT_STATIC_FEATURES
 from tablebench.configs.experiment_configs import ExperimentConfig
-
-DEFAULT_ID_TEST_SIZE = 0.1
-DEFAULT_OOD_VAL_SIZE = 0.1
-DEFAULT_ID_VAL_SIZE = 0.1
-
-DEFAULT_RANDOM_STATE = 264738
 
 
 def _to_nested(ary: Sequence[Any]) -> Sequence[Sequence[Any]]:

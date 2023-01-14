@@ -6,7 +6,7 @@ from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS, NHANES_YEARS
 from tablebench.datasets.mimic_extract_feature_lists import \
     MIMIC_EXTRACT_SHARED_FEATURES
 from tablebench.datasets.mimic_extract import MIMIC_EXTRACT_STATIC_FEATURES
-from tablebench.configs.domain_shift import DEFAULT_ID_TEST_SIZE, \
+from tablebench.configs.experiment_defaults import DEFAULT_ID_TEST_SIZE, \
     DEFAULT_OOD_VAL_SIZE, DEFAULT_ID_VAL_SIZE, DEFAULT_RANDOM_STATE
 
 
