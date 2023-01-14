@@ -103,6 +103,11 @@ class TabularDataset(ABC):
         return len(self.splits["train"])
 
     @property
+    def is_domain_split(self) -> bool:
+        """Return True if this dataset uses a DomainSplitter, else False."""
+        return isinstance(self.splitter, DomainSplitter)
+
+    @property
     def n_domains(self) -> int:
         """Number of domains, across all sensitive attributes."""
         if self.domain_label_colname is None:
@@ -110,10 +115,13 @@ class TabularDataset(ABC):
         else:
             return self._df[self.domain_label_colname].nunique()
 
-    def get_domains(self, split) -> List[str]:
+    def get_domains(self, split) -> Union[List[str], None]:
         """Fetch a list of the domains."""
-        split_df = self._get_split_df(split)
-        return split_df[self.domain_label_colname].unique()
+        if self.is_domain_split and self._is_valid_split(split):
+            split_df = self._get_split_df(split)
+            return split_df[self.domain_label_colname].unique()
+        else:
+            return None
 
     @property
     def eval_split_names(self) -> Tuple:
@@ -220,9 +228,12 @@ class TabularDataset(ABC):
                 default_targets_dtype)
         return data
 
+    def _is_valid_split(self, split) -> bool:
+        return split in self.splits.keys()
+
     def _check_split(self, split):
         """Check that a split name is valid."""
-        assert split in self.splits.keys(), \
+        assert self._is_valid_split(split), \
             f"split {split} not in {list(self.splits.keys())}"
 
     def _get_split_idxs(self, split):
