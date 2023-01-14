@@ -434,6 +434,11 @@ class CachedDataset:
         return os.path.join(self.cache_dir, self.uid)
 
     @property
+    def is_domain_split(self) -> bool:
+        """Return True if this dataset uses a DomainSplitter, else False."""
+        return self.domain_label_colname is not None
+
+    @property
     def domain_split_varname(self):
         return self.domain_label_colname
 
