@@ -137,10 +137,13 @@ class RayExperimentConfig:
 
 
 def make_ray_dataset(dset: Union[TabularDataset, CachedDataset], split,
-                     keep_domain_labels=False):
+                     keep_domain_labels=False, domain=None):
     if isinstance(dset, CachedDataset):
-        return dset.get_ray(split)
+        return dset.get_ray(split, domain=domain)
     else:
+
+        if domain: raise NotImplementedError  # Not currently implemented.
+
         X, y, G, d = dset.get_pandas(split)
         if (d is None) or (not keep_domain_labels):
             df = pd.concat([X, y, G], axis=1)
@@ -195,6 +198,7 @@ def _row_to_dict(row, X_names: List[str], y_name: str, G_names: List[str],
 
 
 def prepare_dataset(split, dset: Union[TabularDataset, CachedDataset],
+                    prepare_pytorch: bool,
                     domain: str = None) -> ray.data.Dataset:
     """Prepare a Ray dataset for a specific split (and optional domain)."""
     keep_domain_labels = dset.domain_label_colname is not None
@@ -203,6 +207,11 @@ def prepare_dataset(split, dset: Union[TabularDataset, CachedDataset],
         ds = make_ray_dataset(dset, split, keep_domain_labels)
     elif isinstance(dset, CachedDataset):
         ds = dset.get_ray(split, domain=domain)
+
+    if not prepare_pytorch:
+        # Do not need to map batches etc. for non-pytorch datasets.
+        return ds
+
     y_name = dset.target
     d_name = dset.domain_label_colname
     G_names = dset.group_feature_names
@@ -214,19 +223,31 @@ def prepare_dataset(split, dset: Union[TabularDataset, CachedDataset],
     return ds.map_batches(_map_fn, batch_format="pandas")
 
 
+def get_per_domain_ray_dsets(dset, split, prepare_pytorch: bool
+                             ) -> Dict[str, ray.data.Dataset]:
+    dsets = {f"{split}_{domain}": prepare_dataset(
+        split, dset, domain=domain, prepare_pytorch=prepare_pytorch)
+        for domain in dset.get_domains(split)}
+    return dsets
+
+
 def prepare_ray_datasets(dset: Union[TabularDataset, CachedDataset],
-                         split_by_domain: bool
+                         split_train_loaders_by_domain: bool,
+                         prepare_pytorch: bool,
                          ) -> Dict[str, ray.data.Dataset]:
     """Fetch a dict of {split:ray.data.Dataset} for each split."""
     ray_dsets = {}
 
     for split in dset.splits:
-        if split == "train" and split_by_domain:
-            # Case: training dataset needs to be split by domain, handled below.
-            for domain in dset.get_domains(split):
-                ray_dsets[f"{split}_{domain}"] = prepare_dataset(split, dset,
-                                                                 domain)
-        ray_dsets[split] = prepare_dataset(split, dset)
+        if (split == "train" and split_train_loaders_by_domain) \
+                or (split in ["id_test", "ood_test"]):
+            # Case: prepare per-split dataloaders when training dataset needs
+            # to be split by domain (e.g. for domain generalization tasks),
+            # and also for the test split of any domain-split task.
+            ray_dsets.update(get_per_domain_ray_dsets(dset, split,
+                                                      prepare_pytorch))
+
+        ray_dsets[split] = prepare_dataset(split, dset, prepare_pytorch)
 
     return ray_dsets
 
@@ -241,10 +262,11 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     tuning experiment, and returns the ray ResultGrid object.
     """
     auto_garbage_collect()
+    dset_domains = {s: dset.get_domains(s) for s in
+                    ("train", "test", "id_test", "ood_test")}
+
     # Explicitly initialize ray in order to set the temp dir.
     ray.init(_temp_dir=tune_config.ray_tmp_dir, ignore_reinit_error=True)
-
-    dset_train_domains = dset.get_domains("train")
 
     def train_loop_per_worker(config: Dict):
         """Function to be run by each TorchTrainer.
@@ -281,7 +303,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
             if get_module_attr(model, "domain_generalization"):
                 train_loaders = {s: _prepare_dataset_shard(f"train_{s}", True)
-                                 for s in dset_train_domains}
+                                 for s in dset_domains["train"]}
                 uda_loader = None
                 max_examples_per_epoch = dset.n_train
 
@@ -292,9 +314,24 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 uda_loader = None
                 max_examples_per_epoch = None
 
-            eval_loaders = {s: _prepare_dataset_shard(s) for s in
-                            ('validation', 'id_test', 'ood_test',
-                             'ood_validation')}
+            if dset.is_domain_split:
+                # Overall eval loaders (compute e.g. overall id/ood test accuracy)
+                eval_loaders = {s: _prepare_dataset_shard(s) for s in
+                                ('validation', 'id_test', 'ood_test',
+                                 'ood_validation')}
+
+                # Per-domain test loaders (for computational efficiency we do not
+                # compute per-domain validation metrics).
+                id_test_loaders = {s: _prepare_dataset_shard(f"id_test_{s}")
+                                   for s in dset_domains['id_test']}
+                oo_test_loaders = {s: _prepare_dataset_shard(f"ood_test_{s}")
+                                   for s in dset_domains['ood_test']}
+
+                eval_loaders.update(id_test_loaders)
+                eval_loaders.update(oo_test_loaders)
+            else:
+                eval_loaders = {s: _prepare_dataset_shard(s) for s in
+                                ('validation', 'test')}
 
             if isinstance(model, torch.nn.parallel.DistributedDataParallel):
                 train_loss = model.module.train_epoch(
@@ -321,7 +358,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     if is_pytorch_model_name(model_name):
 
         split_by_domain = is_domain_generalization_model_name(model_name)
-        datasets = prepare_ray_datasets(dset, split_by_domain)
+        datasets = prepare_ray_datasets(dset, split_by_domain,
+                                        prepare_pytorch=True)
 
         use_gpu = torch.cuda.is_available()
         trainer = TorchTrainer(
@@ -344,8 +382,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         }
 
     elif model_name == "xgb":
-        datasets = {split: make_ray_dataset(dset, split) for split in
-                    dset.splits}
+        datasets = prepare_ray_datasets(dset,
+                                        split_train_loaders_by_domain=False,
+                                        prepare_pytorch=False)
         scaling_config = ScalingConfig(
             num_workers=tune_config.num_workers,
             # Set trainer_resources as described in
@@ -376,8 +415,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             use_gpu=False,
             resources_per_worker={"CPU": tune_config.cpu_per_worker},
             _max_cpu_fraction_per_node=0.8)
-        datasets = {split: make_ray_dataset(dset, split) for split in
-                    dset.splits}
+        datasets = prepare_ray_datasets(dset,
+                                        split_train_loaders_by_domain=False,
+                                        prepare_pytorch=False)
         params = {"objective": "binary",
                   # Note that for lightgbm, average_precision <=> sklearn's
                   # average_precision_score.
