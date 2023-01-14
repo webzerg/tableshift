@@ -6,6 +6,8 @@ from tablebench.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS, NHANES_YEARS
 from tablebench.datasets.mimic_extract_feature_lists import \
     MIMIC_EXTRACT_SHARED_FEATURES
 from tablebench.datasets.mimic_extract import MIMIC_EXTRACT_STATIC_FEATURES
+from tablebench.configs.domain_shift import DEFAULT_ID_TEST_SIZE, \
+    DEFAULT_OOD_VAL_SIZE, DEFAULT_ID_VAL_SIZE, DEFAULT_RANDOM_STATE
 
 
 @dataclass
@@ -18,12 +20,15 @@ class ExperimentConfig:
 
 EXPERIMENT_CONFIGS = {
     "acsfoodstamps": ExperimentConfig(
-        splitter=RandomSplitter(test_size=0.5, val_size=0.25,
-                                random_state=29746),
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname="DIVISION",
+                                domain_split_ood_values=['06']),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"acs_task": "acsfoodstamps",
-                                "years": [2017, ]}),
+        tabular_dataset_kwargs={"acs_task": "acsfoodstamps"}),
 
     "acsincome": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.01, random_state=956523,
@@ -135,7 +140,7 @@ EXPERIMENT_CONFIGS = {
                                 random_state=58439,
                                 id_test_size=0.2,
                                 domain_split_varname='admission_source_id',
-                                domain_split_ood_values=[1],),
+                                domain_split_ood_values=[1], ),
         # male vs. all others; white non-hispanic vs. others
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),

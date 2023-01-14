@@ -7,6 +7,10 @@ from tablebench.datasets import ACS_REGIONS, ACS_STATE_LIST, ACS_YEARS, \
     ANES_REGIONS, MIMIC_EXTRACT_SHARED_FEATURES, MIMIC_EXTRACT_STATIC_FEATURES
 from tablebench.configs.experiment_configs import ExperimentConfig
 
+DEFAULT_ID_TEST_SIZE = 0.1
+DEFAULT_OOD_VAL_SIZE = 0.1
+DEFAULT_ID_VAL_SIZE = 0.1
+
 DEFAULT_RANDOM_STATE = 264738
 
 
@@ -37,7 +41,9 @@ class DomainShiftExperimentConfig:
     domain_split_id_values: Optional[Sequence[Any]] = None
 
     def as_experiment_config_iterator(
-            self, val_size=0.1, ood_val_size=0.1, id_test_size=0.1,
+            self, val_size=DEFAULT_ID_VAL_SIZE,
+            ood_val_size=DEFAULT_OOD_VAL_SIZE,
+            id_test_size=DEFAULT_ID_TEST_SIZE,
             random_state=DEFAULT_RANDOM_STATE
     ) -> Iterator[ExperimentConfig]:
         for i, tgt in enumerate(self.domain_split_ood_values):
