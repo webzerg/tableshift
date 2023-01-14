@@ -98,6 +98,14 @@ class TabularDataset(ABC):
             return []
 
     @property
+    def domain_split_varname(self):
+        if not self.is_domain_split:
+            return None
+        else:
+            assert isinstance(self.splitter, DomainSplitter)
+            return self.splitter.domain_split_varname
+
+    @property
     def n_train(self) -> int:
         """Fetch the number of training observations."""
         return len(self.splits["train"])
@@ -424,6 +432,10 @@ class CachedDataset:
     @property
     def base_dir(self):
         return os.path.join(self.cache_dir, self.uid)
+
+    @property
+    def domain_split_varname(self):
+        return self.domain_label_colname
 
     def is_cached(self) -> bool:
         base_dir = os.path.join(self.cache_dir, self.uid)
