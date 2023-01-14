@@ -9,21 +9,38 @@ from tablebench.models.ray_utils import RayExperimentConfig, \
     fetch_postprocessed_results_df
 from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.core import TabularDataset, TabularDatasetConfig
+from tablebench.core.utils import timestamp_as_int
 from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
     get_default_ray_local_dir
+from tablebench.models.compat import PYTORCH_MODEL_NAMES
 
 
-def main(experiment: str, uid: str, model_name: str, cache_dir: str,
+def main(experiment: str, uid: str, cache_dir: str,
          ray_tmp_dir: str,
          ray_local_dir: str,
          debug: bool,
          no_tune: bool, num_samples: int, search_alg: str,
          use_cached: bool,
+         results_dir: str,
+         model: Optional[str] = None,
          max_concurrent_trials=2,
          num_workers=1,
          gpu_per_worker: float = 1.0,
          cpu_per_worker: int = 1,
-         scheduler: str = None):
+         scheduler: str = None,
+         gpu_models_only: bool = False,
+         cpu_models_only: bool = False,
+         ):
+    start_time = timestamp_as_int()
+    assert not (gpu_models_only and cpu_models_only)
+    if gpu_models_only:
+        models = PYTORCH_MODEL_NAMES
+    elif cpu_models_only:
+        models = ["xgb", "lightgbm"]
+    else:
+        assert model is not None
+        models = [model]
+
     if not ray_tmp_dir:
         ray_tmp_dir = get_default_ray_tmp_dir()
     if not ray_local_dir:
@@ -51,33 +68,52 @@ def main(experiment: str, uid: str, model_name: str, cache_dir: str,
                               preprocessor_config=expt_config.preprocessor_config,
                               **tabular_dataset_kwargs)
 
-    metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
+    expt_results_dir = os.path.join(results_dir, experiment, str(start_time))
 
-    tune_config = RayExperimentConfig(
-        max_concurrent_trials=max_concurrent_trials,
-        ray_tmp_dir=ray_tmp_dir,
-        ray_local_dir=ray_local_dir,
-        num_workers=num_workers,
-        num_samples=num_samples,
-        tune_metric_name=metric_name,
-        search_alg=search_alg,
-        scheduler=scheduler,
-        gpu_per_worker=gpu_per_worker,
-        cpu_per_worker=cpu_per_worker,
-        mode=mode) if not no_tune else None
+    iterates = []
+    for model_name in models:
+        metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
 
-    results = run_ray_tune_experiment(dset=dset, model_name=model_name,
-                                      tune_config=tune_config, debug=debug)
+        tune_config = RayExperimentConfig(
+            max_concurrent_trials=max_concurrent_trials,
+            ray_tmp_dir=ray_tmp_dir,
+            ray_local_dir=ray_local_dir,
+            num_workers=num_workers,
+            num_samples=num_samples,
+            tune_metric_name=metric_name,
+            search_alg=search_alg,
+            scheduler=scheduler,
+            gpu_per_worker=gpu_per_worker,
+            cpu_per_worker=cpu_per_worker,
+            mode=mode) if not no_tune else None
 
-    results_df = results.get_dataframe()
-    print(results_df)
-    if not debug:
-        fp = f"tune_results_{uid}_{model_name}_{search_alg}.csv"
-        print(f"[INFO] writing completed results to {fp}")
-        results_df.to_csv(fp, index=False)
+        results = run_ray_tune_experiment(dset=dset, model_name=model_name,
+                                          tune_config=tune_config, debug=debug)
 
-    # call fetch_postprocessed() just to match the full training loop
-    _ = fetch_postprocessed_results_df(results)
+        results_df = results.get_dataframe()
+        print(results_df)
+        if not debug:
+            fp = f"tune_results_{uid}_{model_name}_{search_alg}.csv"
+            print(f"[INFO] writing completed results to {fp}")
+            results_df.to_csv(fp, index=False)
+
+        # call fetch_postprocessed() just to match the full training loop
+        df = fetch_postprocessed_results_df(results)
+        df["estimator"] = model_name
+        df["domain_split_varname"] = dset.domain_split_varname
+        df["domain_split_ood_values"] = str(dset.get_domains("ood_test"))
+        df["domain_split_id_values"] = str(dset.get_domains("id_test"))
+        df.to_csv(os.path.join(expt_results_dir,
+                               f"ray_train_results_{uid}_{model_name}.csv"),
+                  index=False)
+        iterates.append(df)
+
+        print(df)
+    fp = os.path.join(expt_results_dir,
+                      f"tune_results_{experiment}_{start_time}_full.csv")
+    print(f"[INFO] writing results to {fp}")
+    pd.concat(iterates).to_csv(fp, index=False)
+    print(f"[INFO] completed domain shift experiment {experiment}!")
     return
 
 
@@ -85,6 +121,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache_dir", default="tmp",
                         help="Directory to cache raw data files to.")
+    parser.add_argument("--cpu_models_only", default=False,
+                        action="store_true",
+                        help="whether to only use models that use CPU."
+                             "Mutually exclusive of --gpu_models_only.")
     parser.add_argument("--cpu_per_worker", default=0, type=int,
                         help="Number of CPUs to provide per worker."
                              "If not set, Ray defaults to 1.")
@@ -94,11 +134,17 @@ if __name__ == "__main__":
                              "speed up experiment.")
     parser.add_argument("--experiment", default="diabetes_readmission",
                         help="Experiment to run. Overridden when debug=True.")
+    parser.add_argument("--gpu_models_only", default=False,
+                        action="store_true",
+                        help="whether to only train models that use GPU."
+                             "Mutually exclusive of cpu_models_only.")
     parser.add_argument("--gpu_per_worker", default=1.0, type=float,
                         help="GPUs per worker. Use fractional values < 1. "
                              "(e.g. --gpu_per_worker=0.5) in order"
                              "to allow multiple workers to share GPU.")
-    parser.add_argument("--model_name", default="mlp")
+    parser.add_argument("--model", default="mlp",
+                        help="Model name to train. Not used if "
+                             "--cpu_models_only or --gpu_models_only is used.")
     parser.add_argument("--num_samples", type=int, default=1,
                         help="Number of hparam samples to take in tuning "
                              "sweep.")
@@ -124,6 +170,10 @@ if __name__ == "__main__":
                         https://docs.ray.io/en/latest/ray-core 
                         /configure.html#logging-and-debugging for more 
                         info.""")
+    parser.add_argument("--results_dir", default="./ray_train_results",
+                        help="where to write results. CSVs will be written to "
+                             "experiment-specific subdirectories within this "
+                             "directory.")
     parser.add_argument("--scheduler", choices=(None, "asha", "median"),
                         default="asha",
                         help="Scheduler to use for hyperparameter optimization."
