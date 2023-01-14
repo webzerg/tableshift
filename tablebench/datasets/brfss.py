@@ -7,6 +7,7 @@ Raw Data: https://www.cdc.gov/brfss/annual_data/annual_data.htm
 Data Dictionary: https://www.cdc.gov/brfss/annual_data/2015/pdf/codebook15_llcp.pdf
 """
 
+import numpy as np
 import re
 
 import pandas as pd
@@ -92,9 +93,11 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     # physical health not good?
     Feature("PHYSHLTH", float, na_values=(77, 99)),
     ################ High blood pressure ################
-    # Adults who have been told they have high blood pressure by a
-    # doctor, nurse, or other health professional
-    Feature("HIGH_BLOOD_PRESS", cat_dtype, na_values=(9,)),
+
+    Feature("HIGH_BLOOD_PRESS", cat_dtype, na_values=(9,),
+            description="""Adults who have been told they have high blood 
+            pressure by a doctor, nurse, or other health professional. 1: No. 
+            2: Yes. 9: Don’t know/Not Sure/Refused/Missing"""),
     ################ High cholesterol ################
     # Cholesterol check within past five years
     Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype, na_values=(9,)),
@@ -147,9 +150,12 @@ BRFSS_DIABETES_FEATURES = FeatureList([
 ]) + BRFSS_SHARED_FEATURES
 
 BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
-    Feature("HIGH_BLOOD_PRESS", float,
+    Feature("HIGH_BLOOD_PRESS", int,
             """Have you ever been told by a doctor, nurse or other health 
-            professional that you have high blood pressure?""",
+            professional that you have high blood pressure? 0: No. 1: Yes. 8: 
+            Don’t know/Not Sure/Refused/Missing (note: we subtract 1 from 
+            original codebook values at preprocessing to create a binary 
+            target variable).""",
             is_target=True),
 
     # Indicators for high blood pressure; see
@@ -347,6 +353,9 @@ def preprocess_brfss_diabetes(df: pd.DataFrame):
 
 def preprocess_brfss_blood_pressure(df: pd.DataFrame) -> pd.DataFrame:
     df = brfss_shared_preprocessing(df)
+
+    df["HIGH_BLOOD_PRESS"] = df["HIGH_BLOOD_PRESS"].replace(9, np.nan) - 1
+    df.dropna(subset=["HIGH_BLOOD_PRESS"], inplace=True)
 
     # Retain samples only 50+ years of age (to focus on highest-risk groups
     # for high BP; see:
