@@ -179,17 +179,6 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(),
     ),
 
-    # Integer identifier corresponding to 9 distinct values, for example, emergency, urgent,
-    # elective, newborn, and not available,
-    # https://downloads.hindawi.com/journals/bmri/2014/781670.pdf
-    "diabetes_admtype": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "diabetes_readmission"},
-        domain_split_varname='admission_type_id',
-        domain_split_ood_values=_to_nested([1, 2, 3, 4, 5, 6, 7, 8]),
-        grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(min_frequency=0.01),
-    ),
     # Integer identifier corresponding to 21 distinct values, for example, physician referral,
     # emergency room, and transfer from a hospital,
     # https://downloads.hindawi.com/journals/bmri/2014/781670.pdf

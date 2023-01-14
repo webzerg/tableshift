@@ -131,8 +131,11 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(),
         tabular_dataset_kwargs={"name": "german"}),
     "diabetes_readmission": ExperimentConfig(
-        splitter=RandomSplitter(test_size=0.25, val_size=0.01,
-                                random_state=29746),
+        splitter=DomainSplitter(val_size=0.1,
+                                random_state=58439,
+                                id_test_size=0.2,
+                                domain_split_varname='admission_source_id',
+                                domain_split_ood_values=[1],),
         # male vs. all others; white non-hispanic vs. others
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
