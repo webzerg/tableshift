@@ -86,14 +86,17 @@ EXPERIMENT_CONFIGS = {
 
     # "White nonhispanic" (in-domain) vs. all other race/ethnicity codes (OOD)
     "brfss_diabetes": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.1, id_test_size=0.1,
-                                random_state=29746,
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
                                 domain_split_varname="PRACE1",
                                 domain_split_ood_values=[2, 3, 4, 5, 6],
                                 domain_split_id_values=[1, ]),
         grouper=Grouper({"SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]),
-        tabular_dataset_kwargs={"task": "diabetes", "years": BRFSS_YEARS},
+        tabular_dataset_kwargs={"name": "brfss_diabetes",
+                                "task": "diabetes", "years": BRFSS_YEARS},
     ),
 
     "communities_and_crime": ExperimentConfig(
