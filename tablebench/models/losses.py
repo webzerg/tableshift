@@ -66,14 +66,13 @@ class GroupDROLoss(DomainLoss):
     def __call__(self, outputs: Tensor,
                  targets: Tensor, group_ids: Tensor,
                  group_weights: Tensor,
-                 group_weights_step_size: Tensor,
-                 device):
+                 group_weights_step_size: Tensor):
         """Compute the Group DRO objective."""
         group_ids = group_ids.int()
         assert group_ids.max() < self.n_groups
 
         group_losses = torch.zeros(self.n_groups, dtype=torch.float,
-                                   device=device)
+                                   device=outputs.device)
 
         elementwise_loss = binary_cross_entropy_with_logits(input=outputs,
                                                             target=targets,
