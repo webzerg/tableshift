@@ -295,7 +295,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             """Get the dataset shard and, optionally, repeat infinitely."""
             shard = session.get_dataset_shard(shardname)
             if infinite:
-                raise ValueError  # should be no infinite shards in current expt
                 print(f"[DEBUG] repeating shard {shardname} infinitely.")
                 shard = shard.repeat()
             return shard.iter_torch_batches(batch_size=config["batch_size"])
