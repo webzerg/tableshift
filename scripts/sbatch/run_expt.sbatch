@@ -29,7 +29,6 @@ which python
 ## experimental command to test on a single experiment iteration
 python scripts/ray_train.py \
   --experiment $EXPERIMENT \
-  --model_name $MODEL \
   --uid $EXPT_UID \
   --num_samples 100 \
   --gpu_models_only \
