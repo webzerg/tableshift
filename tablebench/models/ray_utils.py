@@ -314,6 +314,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 uda_loader = None
                 max_examples_per_epoch = None
 
+            print(f"[DEBUG] max_examples_per_epoch is {max_examples_per_epoch}")
+            print(f"[DEBUG] batch_size is {config['batch_size']}")
+
             if dset.is_domain_split:
                 # Overall eval loaders (compute e.g. overall id/ood test accuracy)
                 eval_loaders = {s: _prepare_dataset_shard(s) for s in
