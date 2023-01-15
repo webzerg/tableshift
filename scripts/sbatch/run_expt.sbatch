@@ -1,13 +1,13 @@
 #!/bin/bash
 # usage:
-# sbatch --export=EXPERIMENT=$EXPERIMENT,EXPT_UID=$EXPT_UID,MODEL='resnet',SEARCH_ALG='random' scripts/sbatch/run_single_expt.sbatch
+# sbatch --export=EXPERIMENT=$EXPERIMENT,EXPT_UID=$EXPT_UID scripts/sbatch/run_expt.sbatch
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=6
 #SBATCH --partition=gpu-a40
 #SBATCH --gpus-per-node=1
 #SBATCH --mem-per-gpu=100000m
-#SBATCH --time=07-00:00:00
+#SBATCH --time=15-00:00:00
 #SBATCH --account=efml
 #SBATCH --chdir=/gscratch/efml/jpgard/tableshift
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -31,6 +31,6 @@ python scripts/ray_train.py \
   --experiment $EXPERIMENT \
   --model_name $MODEL \
   --uid $EXPT_UID \
-  --search_alg $SEARCH_ALG \
   --num_samples 100 \
+  --gpu_models_only \
   --use_cached
