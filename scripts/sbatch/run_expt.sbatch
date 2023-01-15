@@ -17,8 +17,6 @@ date;hostname;id;pwd
 
 echo 'experiment is: ' $EXPERIMENT
 echo 'expt_uid is: ' $EXPT_UID
-echo 'model is: ' $MODEL
-echo 'search alg is: ' $SEARCH_ALG
 
 echo 'activating virtual environment'
 source ~/.bashrc
