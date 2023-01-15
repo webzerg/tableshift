@@ -322,13 +322,13 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
                 # Per-domain test loaders (for computational efficiency we do not
                 # compute per-domain validation metrics).
-                id_test_loaders = {s: _prepare_dataset_shard(f"id_test_{s}")
-                                   for s in dset_domains['id_test']}
-                oo_test_loaders = {s: _prepare_dataset_shard(f"ood_test_{s}")
-                                   for s in dset_domains['ood_test']}
-
-                eval_loaders.update(id_test_loaders)
-                eval_loaders.update(oo_test_loaders)
+                # id_test_loaders = {s: _prepare_dataset_shard(f"id_test_{s}")
+                #                    for s in dset_domains['id_test']}
+                # oo_test_loaders = {s: _prepare_dataset_shard(f"ood_test_{s}")
+                #                    for s in dset_domains['ood_test']}
+                #
+                # eval_loaders.update(id_test_loaders)
+                # eval_loaders.update(oo_test_loaders)
             else:
                 eval_loaders = {s: _prepare_dataset_shard(s) for s in
                                 ('validation', 'test')}
