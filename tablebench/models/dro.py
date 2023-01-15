@@ -39,13 +39,15 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
 
         for iteration, batch in enumerate(train_loader):
             x_batch, y_batch, _, d_batch = unpack_batch(batch)
+            x_batch = x_batch.to(device)
+            y_batch = y_batch.to(device)
+            d_batch = d_batch.to(device)
             self.train()
             self.optimizer.zero_grad()
             outputs = apply_model(self, x_batch)
             loss = loss_fn(outputs.squeeze(1), y_batch, d_batch,
                            self.group_weights,
-                           self.group_weights_step_size,
-                           device=device)
+                           self.group_weights_step_size)
 
             loss.backward()
             self.optimizer.step()
