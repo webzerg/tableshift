@@ -3,6 +3,7 @@ import os
 from typing import Optional
 
 import pandas as pd
+import torch
 
 from tablebench.core import CachedDataset
 from tablebench.models.ray_utils import RayExperimentConfig, \
@@ -37,6 +38,8 @@ def main(experiment: str, uid: str, cache_dir: str,
     assert not (gpu_models_only and cpu_models_only)
     if gpu_models_only:
         models = PYTORCH_MODEL_NAMES
+        assert torch.cuda.is_available(), \
+            "gpu_models_only is True but GPU is not available."
     elif cpu_models_only:
         models = ["xgb", "lightgbm"]
     else:
@@ -70,7 +73,10 @@ def main(experiment: str, uid: str, cache_dir: str,
                               preprocessor_config=expt_config.preprocessor_config,
                               **tabular_dataset_kwargs)
 
+    print(f"DEBUG torch.cuda.is_available(): {torch.cuda.is_available()}")
+
     expt_results_dir = os.path.join(results_dir, experiment, str(start_time))
+    print(f"[INFO] results will be written to {expt_results_dir}")
     if not os.path.exists(expt_results_dir): os.makedirs(expt_results_dir)
 
     iterates = []
