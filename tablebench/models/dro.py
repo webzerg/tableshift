@@ -39,9 +39,9 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
 
         for iteration, batch in enumerate(train_loader):
             x_batch, y_batch, _, d_batch = unpack_batch(batch)
-            x_batch = x_batch.to(device)
-            y_batch = y_batch.to(device)
-            d_batch = d_batch.to(device)
+            x_batch = x_batch.float().to(device)
+            y_batch = y_batch.float().to(device)
+            d_batch = d_batch.float().to(device)
             self.train()
             self.optimizer.zero_grad()
             outputs = apply_model(self, x_batch)
