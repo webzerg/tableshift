@@ -1,7 +1,5 @@
-<img src="./img/tablebench.jpg" width="200" alt="Image of a tablebench."/>
+# TableShift
 
-# Tablebench
-
-Tablebench is a package for benchmarking of tabular data algorithms. The package is under active development.
+TableShift is a benchmarking library for machine learning with tabular data. The package is under active development.
 
 More information coming soon.
