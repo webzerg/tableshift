@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=6
 #SBATCH --partition=gpu-a40
-#SBATCH --gpus-per-node=1
+#SBATCH --gpus-per-node=4
 #SBATCH --mem-per-gpu=100000m
 #SBATCH --time=15-00:00:00
 #SBATCH --account=efml
@@ -30,4 +30,5 @@ python scripts/ray_train.py \
   --uid $EXPT_UID \
   --num_samples 100 \
   --gpu_models_only \
+  --num_workers 4 \
   --use_cached
