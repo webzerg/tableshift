@@ -6,6 +6,8 @@ from tablebench.models.compat import is_pytorch_model_name
 from tablebench.models.losses import GroupDROLoss, DROLoss
 from torch.nn import functional as F
 
+DEFAULT_BATCH_SIZE = 4096
+
 # Default configs for testing models. These are not tuned
 # or selected for any particular reason; they might not even
 # be good choices for hyperparameters. These values do set
@@ -124,14 +126,14 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
     if is_pytorch_model_name(model) and model != "dann":
         # Note: very small batch size is needed for domain shift
         # when in debug mode.
-        config.update({"batch_size": 4096,
+        config.update({"batch_size": DEFAULT_BATCH_SIZE,
                        "lr": 0.01,
                        "weight_decay": 0.01,
                        "n_epochs": 1})
     elif is_pytorch_model_name(model):
         # Case: DANN model; lr and weight_decay set per-model (for disc and
         # classifier separately).
-        config.update({"batch_size": 4,
+        config.update({"batch_size": DEFAULT_BATCH_SIZE,
                        "n_epochs": 1})
 
     return config
