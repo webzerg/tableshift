@@ -4,6 +4,7 @@ https://www.cdc.gov/Nchs/Nhanes/about_nhanes.htm
 """
 from collections import defaultdict
 import json
+import logging
 import os
 
 import numpy as np
@@ -19,9 +20,10 @@ NHANES_YEARS = [1999, 2001, 2003, 2005, 2007, 2009, 2011, 2013, 2015, 2017]
 NHANES_DATA_SOURCES = os.path.join(os.path.dirname(__file__),
                                    "nhanes_data_sources.json")
 
-# Mapping of NHANES component types to names of data sources to use.
-# See nhanes_data_sources.json. This ensures that only needed files
-# are downloaded/read from disk, because NHANES contains a huge number of sources per year.
+# Mapping of NHANES component types to names of data sources to use. See
+# nhanes_data_sources.json. This ensures that only needed files are
+# downloaded/read from disk, because NHANES contains a huge number of sources
+# per year.
 
 NHANES_CHOLESTEROL_DATA_SOURCES_TO_USE = {
     "Demographics": [
@@ -35,15 +37,16 @@ NHANES_CHOLESTEROL_DATA_SOURCES_TO_USE = {
                       "Medical Conditions",  # All years
                       "Osteoporosis",  # Not preset in 2011, 2015
                       ],
-    "Laboratory": ["Cholesterol - LDL & Triglycerides",
-                   # 1999 - 2003, 2007 - 2013
-                   "Cholesterol - LDL, Triglyceride & Apoliprotein (ApoB)",
-                   # 2005
-                   "Cholesterol - Low - Density Lipoprotein (LDL) & Triglycerides",
-                   # 2015
-                   "Cholesterol - Low-Density Lipoproteins (LDL) & Triglycerides"
-                   # 2017
-                   ],
+    "Laboratory": [
+        "Cholesterol - LDL & Triglycerides",
+        # 1999 - 2003, 2007 - 2013
+        "Cholesterol - LDL, Triglyceride & Apoliprotein (ApoB)",
+        # 2005
+        "Cholesterol - Low - Density Lipoprotein (LDL) & Triglycerides",
+        # 2015
+        "Cholesterol - Low-Density Lipoproteins (LDL) & Triglycerides"
+        # 2017
+    ],
 }
 
 NHANES_LEAD_DATA_SOURCES_TO_USE = {
@@ -158,7 +161,7 @@ NHANES_CHOLESTEROL_FEATURES = FeatureList(features=[
 
     # Note: no questions on these.
 
-    # #######  Risk Factor: High-risk race/ethnicities (eg, South Asian ancestry)
+    # #######  Risk Factor: High-risk race/ethnicities (eg South Asian ancestry)
     # Covered in shared 'RIDRETH' feature
 ], documentation="https://wwwn.cdc.gov/Nchs/Nhanes/")
 
@@ -213,14 +216,14 @@ def _postprocess_nhanes(df: pd.DataFrame,
     for feature in feature_list:
         name = feature.name
         if name not in df.columns:
-            print(
-                f"[WARNING] feature {feature.name} missing; filling with "
+            logging.warning(
+                f"feature {feature.name} missing; filling with "
                 f"indicator; this can happen when data is subset by years since"
                 f" some questions are not asked in all survey years.")
             df[name] = pd.Series(["MISSING"] * len(df))
 
         elif name != feature_list.target and feature.kind == cat_dtype:
-            print(f"[DEBUG] filling and casting categorical feature {name}")
+            logging.debug(f"filling and casting categorical feature {name}")
             df[name] = df[name].fillna("MISSING").apply(str).astype("category")
 
     df.reset_index(drop=True, inplace=True)
