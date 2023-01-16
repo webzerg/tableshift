@@ -108,7 +108,6 @@ def main(experiment: str, uid: str, cache_dir: str,
                 print(f"[INFO] writing completed results to {fp}")
                 results_df.to_csv(fp, index=False)
 
-            # call fetch_postprocessed() just to match the full training loop
             df = fetch_postprocessed_results_df(results)
             df["estimator"] = model_name
             df["domain_split_varname"] = dset.domain_split_varname

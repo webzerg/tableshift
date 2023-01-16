@@ -527,11 +527,12 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
 def fetch_postprocessed_results_df(
         results: ray.tune.ResultGrid) -> pd.DataFrame:
-    """Fetch a DataFrame and clean up the names of columns so they align across models.
+    """Fetch a DataFrame and clean up the names of columns so they align
+    across models.
 
-    This function accounts for the fact that some Trainers in ray produce results that have the right
-    metrics, but with names that don't align to our custom trainers, or they provide error when accuracy
-    is desired.
+    This function accounts for the fact that some Trainers in ray produce
+    results that have metric names that don't align to our custom trainers,
+    or they provide error when accuracy is desired.
     """
     df = results.get_dataframe()
     for c in df.columns:
