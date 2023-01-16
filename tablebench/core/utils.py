@@ -1,5 +1,6 @@
 import collections
 import datetime
+import logging
 import re
 from itertools import islice
 import os
@@ -36,11 +37,11 @@ def download_file(url: str, dirpath: str, if_not_exist=True,
 
     if os.path.exists(fpath) and if_not_exist:
         # Case: file already exists; skip it.
-        print(f"[DEBUG] not downloading {url}; exists at {fpath}")
+        logging.debug(f"not downloading {url}; exists at {fpath}")
 
     else:
         initialize_dir(dirpath)
-        print(f"[DEBUG] downloading {url} to {fpath}")
+        logging.debug(f"downloading {url} to {fpath}")
         with open(fpath, "wb") as f:
             f.write(requests.get(url).content)
 
@@ -63,9 +64,9 @@ def read_xpt(fp) -> pd.DataFrame:
 
 
 def run_in_subproces(cmd):
-    print(f"[INFO] running {cmd}")
+    logging.info(f"running {cmd}")
     res = subprocess.run(cmd, shell=True)
-    print(f"[DEBUG] {cmd} returned {res}")
+    logging.debug(f"{cmd} returned {res}")
     return
 
 
@@ -86,9 +87,11 @@ def make_uid(name: str, splitter: Splitter, replace_chars="*/:'$!") -> str:
     uid = name
     if isinstance(splitter, DomainSplitter):
         attrs = {'domain_split_varname': splitter.domain_split_varname,
-                 'domain_split_ood_value': ''.join(str(x) for x in splitter.domain_split_ood_values)}
+                 'domain_split_ood_value': ''.join(
+                     str(x) for x in splitter.domain_split_ood_values)}
         if splitter.domain_split_id_values:
-            attrs['domain_split_id_values'] = ''.join(str(x) for x in splitter.domain_split_id_values)
+            attrs['domain_split_id_values'] = ''.join(
+                str(x) for x in splitter.domain_split_id_values)
         uid += ''.join(f'{k}_{v}' for k, v in attrs.items())
     # if any slashes exist, replace with periods.
     for char in replace_chars:
