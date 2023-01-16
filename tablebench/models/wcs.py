@@ -3,13 +3,14 @@ Implements the 'Weighted ERM for Covariate Shift' model described in
 'Probabilistic Machine Learning: Advanced Topics' by Kevin Murphy
 (draft accessed 11/16/22 via https://github.com/probml/pml2-book).
 """
+import logging
 import numpy as np
 import pandas as pd
 from sklearn import linear_model
 
 
 class WeightedCovariateShiftClassifier:
-    def __init__(self, C_domain:float, C_discrim:float):
+    def __init__(self, C_domain: float, C_discrim: float):
         # Used to predict weights for training examples
         self.domain_classifier = linear_model.LogisticRegression(C=C_domain)
         # Used to predict labels
@@ -29,12 +30,12 @@ class WeightedCovariateShiftClassifier:
             X = pd.concat((X_id, X_ood), axis=0)
         else:
             X = np.row_stack((X_id, X_ood))
-        y = np.concatenate((np.ones((len(X_id),)), -np.ones(len(X_ood),)))
-        print("[INFO] fitting domain classifier")
+        y = np.concatenate((np.ones((len(X_id),)), -np.ones(len(X_ood), )))
+        logging.info("fitting domain classifier")
         self.domain_classifier.fit(X, y)
 
         # Fit the discriminator
-        print("[INFO] fitting discriminator")
+        logging.info("fitting discriminator")
         id_sample_weights = self.predict_importance_weights(X_id)
         self.discriminator.fit(X_id, y_id, sample_weight=id_sample_weights)
 

@@ -2,6 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 import glob
 import json
+import logging
 import math
 import os
 import pickle
@@ -139,9 +140,9 @@ class TabularDataset(ABC):
     def _check_data(self):
         """Helper function to check data after all preprocessing/splitting."""
         if not pd.api.types.is_numeric_dtype(self._df[self.target]):
-            print(f"[WARNING] y is of type {self._df[self.target].dtype}; "
-                  f"non-numeric types are not accepted by all estimators ("
-                  f"e.g. xgb.XGBClassifier")
+            logging.warning(f"y is of type {self._df[self.target].dtype}; "
+                            f"non-numeric types are not accepted by all estimators ("
+                            f"e.g. xgb.XGBClassifier")
         if self.domain_label_colname:
             assert self.domain_label_colname not in self._df[
                 self.feature_names].columns
@@ -276,7 +277,7 @@ class TabularDataset(ABC):
         split_data = self._get_split_xygd(split)
         assert self.n_domains, "sanity check for a domain-split dataset"
 
-        print("[DEBUG] domain value counts:\n{}".format(
+        logging.debug("Domain value counts:\n{}".format(
             split_data[3].value_counts()))
 
         for domain in sorted(split_data[3].unique()):
@@ -368,7 +369,7 @@ class TabularDataset(ABC):
 
         for split in self.splits:
             outdir = os.path.join(base_dir, split)
-            print(f"[INFO] caching task {uid} split {split} to {outdir}")
+            logging.info(f"caching task {uid} split {split} to {outdir}")
             initialize_dir(outdir)
             df = self._get_split_df(split)
 
@@ -450,7 +451,7 @@ class CachedDataset:
             return False
 
     def _load_info_from_cache(self):
-        print(f"[INFO] loading from {self.base_dir}")
+        logging.info(f"loading from {self.base_dir}")
         with open(os.path.join(self.base_dir, "info.json"), "r") as f:
             ds_info = json.loads(f.read())
 

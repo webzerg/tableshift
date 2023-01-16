@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from functools import partial
 import glob
+import logging
 import os
 import re
 from typing import Sequence, Optional, Callable
@@ -222,13 +223,13 @@ class BRFSSDataSource(DataSource):
             # Unzip the file if needed
             if not os.path.exists(xpt_fp):
                 zip_fp = os.path.join(self.cache_dir, zip_fname)
-                print(f"[DEBUG] unzipping {zip_fp}")
+                logging.debug(f"unzipping {zip_fp}")
                 with zipfile.ZipFile(zip_fp, 'r') as zf:
                     zf.extractall(self.cache_dir)
                 # BRFSS data files have an awful space at the end; remove it.
                 os.rename(xpt_fp + " ", xpt_fp)
             # Read the XPT data
-            print(f"[DEBUG] reading {xpt_fp}")
+            logging.debug(f"reading {xpt_fp}")
             df = utils.read_xpt(xpt_fp)
             df = align_brfss_features(df)
             dfs[url] = df
@@ -283,7 +284,7 @@ class NHANESDataSource(DataSource):
         for f in files:
             year = int(re.search(".*([0-9]{4})\\.XPT", f).group(1))
             if year in self.years:
-                print(f"[DEBUG] reading {f}")
+                logging.debug(f"reading {f}")
                 df = utils.read_xpt(f)
                 try:
                     df.set_index("SEQN", inplace=True)
@@ -298,14 +299,13 @@ class NHANESDataSource(DataSource):
             dfs = year_dfs[year]
             src_df = dfs[0]
             try:
-                print(
-                    f"[INFO] starting join of {len(dfs)} dataframes for {year}")
+                logging.info(f"joining {len(dfs)} dataframes for {year}")
                 df = src_df.join(dfs[1:], how="outer")
                 df["nhanes_year"] = int(year)
-                print("[INFO] finished joins")
+                logging.info("finished joins")
                 df_list.append(df)
             except Exception as e:
-                print(e)
+                logging.error(e)
 
         if len(df_list) > 1:
             df = pd.concat(df_list, axis=0)
@@ -333,14 +333,14 @@ class ACSDataSource(DataSource):
         year_dfs = []
 
         for year in self.years:
-            print(f"fetching ACS data for year {year}...")
+            logging.info(f"fetching ACS data for year {year}...")
             data_source = get_acs_data_source(year, self.cache_dir)
             year_data = data_source.get_data(states=self.states,
                                              join_household=True,
                                              download=True)
             year_data["ACS_YEAR"] = year
             year_dfs.append(year_data)
-        print("fetching ACS data complete.")
+        logging.info("fetching ACS data complete.")
         return pd.concat(year_dfs, axis=0)
 
     def _download_if_not_cached(self):
@@ -461,8 +461,8 @@ class PhysioNetDataSource(DataSource):
         n_train_b = len(glob.glob(os.path.join(root, "training_setB", "*.psv")))
 
         if (not n_train_a == 20336) or (not n_train_b == 20000):
-            print("[INFO] downloading physionet training data. This could "
-                  "take several minutes.")
+            logging.info("downloading physionet training data. This could "
+                         "take several minutes.")
             # download the training data
             cmd = "wget -r -N -c -np https://physionet.org/files/challenge" \
                   f"-2019/1.0.0/training/ -P={self.cache_dir}"
@@ -472,12 +472,12 @@ class PhysioNetDataSource(DataSource):
     def _load_data(self) -> pd.DataFrame:
         root = os.path.join(self.cache_dir, "physionet.org", "files",
                             "challenge-2019", "1.0.0", "training")
-        print("[INFO] reading physionet data files.")
+        logging.info("reading physionet data files.")
         train_a_files = glob.glob(os.path.join(root, "training_setA", "*.psv"))
         df_a = pd.concat(pd.read_csv(x, delimiter="|") for x in train_a_files)
         train_b_files = glob.glob(os.path.join(root, "training_setB", "*.psv"))
         df_b = pd.concat(pd.read_csv(x, delimiter="|") for x in train_b_files)
-        print("[INFO] done reading physionet data files.")
+        logging.info("done reading physionet data files.")
         df_a["set"] = "a"
         df_b["set"] = "b"
         df = pd.concat((df_a, df_b))
@@ -564,4 +564,3 @@ class HELOCDataSource(OfflineDataSource):
             https://community.fico.com/s/explainable-machine-learning-challenge
             """
         return pd.read_csv(filename)
-

@@ -1,5 +1,6 @@
-from typing import Mapping, Sequence, Any, List
 from dataclasses import dataclass
+import logging
+from typing import Mapping, Sequence, Any, List
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -30,7 +31,7 @@ class Grouper:
 
             missing_ood_vals = set(group_vals) - set(data_vals)
             if len(missing_ood_vals):
-                print(f"[WARNING] values {list(missing_ood_vals)} specified "
+                logging.warning(f"values {list(missing_ood_vals)} specified "
                       f"in Grouper split but not  present in the data.")
             return
 
@@ -43,16 +44,16 @@ class Grouper:
                                  f"unique value after transformation {vals}")
 
         # Print a summary of the counts after grouping.
-        print("[DEBUG] overall counts after grouping:")
+        logging.debug("overall counts after grouping:")
         if len(self.features) == 1:
-            print(data[self.features[0]].value_counts())
+            logging.info(data[self.features[0]].value_counts())
         else:
             row_feat = self.features[0]
             col_feats = self.features[1:]
             xt = pd.crosstab(data[row_feat].squeeze(),
                              data[col_feats].squeeze(),
                              dropna=False)
-            print(xt)
+            logging.debug(xt)
 
     def _group_column(self, x: pd.Series, vals: Sequence) -> pd.Series:
         """Apply a grouping to a column, retuning a binary numeric Series."""

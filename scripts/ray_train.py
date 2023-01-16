@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 from typing import Optional
 
@@ -16,6 +17,14 @@ from tablebench.core.utils import timestamp_as_int
 from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
     get_default_ray_local_dir
 from tablebench.models.compat import PYTORCH_MODEL_NAMES
+
+LOG_LEVEL = logging.DEBUG
+
+logger = logging.getLogger()
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    level=LOG_LEVEL,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def main(experiment: str, uid: str, cache_dir: str,
@@ -52,11 +61,11 @@ def main(experiment: str, uid: str, cache_dir: str,
         ray_local_dir = get_default_ray_local_dir()
 
     if debug:
-        print("[INFO] running in debug mode.")
+        logging.info("running in debug mode.")
         experiment = "_debug"
 
     if use_cached:
-        print(f"[DEBUG] loading cached data from {cache_dir}")
+        logging.info(f"loading cached data from {cache_dir}")
         assert uid is not None, "uid is required to use a cached dataset."
         dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
     else:
@@ -73,10 +82,10 @@ def main(experiment: str, uid: str, cache_dir: str,
                               preprocessor_config=expt_config.preprocessor_config,
                               **tabular_dataset_kwargs)
 
-    print(f"DEBUG torch.cuda.is_available(): {torch.cuda.is_available()}")
+    logging.debug(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
 
     expt_results_dir = os.path.join(results_dir, experiment, str(start_time))
-    print(f"[INFO] results will be written to {expt_results_dir}")
+    logging.info(f"results will be written to {expt_results_dir}")
     if not os.path.exists(expt_results_dir): os.makedirs(expt_results_dir)
 
     iterates = []
@@ -112,20 +121,19 @@ def main(experiment: str, uid: str, cache_dir: str,
                     expt_results_dir,
                     f"tune_results_{experiment}_{start_time}_{uid}_"
                     f"{model_name}.csv")
-                print(f"[INFO] writing results for {model_name} to {iter_fp}")
+                logging.info(f"writing results for {model_name} to {iter_fp}")
                 df.to_csv(iter_fp, index=False)
             iterates.append(df)
 
             print(df)
         except Exception as e:
-            print(f"[WARNING] exception training model {model_name}: {e}, "
-                  f"skipping")
+            logging.warning(f"exception training {model_name}: {e}, skipping")
             continue
     fp = os.path.join(expt_results_dir,
                       f"tune_results_{experiment}_{start_time}_full.csv")
-    print(f"[INFO] writing results to {fp}")
+    logging.info(f"writing results to {fp}")
     pd.concat(iterates).to_csv(fp, index=False)
-    print(f"[INFO] completed domain shift experiment {experiment}!")
+    logging.info(f"completed domain shift experiment {experiment}!")
     return
 
 

@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import logging
 from typing import Union, Dict, Any, Callable, Optional, Mapping, Tuple
 
 from torch import Tensor
@@ -40,8 +41,8 @@ class DomainGeneralizationModel(MLPModel):
         loss = None
         self.examples_seen.zero_()
         while True:
-            print(f"{self.__class__.__name__}:train examples seen: "
-                  f"{self.examples_seen.item()} of {max_examples_per_epoch}")
+            logging.info(f"{self.__class__.__name__}:train examples seen: "
+                         f"{self.examples_seen.item()} of {max_examples_per_epoch}")
             batches = [_prepare_batch(batch) for batch in
                        next(train_minibatches_iterator)]
             # Note: if this was a domain_adaption task, do the same as above
