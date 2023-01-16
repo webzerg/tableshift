@@ -38,7 +38,8 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
         assert len(train_loaders.values()) == 1
         train_loader = list(train_loaders.values())[0]
 
-        for iteration, batch in tqdm(enumerate(train_loader)):
+        for iteration, batch in tqdm(enumerate(train_loader),
+                                     desc="groupdro:train"):
             x_batch, y_batch, _, d_batch = unpack_batch(batch)
             x_batch = x_batch.float().to(device)
             y_batch = y_batch.float().to(device)
