@@ -485,13 +485,14 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     results = tuner.fit()
     ray.shutdown()
     auto_garbage_collect(force=True)
-    try:
-        cmd = "kill -9 $(lsof +L1 /dev/shm | grep deleted | awk '{print $2}')"
-        print(f"[INFO] attempting to clean up files with {cmd}")
-        os.system(cmd)
-    except Exception as e:
-        print(
-            f"[WARNING] exception running cleanup: {e}. Suggest running this command manually (due to Ray bug): {cmd}")
+    if os.path.exists("/dev/shm"):
+        try:
+            cmd = "kill -9 $(lsof +L1 /dev/shm | grep deleted | awk '{print $2}')"
+            print(f"[INFO] attempting to clean up files with {cmd}")
+            os.system(cmd)
+        except Exception as e:
+            print(
+                f"[WARNING] exception running cleanup: {e}. Suggest running this command manually (due to Ray bug): {cmd}")
     return results
 
 
