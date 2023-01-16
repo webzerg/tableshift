@@ -60,7 +60,8 @@ def get_predictions_and_labels(model, loader, device, as_logits=False) -> Tuple[
     prediction = []
     label = []
 
-    for batch in tqdm(loader):
+    modelname = model.__class__.__name__
+    for batch in tqdm(loader, desc=f"{modelname}:getpreds"):
         batch_x, batch_y, _, _ = unpack_batch(batch)
         batch_x = batch_x.float().to(device)
         batch_y = batch_y.float().to(device)

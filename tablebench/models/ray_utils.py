@@ -172,6 +172,8 @@ def ray_evaluate(model, split_loaders: Dict[str, Any]) -> dict:
     model.eval()
     metrics = {}
     for split, loader in split_loaders.items():
+        print(f"[DEBUG] evaluating split {split} "
+              f"for model {model.__class__.__name__}")
         prediction_soft, target = get_predictions_and_labels(model, loader, dev)
         prediction_hard = np.round(prediction_soft)
         acc = sklearn.metrics.accuracy_score(target, prediction_hard)
