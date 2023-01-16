@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 import gc
+import logging
 import os
 import psutil
 import re
@@ -44,15 +45,14 @@ def auto_garbage_collect(pct=75.0, force=False):
     """
     memory_pct = psutil.virtual_memory().percent
     if (memory_pct >= pct) or force:
-        print(
-            f"[INFO] running garbage collection; memory used "
-            f"{psutil.virtual_memory().percent}% "
-            f"; threshold is {pct}%; force is {force}.")
+        logging.info(f"running garbage collection; memory used "
+                     f"{psutil.virtual_memory().percent}% "
+                     f"; threshold is {pct}%; force is {force}.")
         gc.collect()
     else:
-        print(f"[INFO] not running garbage collection; "
-              f"memory used {psutil.virtual_memory().percent}% < {pct} "
-              f"threshold.")
+        logging.info(f"not running garbage collection; "
+                     f"memory used {psutil.virtual_memory().percent}% < {pct} "
+                     f"threshold.")
     return
 
 
@@ -105,7 +105,7 @@ class RayExperimentConfig:
     cpu_per_worker: int = 1
 
     def get_search_alg(self):
-        print(f"[INFO] instantiating search alg of type {self.search_alg}")
+        logging.info(f"instantiating search alg of type {self.search_alg}")
         if self.search_alg == "hyperopt":
             return HyperOptSearch(metric=self.tune_metric_name,
                                   mode=self.mode,
@@ -172,8 +172,8 @@ def ray_evaluate(model, split_loaders: Dict[str, Any]) -> dict:
     model.eval()
     metrics = {}
     for split, loader in split_loaders.items():
-        print(f"[DEBUG] evaluating split {split} "
-              f"for model {model.__class__.__name__}")
+        logging.debug(f"evaluating split {split} "
+                      f"for model {model.__class__.__name__}")
         prediction_soft, target = get_predictions_and_labels(model, loader, dev)
         prediction_hard = np.round(prediction_soft)
         acc = sklearn.metrics.accuracy_score(target, prediction_hard)
@@ -302,7 +302,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             """Get the dataset shard and, optionally, repeat infinitely."""
             shard = session.get_dataset_shard(shardname)
             if infinite:
-                print(f"[DEBUG] repeating shard {shardname} infinitely.")
+                logging.debug(f"repeating shard {shardname} infinitely.")
                 shard = shard.repeat()
             return shard.iter_torch_batches(batch_size=config["batch_size"])
 
@@ -348,7 +348,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         train_loss = np.nan  # initialize the training loss
 
         for epoch in range(n_epochs):
-            print(f"[DEBUG] starting epoch {epoch} with model {model_name}")
+            logging.debug(f"starting epoch {epoch} with model {model_name}")
 
             train_loaders = {s: _prepare_shard(s, infinite_train_loaders)
                              for s in train_loader_keys}
@@ -363,8 +363,8 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 uda_loader = None
                 max_examples_per_epoch = None
 
-            print(f"[DEBUG] max_examples_per_epoch is {max_examples_per_epoch}")
-            print(f"[DEBUG] batch_size is {config['batch_size']}")
+            logging.debug(f"max_examples_per_epoch is {max_examples_per_epoch}")
+            logging.debug(f"batch_size is {config['batch_size']}")
 
             train_kwargs = dict(device=device, uda_loader=uda_loader,
                                 max_examples_per_epoch=max_examples_per_epoch)
@@ -497,7 +497,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         raise NotImplementedError(f"model {model_name} not implemented.")
 
     if tune_config is None:
-        print("[DEBUG] no TuneConfig provided; no tuning will be performed.")
+        logging.info("no TuneConfig provided; no tuning will be performed.")
         # To run just a single training iteration (without tuning)
         result = trainer.fit()
         latest_checkpoint = result.checkpoint
@@ -523,11 +523,11 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     if os.path.exists("/dev/shm"):
         try:
             cmd = "kill -9 $(lsof +L1 /dev/shm | grep deleted | awk '{print $2}')"
-            print(f"[INFO] attempting to clean up files with {cmd}")
+            logging.info(f"attempting to clean up files with {cmd}")
             os.system(cmd)
         except Exception as e:
-            print(
-                f"[WARNING] exception running cleanup: {e}. Suggest running this command manually (due to Ray bug): {cmd}")
+            logging.warning(f"exception running cleanup: {e}. Suggest running "
+                            f"this command manually (due to Ray bug): {cmd}")
     return results
 
 
