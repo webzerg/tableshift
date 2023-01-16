@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-import re
+import logging
 from typing import List, Any, Sequence, Optional, Mapping, Tuple, Union
 
 import numpy as np
@@ -18,8 +18,8 @@ def _contains_missing_values(df: pd.DataFrame) -> bool:
 
 
 def safe_cast(x: pd.Series, dtype):
-    print(f"[DEBUG] casting feature {x.name} from dtype "
-          f"{x.dtype.name} to dtype {dtype.__name__}")
+    logging.debug(f"casting feature {x.name} from dtype "
+                  f"{x.dtype.name} to dtype {dtype.__name__}")
     if dtype == cat_dtype:
         return x.apply(str).astype("category")
     else:
@@ -29,10 +29,10 @@ def safe_cast(x: pd.Series, dtype):
             if 'int' in dtype.__name__.lower():
                 # Case: integer with nan values; cast to float instead. Integers
                 # are not nullable in Pandas (but "Int64" type is).
-                print(f"[WARNING] cannot cast feature {x.name} to "
-                      f"dtype {dtype.__name__} due to missing values; "
-                      f"attempting cast to float instead. Recommend changing"
-                      f"the feature spec for this feature to type float.")
+                logging.warning(f"cannot cast feature {x.name} to "
+                                f"dtype {dtype.__name__} due to missing values; "
+                                f"attempting cast to float instead. Recommend changing"
+                                f"the feature spec for this feature to type float.")
                 return x.astype(float)
 
 
@@ -69,8 +69,8 @@ class Feature:
 
     def fillna(self, data: pd.Series) -> pd.Series:
         """Apply the list of na_values, filling these values in data with np.nan."""
-        print(f"[DEBUG] replacing missing values of {self.na_values} "
-              f"for feature {self.name}")
+        logging.debug(f"replacing missing values of {self.na_values} "
+                      f"for feature {self.name}")
         # Handles case where na values have misspecified type (i.e. float vs. int);
         # we would like the filling to be robust to these kinds of misspecification.
         if not isinstance(data.dtype, cat_dtype):
@@ -134,11 +134,10 @@ class FeatureList:
                              if x not in self.names
                              and x not in passthrough_columns))
         if drop_cols:
-            print("[DEBUG] dropping data columns not in "
-                  f"FeatureList: {drop_cols}")
+            logging.info(f"dropping columns not in FeatureList: {drop_cols}")
             df.drop(columns=drop_cols, inplace=True)
         for f in self.features:
-            print(f"[DEBUG] checking feature {f.name}")
+            logging.debug(f"checking feature {f.name}")
             if f.name not in df.columns:
                 # Case: expected this feature, and it is missing.
                 raise ValueError(f"feature {f.name} not present in data with"
@@ -154,8 +153,8 @@ class FeatureList:
 
         # Drop any rows containing missing values.
         if _contains_missing_values(df):
-            print("[DEBUG] missing values in data; counts by column:")
-            print(pd.isnull(df).sum())
+            logging.debug("missing values detected in data; counts by column:")
+            logging.debug(pd.isnull(df).sum())
 
         return df
 
@@ -178,7 +177,7 @@ def _transformed_columns_to_numeric(df, prefix: str,
     one-hot-encoded columns.
     """
     cols_to_transform = [c for c in df.columns if c.startswith(prefix)]
-    print(f"[DEBUG] casting {len(cols_to_transform)} columns to type {to_type}")
+    logging.debug(f"casting {len(cols_to_transform)} columns to type {to_type}")
     for c in tqdm(cols_to_transform):
         df[c] = df[c].astype(to_type)
     return df
@@ -232,14 +231,14 @@ class PreprocessorConfig:
         return transforms
 
     def _post_transform_summary(self, data: pd.DataFrame):
-        print("[DEBUG] printing post-transform feature summary")
+        logging.debug("printing post-transform feature summary")
         if self.numeric_features == "kbins":
             for c in data.columns:
-                if "kbin" in c: print(f"{c}: {data[c].unique().tolist()}")
+                if "kbin" in c: logging.info(f"{c}:{data[c].unique().tolist()}")
         elif self.numeric_features == "normalize":
             for c in data.columns:
-                if "scale" in c: print(f"{c}: mean {data[c].mean()}, "
-                                       f"std {data[c].std()}")
+                if "scale" in c: logging.info(f"{c}: mean {data[c].mean()}, "
+                                              f"std {data[c].std()}")
 
     def fit_feature_transformer(self, data, train_idxs: List[int],
                                 passthrough_columns: List[str] = None):
@@ -311,9 +310,9 @@ class PreprocessorConfig:
             data.dropna(inplace=True)
         elif self.dropna == "columns":
             data.dropna(axis=1, inplace=True)
-        print(f"[DEBUG] dropped {start_len - len(data)} rows "
-              f"containing missing values "
-              f"({(start_len - len(data)) * 100 / start_len}% of data).")
+        logging.debug(f"dropped {start_len - len(data)} rows "
+                      f"containing missing values "
+                      f"({(start_len - len(data)) * 100 / start_len}% of data).")
         return data.reset_index(drop=True)
 
     def _check_inputs(self, data):
@@ -337,17 +336,17 @@ class PreprocessorConfig:
                       domain_label_colname: Optional[str],
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         """Fit a feature_transformer and apply it to the input features."""
-        print(f"[INFO] transforming columns")
+        logging.info(f"transforming columns")
         if self.passthrough_columns == "all":
-            print(
-                "[DEBUG] passthrough is 'all'; data will not be preprocessed by tableshift.")
+            logging.info("passthrough is 'all'; data will not be preprocessed "
+                         "by tableshift.")
             return data
         if self.passthrough_columns:
             passthrough_columns += self.passthrough_columns
 
         if domain_label_colname and domain_label_colname not in passthrough_columns:
-            print(f"[DEBUG] adding domain label column {domain_label_colname} "
-                  f"to passthrough columns")
+            logging.debug(f"adding domain label column {domain_label_colname} "
+                          f"to passthrough columns")
             passthrough_columns.append(domain_label_colname)
 
         # All non-domain label passthrough columns will be cast to their
@@ -375,5 +374,5 @@ class PreprocessorConfig:
                 transformed.loc[:, domain_label_colname])
 
         self._post_transform_summary(transformed)
-        print("[INFO] transforming columns complete.")
+        logging.info("transforming columns complete.")
         return transformed
