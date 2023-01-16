@@ -108,10 +108,12 @@ def main(experiment: str, uid: str, cache_dir: str,
             df["domain_split_ood_values"] = str(dset.get_domains("ood_test"))
             df["domain_split_id_values"] = str(dset.get_domains("id_test"))
             if not debug:
-                df.to_csv(os.path.join(
+                iter_fp = os.path.join(
                     expt_results_dir,
-                    f"ray_tune_results_{uid}_{model_name}.csv"),
-                    index=False)
+                    f"tune_results_{experiment}_{start_time}_{uid}_"
+                    f"{model_name}.csv")
+                print(f"[INFO] writing results for {model_name} to {iter_fp}")
+                df.to_csv(iter_fp, index=False)
             iterates.append(df)
 
             print(df)
