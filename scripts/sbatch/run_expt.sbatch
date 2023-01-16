@@ -12,6 +12,7 @@
 #SBATCH --chdir=/gscratch/efml/jpgard/tableshift
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=jpgard@cs.washington.edu
+#SBATCH --output=/gscratch/efml/jpgard/tableshift/slurm-out/slurm-%j.out
 
 date;hostname;id;pwd
 

@@ -31,15 +31,15 @@ EXPERIMENT_CONFIGS = {
         tabular_dataset_kwargs={"acs_task": "acsfoodstamps"}),
 
     "acsincome": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.01, random_state=956523,
-                                id_test_size=0.5,
-                                domain_split_varname="ACS_YEAR",
-                                domain_split_ood_values=[ACS_YEARS[-1]],
-                                domain_split_id_values=ACS_YEARS[:-1]),
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname="DIVISION",
+                                domain_split_ood_values=['01']),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"acs_task": "acsincome",
-                                "years": ACS_YEARS}),
+        tabular_dataset_kwargs={"acs_task": "acsincome"}),
 
     "acspubcov": ExperimentConfig(
         splitter=RandomSplitter(test_size=0.5, val_size=0.25,
@@ -60,12 +60,15 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"Race": ["White", ], "Sex": ["Male", ]}, drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
+    # ANES, Split by region; OOD is south: (AL, AR, DE, D.C., FL, GA, KY, LA,
+    # MD, MS, NC, OK, SC,TN, TX, VA, WV)
     "anes": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.01, id_test_size=0.2,
-                                random_state=45345,
-                                domain_split_varname="VCF0004",
-                                domain_split_ood_values=[ANES_YEARS[-1]],
-                                domain_split_id_values=ANES_YEARS[:-1]),
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname='VCF0112',
+                                domain_split_ood_values=['3.0']),
         # male vs. all others; white non-hispanic vs. others
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
@@ -139,11 +142,12 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(),
         tabular_dataset_kwargs={"name": "german"}),
     "diabetes_readmission": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.1,
-                                random_state=58439,
-                                id_test_size=0.2,
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
                                 domain_split_varname='admission_source_id',
-                                domain_split_ood_values=[1], ),
+                                domain_split_ood_values=[7, ]),
         # male vs. all others; white non-hispanic vs. others
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
