@@ -315,16 +315,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             return eval_loaders
 
         def _on_epoch_end(loss_train):
-            """Function to be called at the end of epoch to log
-            validation/test metrics. """
-            eval_loaders = _prepare_eval_loaders()
-            metrics = ray_evaluate(model, eval_loaders)
-            metrics.update(dict(train_loss=loss_train))
-            checkpoint = get_ray_checkpoint(model)
-            session.report(metrics, checkpoint=checkpoint)
-            return
-
-        def _on_train_end(loss_train):
             """Function to be called at the end of training to log
             validation/test metrics.
 
@@ -383,8 +373,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
             # Log the metrics for this epoch
             _on_epoch_end(train_loss)
-
-        _on_train_end(train_loss)
 
     # Get the default/fixed configs (these are provided to every Trainer but
     # can be overwritten if they are also in the param_space).
