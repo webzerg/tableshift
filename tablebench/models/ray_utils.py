@@ -315,13 +315,14 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 max_examples_per_epoch = None
 
             if dset.is_domain_split:
-                # Overall eval loaders (compute e.g. overall id/ood test accuracy)
+                # Overall eval loaders (compute e.g. overall id/ood
+                # validation and test accuracy)
                 eval_loaders = {s: _prepare_dataset_shard(s) for s in
                                 ('validation', 'id_test', 'ood_test',
                                  'ood_validation')}
 
-                # Per-domain test loaders (for computational efficiency we do not
-                # compute per-domain validation metrics).
+                # Per-domain test loaders (for computational efficiency we do
+                # not compute per-domain validation metrics).
                 id_test_loaders = {s: _prepare_dataset_shard(f"id_test_{s}")
                                    for s in dset_domains['id_test']}
                 oo_test_loaders = {s: _prepare_dataset_shard(f"ood_test_{s}")
