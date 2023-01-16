@@ -395,7 +395,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         # Fit preprocessors on the train dataset only (not currently used).
         # Split the dataset across workers if scaling_config["num_workers"] > 1.
         # See https://docs.ray.io/en/latest/ray-air/check-ingest.html
-        dataset_config = {ds: DatasetConfig(fit=True, split=True) for ds in
+        dataset_config = {ds: DatasetConfig(split=True) for ds in
                           train_loader_keys}
 
         # For all other datasets, use the defaults (don't fit, don't split).
