@@ -31,4 +31,5 @@ python scripts/ray_train.py \
   --num_samples 100 \
   --gpu_models_only \
   --num_workers 4 \
+  --cpu_per_worker 6 \
   --use_cached
