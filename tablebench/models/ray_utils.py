@@ -13,7 +13,7 @@ import ray
 import sklearn
 import torch
 from ray import train, tune
-from ray.air import session, ScalingConfig, RunConfig
+from ray.air import session, ScalingConfig, RunConfig, DatasetConfig
 from ray.train.lightgbm import LightGBMTrainer
 from ray.train.torch import TorchCheckpoint, TorchTrainer
 from ray.train.xgboost import XGBoostTrainer
@@ -271,6 +271,12 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
     # Explicitly initialize ray in order to set the temp dir.
     ray.init(_temp_dir=tune_config.ray_tmp_dir, ignore_reinit_error=True)
 
+    is_dg = is_domain_generalization_model_name(model_name)
+
+    train_loader_keys = [f"train_{s}" for s in dset_domains["train"]] if is_dg \
+        else ["train"]
+    infinite_train_loaders = True if is_dg else False
+
     def train_loop_per_worker(config: Dict):
         """Function to be run by each TorchTrainer.
 
@@ -283,7 +289,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         model = train.torch.prepare_model(model)
 
         criterion = config["criterion"]
-
         n_epochs = config["n_epochs"]
 
         if debug:
@@ -293,7 +298,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
         device = train.torch.get_device()
 
-        def _prepare_dataset_shard(shardname, infinite=False):
+        def _prepare_shard(shardname, infinite=False):
             """Get the dataset shard and, optionally, repeat infinitely."""
             shard = session.get_dataset_shard(shardname)
             if infinite:
@@ -305,12 +310,12 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             if dset.is_domain_split:
                 # Overall eval loaders (compute e.g. overall id/ood
                 # validation and test accuracy)
-                eval_loaders = {s: _prepare_dataset_shard(s) for s in
+                eval_loaders = {s: _prepare_shard(s) for s in
                                 ('validation', 'id_test', 'ood_test',
                                  'ood_validation')}
 
             else:
-                eval_loaders = {s: _prepare_dataset_shard(s) for s in
+                eval_loaders = {s: _prepare_shard(s) for s in
                                 ('validation', 'test')}
             return eval_loaders
 
@@ -327,9 +332,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             """
             eval_loaders = _prepare_eval_loaders()
 
-            id_test_loaders = {s: _prepare_dataset_shard(f"id_test_{s}")
+            id_test_loaders = {s: _prepare_shard(f"id_test_{s}")
                                for s in dset_domains['id_test']}
-            oo_test_loaders = {s: _prepare_dataset_shard(f"ood_test_{s}")
+            oo_test_loaders = {s: _prepare_shard(f"ood_test_{s}")
                                for s in dset_domains['ood_test']}
 
             eval_loaders.update(id_test_loaders)
@@ -345,16 +350,16 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         for epoch in range(n_epochs):
             print(f"[DEBUG] starting epoch {epoch} with model {model_name}")
 
-            if get_module_attr(model, "domain_generalization"):
-                train_loaders = {s: _prepare_dataset_shard(f"train_{s}", True)
-                                 for s in dset_domains["train"]}
+            train_loaders = {s: _prepare_shard(s, infinite_train_loaders)
+                             for s in train_loader_keys}
+
+            if is_dg:
                 uda_loader = None
                 max_examples_per_epoch = dset.n_train
 
             elif get_module_attr(model, "domain_adaptation"):
                 raise NotImplementedError
             else:
-                train_loaders = {"train": _prepare_dataset_shard("train")}
                 uda_loader = None
                 max_examples_per_epoch = None
 
@@ -386,10 +391,23 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                                         prepare_pytorch=True)
 
         use_gpu = torch.cuda.is_available()
+
+        # Fit preprocessors on the train dataset only (not currently used).
+        # Split the dataset across workers if scaling_config["num_workers"] > 1.
+        # See https://docs.ray.io/en/latest/ray-air/check-ingest.html
+        dataset_config = {ds: DatasetConfig(fit=True, split=True) for ds in
+                          train_loader_keys}
+
+        # For all other datasets, use the defaults (don't fit, don't split).
+        # The datasets will be transformed by the fitted preprocessor.
+        # See https://docs.ray.io/en/latest/ray-air/check-ingest.html
+        dataset_config["*"] = DatasetConfig()
+
         trainer = TorchTrainer(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=default_train_config,
             datasets=datasets,
+            dataset_config=dataset_config,
             scaling_config=ScalingConfig(
                 num_workers=tune_config.num_workers,
                 resources_per_worker={
