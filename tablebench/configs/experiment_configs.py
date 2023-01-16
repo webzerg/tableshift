@@ -31,15 +31,15 @@ EXPERIMENT_CONFIGS = {
         tabular_dataset_kwargs={"acs_task": "acsfoodstamps"}),
 
     "acsincome": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.01, random_state=956523,
-                                id_test_size=0.5,
-                                domain_split_varname="ACS_YEAR",
-                                domain_split_ood_values=[ACS_YEARS[-1]],
-                                domain_split_id_values=ACS_YEARS[:-1]),
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname="DIVISION",
+                                domain_split_ood_values=['01']),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"acs_task": "acsincome",
-                                "years": ACS_YEARS}),
+        tabular_dataset_kwargs={"acs_task": "acsincome"}),
 
     "acspubcov": ExperimentConfig(
         splitter=RandomSplitter(test_size=0.5, val_size=0.25,
