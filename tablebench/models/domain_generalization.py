@@ -13,7 +13,7 @@ class DomainGeneralizationModel(MLPModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.register_buffer('examples_seen', Tensor(0.), persistent=False)
+        self.register_buffer('examples_seen', Tensor([0.]), persistent=False)
         self.domain_generalization = True
 
     @abstractmethod
