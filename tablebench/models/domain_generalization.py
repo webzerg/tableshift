@@ -13,6 +13,7 @@ class DomainGeneralizationModel(MLPModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.register_buffer('examples_seen', Tensor(0.), persistent=False)
         self.domain_generalization = True
 
     @abstractmethod
@@ -37,19 +38,19 @@ class DomainGeneralizationModel(MLPModel):
             return x_batch.float().to(device), y_batch.float().to(device)
 
         loss = None
-        examples_seen = 0
+        self.examples_seen.zero_()
         while True:
             print(f"{self.__class__.__name__}:train examples seen: "
-                  f"{examples_seen} of {max_examples_per_epoch}")
+                  f"{self.examples_seen.item()} of {max_examples_per_epoch}")
             batches = [_prepare_batch(batch) for batch in
-                                  next(train_minibatches_iterator)]
+                       next(train_minibatches_iterator)]
             # Note: if this was a domain_adaption task, do the same as above
             # for uda_loader.
             tmp = self.update(batches)
 
             loss = tmp['loss'] if loss is None else loss + tmp['loss']
-            examples_seen += sum(len(batch_x) for batch_x, _ in batches)
-            if examples_seen >= max_examples_per_epoch:
+            self.examples_seen += sum(len(batch_x) for batch_x, _ in batches)
+            if self.examples_seen.item() >= max_examples_per_epoch:
                 break
 
-        return loss / examples_seen
+        return loss / self.examples_seen.item()
