@@ -371,16 +371,15 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             print(f"[DEBUG] max_examples_per_epoch is {max_examples_per_epoch}")
             print(f"[DEBUG] batch_size is {config['batch_size']}")
 
+            train_kwargs = dict(device=device, uda_loader=uda_loader,
+                                max_examples_per_epoch=max_examples_per_epoch)
+
             if isinstance(model, torch.nn.parallel.DistributedDataParallel):
                 train_loss = model.module.train_epoch(
-                    train_loaders, criterion,
-                    device=device, uda_loader=uda_loader,
-                    max_examples_per_epoch=max_examples_per_epoch)
+                    train_loaders, criterion, **train_kwargs)
             else:
                 train_loss = model.train_epoch(
-                    train_loaders, criterion,
-                    device=device, uda_loader=uda_loader,
-                    max_examples_per_epoch=max_examples_per_epoch)
+                    train_loaders, criterion, **train_kwargs)
 
             # Log the metrics for this epoch
             _on_epoch_end(train_loss)
