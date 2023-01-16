@@ -2,6 +2,7 @@ from typing import Optional, Mapping, Dict, Any, Callable
 
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from tablebench.models.compat import SklearnStylePytorchModel
 from tablebench.models.rtdl import MLPModel
@@ -37,7 +38,7 @@ class GroupDROModel(MLPModel, SklearnStylePytorchModel):
         assert len(train_loaders.values()) == 1
         train_loader = list(train_loaders.values())[0]
 
-        for iteration, batch in enumerate(train_loader):
+        for iteration, batch in tqdm(enumerate(train_loader)):
             x_batch, y_batch, _, d_batch = unpack_batch(batch)
             x_batch = x_batch.float().to(device)
             y_batch = y_batch.float().to(device)
