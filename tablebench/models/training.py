@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Optional
 
 from frozendict import frozendict
@@ -69,7 +70,7 @@ def train_epoch(model, optimizer, criterion, train_loader,
         running_loss += loss.item()
         n_train += len(inputs)
         n_batch += 1
-    print(f"{model_name}:train: completed {n_batch} batches")
+    logging.info(f"{model_name}:train: completed {n_batch} batches")
     return running_loss / n_train
 
 
@@ -120,11 +121,11 @@ def _train_pytorch(estimator: SklearnStylePytorchModel, dset: TabularDataset,
                    config=PYTORCH_DEFAULTS,
                    tune_report_split: str = None):
     """Helper function to train a pytorch estimator."""
-    print(f"[DEBUG] config is {config}")
-    print(f"[DEBUG] estimator is of type {type(estimator)}")
-    print(f"[DEBUG] dset name is {dset.name}")
-    print(f"[DEBUG] device is {device}")
-    print(f"[DEBUG] tune_report_split is {tune_report_split}")
+    logging.debug(f"config is {config}")
+    logging.debug(f"estimator is of type {type(estimator)}")
+    logging.debug(f"dset name is {dset.name}")
+    logging.debug(f"device is {device}")
+    logging.debug(f"tune_report_split is {tune_report_split}")
 
     batch_size = config["batch_size"]
     train_loaders = get_train_loaders(estimator=estimator,
@@ -156,7 +157,7 @@ def _train_sklearn(estimator, dset: TabularDataset,
         estimator.fit(X_tr, y_tr, X_ood_tr)
     else:
         estimator.fit(X_tr, y_tr)
-    print("fitting estimator complete.")
+    logging.info("fitting estimator complete.")
 
     if tune_report_split:
         X_te, _, _, _ = dset.get_pandas(split=tune_report_split)
@@ -168,7 +169,7 @@ def _train_sklearn(estimator, dset: TabularDataset,
 
 def train(estimator: Any, dset: TabularDataset, tune_report_split: str = None,
           **kwargs):
-    print(f"fitting estimator of type {type(estimator)}")
+    logging.info(f"fitting estimator of type {type(estimator)}")
     if isinstance(estimator, torch.nn.Module):
         assert isinstance(
             estimator,

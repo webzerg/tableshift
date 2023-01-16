@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
+import logging
 from typing import Optional, Mapping, Union, Callable, Any, Dict
 
 import numpy as np
@@ -39,7 +40,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
     def _init_optimizer(self):
         """(re)initialize the optimizer."""
         opt_config = {k: self.config[k] for k in OPTIMIZER_ARGS}
-        print(f"[DEBUG] initializing optimizer with params {opt_config}")
+        logging.debug(f"initializing optimizer with params {opt_config}")
         self.optimizer = get_optimizer(self, config=opt_config)
 
     def predict(self, X) -> np.ndarray:
@@ -101,7 +102,7 @@ class SklearnStylePytorchModel(ABC, nn.Module):
             metrics = self.evaluate(eval_loaders, device=device)
             log_str = f'Epoch {epoch:03d} ' + ' | '.join(
                 f"{k} score: {v:.4f}" for k, v in metrics.items())
-            print(log_str)
+            logging.info(log_str)
 
             checkpoint = self.save_checkpoint()
 
