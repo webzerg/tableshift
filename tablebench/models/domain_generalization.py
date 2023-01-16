@@ -41,14 +41,14 @@ class DomainGeneralizationModel(MLPModel):
         while True:
             print(f"{self.__class__.__name__}:train examples seen: "
                   f"{examples_seen} of {max_examples_per_epoch}")
-            minibatches_device = [_prepare_batch(batch) for batch in
+            batches = [_prepare_batch(batch) for batch in
                                   next(train_minibatches_iterator)]
             # Note: if this was a domain_adaption task, do the same as above
             # for uda_loader.
-            tmp = self.update(minibatches_device)
+            tmp = self.update(batches)
 
             loss = tmp['loss'] if loss is None else loss + tmp['loss']
-            examples_seen += sum(len(x) for x in minibatches_device)
+            examples_seen += sum(len(batch_x) for batch_x, _ in batches)
             if examples_seen >= max_examples_per_epoch:
                 break
 
