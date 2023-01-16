@@ -20,6 +20,7 @@ from ray.train.xgboost import XGBoostTrainer
 from ray.tune import Tuner
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.hyperopt import HyperOptSearch
+from tqdm import tqdm
 
 from tablebench.configs.hparams import search_space
 from tablebench.core import TabularDataset, CachedDataset
@@ -313,6 +314,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 train_loaders = {"train": _prepare_dataset_shard("train")}
                 uda_loader = None
                 max_examples_per_epoch = None
+
+            print(f"[DEBUG] max_examples_per_epoch is {max_examples_per_epoch}")
+            print(f"[DEBUG] batch_size is {config['batch_size']}")
 
             if dset.is_domain_split:
                 # Overall eval loaders (compute e.g. overall id/ood

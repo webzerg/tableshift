@@ -124,7 +124,7 @@ def get_default_config(model: str, dset: TabularDataset) -> dict:
     if is_pytorch_model_name(model) and model != "dann":
         # Note: very small batch size is needed for domain shift
         # when in debug mode.
-        config.update({"batch_size": 4,
+        config.update({"batch_size": 4096,
                        "lr": 0.01,
                        "weight_decay": 0.01,
                        "n_epochs": 1})

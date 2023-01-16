@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 from frozendict import frozendict
 from ray.air import session
 import torch
+from tqdm import tqdm
 
 from tablebench.core import TabularDataset
 from tablebench.models.compat import SklearnStylePytorchModel, \
@@ -28,7 +29,7 @@ def train_epoch(model, optimizer, criterion, train_loader,
     model.train()
     running_loss = 0.0
     n_train = 0
-    for i, batch in enumerate(train_loader):
+    for i, batch in tqdm(enumerate(train_loader)):
         # get the inputs and labels
         inputs, labels, _, domains = unpack_batch(batch)
         inputs = inputs.float().to(device)

@@ -117,7 +117,7 @@ class TabularDataset(ABC):
 
     @property
     def n_domains(self) -> int:
-        """Number of domains, across all sensitive attributes."""
+        """Number of domains, across all sensitive attributes and splits."""
         if self.domain_label_colname is None:
             return 0
         else:
@@ -468,6 +468,16 @@ class CachedDataset:
         else:
             domains = os.listdir(dir)
             return sorted(domains)
+
+    @property
+    def n_domains(self) -> int:
+        """Number of domains, across all sensitive attributes and splits."""
+        if self.domain_label_colname is None:
+            return 0
+        else:
+            domains_per_split = [self.get_domains(s) for s in self.splits]
+            domains = list(set(d for ds in domains_per_split for d in ds))
+            return len(domains)
 
     def get_ray(self, split, domain=None, num_partitions=64):
         if domain:  # Match only the specified domain
