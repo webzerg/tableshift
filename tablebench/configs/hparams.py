@@ -38,7 +38,7 @@ _deepcoral_search_space = {
 
 _dro_search_space = {
     **_DEFAULT_NN_SEARCH_SPACE,
-    "geometry": ("cvar", "chi-square"),
+    "geometry": tune.choice(["cvar", "chi-square"]),
     # Note: training is very slow for large values of uncertainty
     # set size (larger than ~0.5) for chi-square geometry, particularly
     # when the learning rate is small.
