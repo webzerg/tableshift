@@ -301,6 +301,57 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 shard = shard.repeat()
             return shard.iter_torch_batches(batch_size=config["batch_size"])
 
+        def _prepare_eval_loaders() -> Dict:
+            if dset.is_domain_split:
+                # Overall eval loaders (compute e.g. overall id/ood
+                # validation and test accuracy)
+                eval_loaders = {s: _prepare_dataset_shard(s) for s in
+                                ('validation', 'id_test', 'ood_test',
+                                 'ood_validation')}
+
+            else:
+                eval_loaders = {s: _prepare_dataset_shard(s) for s in
+                                ('validation', 'test')}
+            return eval_loaders
+
+        def _on_epoch_end(loss_train):
+            """Function to be called at the end of epoch to log
+            validation/test metrics. """
+            eval_loaders = _prepare_eval_loaders()
+            metrics = ray_evaluate(model, eval_loaders)
+            metrics.update(dict(train_loss=loss_train))
+            checkpoint = get_ray_checkpoint(model)
+            session.report(metrics, checkpoint=checkpoint)
+            return
+
+        def _on_train_end(loss_train):
+            """Function to be called at the end of training to log
+            validation/test metrics.
+
+            We only compute id/ood domain-level metrics at the end of training,
+            because it is expensive to compute these every epoch.
+
+            At the final step, compute detailed per-domain test metrics (for
+            computational efficiency we do not compute per-domain validation
+            metrics).
+            """
+            eval_loaders = _prepare_eval_loaders()
+
+            id_test_loaders = {s: _prepare_dataset_shard(f"id_test_{s}")
+                               for s in dset_domains['id_test']}
+            oo_test_loaders = {s: _prepare_dataset_shard(f"ood_test_{s}")
+                               for s in dset_domains['ood_test']}
+
+            eval_loaders.update(id_test_loaders)
+            eval_loaders.update(oo_test_loaders)
+            metrics = ray_evaluate(model, eval_loaders)
+            metrics.update(dict(train_loss=loss_train))
+            checkpoint = get_ray_checkpoint(model)
+            session.report(metrics, checkpoint=checkpoint)
+            return
+
+        train_loss = np.nan  # initialize the training loss
+
         for epoch in range(n_epochs):
             print(f"[DEBUG] starting epoch {epoch} with model {model_name}")
 
@@ -320,26 +371,6 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             print(f"[DEBUG] max_examples_per_epoch is {max_examples_per_epoch}")
             print(f"[DEBUG] batch_size is {config['batch_size']}")
 
-            if dset.is_domain_split:
-                # Overall eval loaders (compute e.g. overall id/ood
-                # validation and test accuracy)
-                eval_loaders = {s: _prepare_dataset_shard(s) for s in
-                                ('validation', 'id_test', 'ood_test',
-                                 'ood_validation')}
-
-                # Per-domain test loaders (for computational efficiency we do
-                # not compute per-domain validation metrics).
-                id_test_loaders = {s: _prepare_dataset_shard(f"id_test_{s}")
-                                   for s in dset_domains['id_test']}
-                oo_test_loaders = {s: _prepare_dataset_shard(f"ood_test_{s}")
-                                   for s in dset_domains['ood_test']}
-
-                eval_loaders.update(id_test_loaders)
-                eval_loaders.update(oo_test_loaders)
-            else:
-                eval_loaders = {s: _prepare_dataset_shard(s) for s in
-                                ('validation', 'test')}
-
             if isinstance(model, torch.nn.parallel.DistributedDataParallel):
                 train_loss = model.module.train_epoch(
                     train_loaders, criterion,
@@ -352,10 +383,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                     max_examples_per_epoch=max_examples_per_epoch)
 
             # Log the metrics for this epoch
-            metrics = ray_evaluate(model, eval_loaders)
-            metrics.update(dict(train_loss=train_loss))
-            checkpoint = get_ray_checkpoint(model)
-            session.report(metrics, checkpoint=checkpoint)
+            _on_epoch_end(train_loss)
+
+        _on_train_end(train_loss)
 
     # Get the default/fixed configs (these are provided to every Trainer but
     # can be overwritten if they are also in the param_space).
