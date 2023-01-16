@@ -29,6 +29,7 @@ def train_epoch(model, optimizer, criterion, train_loader,
     model.train()
     running_loss = 0.0
     n_train = 0
+    n_batch = 0
     model_name = model.__class__.__name__
     for i, batch in tqdm(enumerate(train_loader), desc=f"{model_name}:train"):
         # get the inputs and labels
@@ -67,7 +68,8 @@ def train_epoch(model, optimizer, criterion, train_loader,
         # print statistics
         running_loss += loss.item()
         n_train += len(inputs)
-
+        n_batch += 1
+    print(f"{model_name}:train: completed {n_batch} batches")
     return running_loss / n_train
 
 
