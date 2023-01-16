@@ -29,7 +29,8 @@ def train_epoch(model, optimizer, criterion, train_loader,
     model.train()
     running_loss = 0.0
     n_train = 0
-    for i, batch in tqdm(enumerate(train_loader)):
+    model_name = model.__class__.__name__
+    for i, batch in tqdm(enumerate(train_loader), desc=f"{model_name}:train"):
         # get the inputs and labels
         inputs, labels, _, domains = unpack_batch(batch)
         inputs = inputs.float().to(device)

@@ -39,6 +39,7 @@ class DomainGeneralizationModel(MLPModel):
         loss = None
         examples_seen = 0
         while True:
+            print(f"domain_generalization:train examples seen: {examples_seen}")
             minibatches_device = [_prepare_batch(batch) for batch in
                                   next(train_minibatches_iterator)]
             # Note: if this was a domain_adaption task, do the same as above
