@@ -270,6 +270,7 @@ EXPERIMENT_CONFIGS = {
                                 domain_split_ood_values=["a"]),
         grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins"),
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None),
         tabular_dataset_kwargs={})
 }
