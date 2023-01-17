@@ -51,11 +51,18 @@ EXPERIMENT_CONFIGS = {
         tabular_dataset_kwargs={"acs_task": "acsincome"}),
 
     "acspubcov": ExperimentConfig(
-        splitter=RandomSplitter(test_size=0.5, val_size=0.25,
-                                random_state=29746),
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname='SCHL',
+                                domain_split_ood_values=['01', '02', '03', '04',
+                                                         '05', '06', '07', '08',
+                                                         '09', '10', '11', '12',
+                                                         '13', '14', '15']),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"acs_task": "acspubcov"}),
+        tabular_dataset_kwargs={"acs_task": "acspubcov", "name": "acspubcov"}),
 
     "acsunemployment": ExperimentConfig(
         splitter=RandomSplitter(test_size=0.5, val_size=0.25,
