@@ -126,15 +126,34 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "acsunemployment_year": DomainShiftExperimentConfig(
+    "acsunemployment_disability": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsunemployment",
                                 "acs_task": "acsunemployment",
                                 "years": ACS_YEARS},
-        domain_split_varname="ACS_YEAR",
-        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
-                                 range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[[ACS_YEARS[i]] for i in
-                                range(len(ACS_YEARS) - 1)],
+        domain_split_varname="DIS",
+        domain_split_ood_values=_to_nested(['1.0']),
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig()),
+
+    "acsunemployment_edlvl": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acsunemployment",
+                                "acs_task": "acsunemployment",
+                                "years": ACS_YEARS},
+        domain_split_varname='SCHL',
+        # No high school diploma vs. GED/diploma or higher.
+        domain_split_ood_values=_to_nested(['01', '02', '03', '04',
+                                            '05', '06', '07', '08',
+                                            '09', '10', '11', '12',
+                                            '13', '14', '15']),
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig()),
+
+    "acsunemployment_mobility": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acsunemployment",
+                                "acs_task": "acsunemployment",
+                                "years": ACS_YEARS},
+        domain_split_varname='MIG',
+        domain_split_ood_values=_to_nested(['02', '03']),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
