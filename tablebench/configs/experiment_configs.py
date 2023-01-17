@@ -18,6 +18,15 @@ class ExperimentConfig:
     tabular_dataset_kwargs: dict
 
 
+# We passthrough all non-static columns because we use
+# MIMIC-extract's default preprocessing/imputation and do not
+# wish to modify it for these features
+# (static features are not preprocessed by MIMIC-extract). See
+# tableshift.datasets.mimic_extract.preprocess_mimic_extract().
+_MIMIC_EXTRACT_PASSTHROUGH_COLUMNS = [
+    f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
+    if f not in MIMIC_EXTRACT_STATIC_FEATURES.names]
+
 EXPERIMENT_CONFIGS = {
     "acsfoodstamps": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
@@ -174,23 +183,30 @@ EXPERIMENT_CONFIGS = {
         tabular_dataset_kwargs={"name": "heloc"},
     ),
     "mimic_extract_los_3": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.05,
-                                id_test_size=0.2,
-                                random_state=43456,
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
                                 domain_split_varname="insurance",
-                                domain_split_ood_values=[
-                                    "Medicare", "Medicaid"]),
+                                domain_split_ood_values=["Medicare"]),
+
         grouper=Grouper({"gender": ['M'], }, drop=False),
-        # We passthrough all non-static columns because we use
-        # MIMIC-extract's default preprocessing/imputation and do not
-        # wish to modify it for these features
-        # (static features are not preprocessed by MIMIC-extract). See
-        # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
         preprocessor_config=PreprocessorConfig(
-            passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
-                                 if
-                                 f not in MIMIC_EXTRACT_STATIC_FEATURES.names]),
+            passthrough_columns=_MIMIC_EXTRACT_PASSTHROUGH_COLUMNS),
         tabular_dataset_kwargs={"task": "los_3"}),
+
+    "mimic_extract_hosp_mort": ExperimentConfig(
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname="insurance",
+                                domain_split_ood_values=["Medicare",
+                                                         "Medicaid"]),
+        grouper=Grouper({"gender": ['M'], }, drop=False),
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=_MIMIC_EXTRACT_PASSTHROUGH_COLUMNS),
+        tabular_dataset_kwargs={"task": "mort_hosp"}),
 
     "mooc": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.01,
