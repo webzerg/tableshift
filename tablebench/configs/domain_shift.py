@@ -104,15 +104,23 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "acspubcov_year": DomainShiftExperimentConfig(
+    "acspubcov_disability": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acspubcov",
                                 "acs_task": "acspubcov",
                                 "years": ACS_YEARS},
-        domain_split_varname="ACS_YEAR",
-        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
-                                 range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[[ACS_YEARS[i]] for i in
-                                range(len(ACS_YEARS) - 1)],
+        domain_split_varname="DIS",
+        domain_split_ood_values=_to_nested([1]),
+        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig()),
+
+    "acspubcov_edlvl": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "acspubcov",
+                                "acs_task": "acspubcov",
+                                "years": ACS_YEARS},
+        domain_split_varname="DIS",
+        # No high school diploma vs. GED/diploma or higher.
+        domain_split_ood_values=_to_nested([1, 2, 3, 4, 5, 6, 7, 8, 9,
+                                            10, 11, 12, 13, 14, 15]),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
