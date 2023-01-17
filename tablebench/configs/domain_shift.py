@@ -117,7 +117,7 @@ domain_shift_experiment_configs = {
         tabular_dataset_kwargs={"name": "acspubcov",
                                 "acs_task": "acspubcov",
                                 "years": ACS_YEARS},
-        domain_split_varname="DIS",
+        domain_split_varname='SCHL',
         # No high school diploma vs. GED/diploma or higher.
         domain_split_ood_values=_to_nested([1, 2, 3, 4, 5, 6, 7, 8, 9,
                                             10, 11, 12, 13, 14, 15]),
