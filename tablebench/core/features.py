@@ -313,7 +313,11 @@ class PreprocessorConfig:
         logging.debug(f"dropped {start_len - len(data)} rows "
                       f"containing missing values "
                       f"({(start_len - len(data)) * 100 / start_len}% of data).")
-        return data.reset_index(drop=True)
+        data.reset_index(drop=True, inplace=True)
+        if not len(data):
+            raise ValueError(f"Data is empty after applying dropna="
+                             f"{self.dropna}")
+        return data
 
     def _check_inputs(self, data):
         prohibited_chars = "[].<>"
