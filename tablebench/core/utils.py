@@ -108,5 +108,12 @@ def timestamp_as_int() -> int:
 ILLEGAL_CHARS_REGEX = '[\\[\\]{}.:<>/,"]'
 
 
+def contains_illegal_chars(s: str) -> bool:
+    if re.search(ILLEGAL_CHARS_REGEX, s):
+        return True
+    else:
+        return False
+
+
 def sub_illegal_chars(s: str) -> str:
     return re.sub(ILLEGAL_CHARS_REGEX, "", s)
