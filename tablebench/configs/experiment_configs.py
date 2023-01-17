@@ -86,8 +86,10 @@ EXPERIMENT_CONFIGS = {
         tabular_dataset_kwargs={}),
 
     "brfss_blood_pressure": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.1, id_test_size=0.1,
-                                random_state=29746,
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
                                 domain_split_varname="POVERTY",
                                 domain_split_ood_values=[1],
                                 domain_split_id_values=[0, ]),
@@ -171,17 +173,21 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
-    "heloc": ExperimentConfig(
-        splitter=DomainSplitter(
-            val_size=0.01,
-            id_test_size=0.1,
-            random_state=43590,
-            domain_split_varname='NetFractionRevolvingBurdenPercentile',
-            domain_split_ood_values=list(range(90, 101))),
-        grouper=None,
-        preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"name": "heloc"},
-    ),
+    # "heloc": ExperimentConfig(
+    #     splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+    #                             ood_val_size=DEFAULT_OOD_VAL_SIZE,
+    #                             random_state=DEFAULT_RANDOM_STATE,
+    #                             id_test_size=DEFAULT_ID_TEST_SIZE,
+    #                             domain_split_varname='NetFractionRevolvingBurdenPercentile',
+    #                             # TODO(jpgard): this should be a binary
+    #                             #  split, not one with per-percentile
+    #                             #  domains. Otherwise we will have 100
+    #                             #  different dataloaders!
+    #                             domain_split_ood_values=list(range(90, 101))),
+    #     grouper=None,
+    #     preprocessor_config=PreprocessorConfig(),
+    #     tabular_dataset_kwargs={"name": "heloc"},
+    # ),
     "mimic_extract_los_3": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
                                 ood_val_size=DEFAULT_OOD_VAL_SIZE,
@@ -211,9 +217,10 @@ EXPERIMENT_CONFIGS = {
                                 "name": "mimic_extract_mort_hosp"}),
 
     "mooc": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.01,
-                                id_test_size=0.2,
-                                random_state=43406,
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
                                 domain_split_varname="course_id",
                                 domain_split_ood_values=[
                                     "HarvardX/CB22x/2013_Spring"]),
@@ -223,14 +230,14 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
     "nhanes_cholesterol": ExperimentConfig(
-        splitter=DomainSplitter(
-            val_size=0.1,
-            random_state=453879,
-            id_test_size=0.1,
-            domain_split_varname='RIDRETH_merged',
-            domain_split_ood_values=[1, 2, 4, 6, 7],
-            domain_split_id_values=[3],
-        ),
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname='RIDRETH_merged',
+                                domain_split_ood_values=[1, 2, 4, 6, 7],
+                                domain_split_id_values=[3],
+                                ),
         # Group by male vs. all others
         grouper=Grouper({"RIAGENDR": ["1.0", ]}, drop=False),
         preprocessor_config=PreprocessorConfig(
@@ -240,12 +247,12 @@ EXPERIMENT_CONFIGS = {
                                 "years": NHANES_YEARS}),
 
     "nhanes_lead": ExperimentConfig(
-        splitter=DomainSplitter(
-            val_size=0.1,
-            random_state=53079340,
-            id_test_size=0.1,
-            domain_split_varname='INDFMPIRBelowCutoff',
-            domain_split_ood_values=[1.]),
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname='INDFMPIRBelowCutoff',
+                                domain_split_ood_values=[1.]),
         # Race (non. hispanic white vs. all others; male vs. all others)
         grouper=Grouper({"RIDRETH_merged": [3, ], "RIAGENDR": ["1.0", ]},
                         drop=False),
@@ -255,9 +262,10 @@ EXPERIMENT_CONFIGS = {
         tabular_dataset_kwargs={"nhanes_task": "lead", "years": NHANES_YEARS}),
 
     "physionet": ExperimentConfig(
-        splitter=DomainSplitter(val_size=0.05,
-                                id_test_size=0.2,
-                                random_state=43406,
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
                                 domain_split_varname="set",
                                 domain_split_ood_values=["a"]),
         grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
