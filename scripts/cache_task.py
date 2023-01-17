@@ -1,11 +1,20 @@
 """Cache a tabualr dataset to parquet."""
 import argparse
+import logging
 
 from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS, \
     ExperimentConfig
 from tablebench.configs.domain_shift import domain_shift_experiment_configs
 from tablebench.core.utils import make_uid
+
+LOG_LEVEL = logging.DEBUG
+
+logger = logging.getLogger()
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    level=LOG_LEVEL,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def _cache_experiment(expt_config: ExperimentConfig, cache_dir,
