@@ -109,7 +109,7 @@ domain_shift_experiment_configs = {
                                 "acs_task": "acspubcov",
                                 "years": ACS_YEARS},
         domain_split_varname="DIS",
-        domain_split_ood_values=_to_nested([1]),
+        domain_split_ood_values=_to_nested(['1.0']),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
