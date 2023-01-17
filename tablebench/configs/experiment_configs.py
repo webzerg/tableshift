@@ -73,8 +73,7 @@ EXPERIMENT_CONFIGS = {
                                 domain_split_ood_values=['02', '03']),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"acs_task": "acsunemployment",
-                                "states": ["CA"]}),
+        tabular_dataset_kwargs={"acs_task": "acsunemployment"}),
 
     "adult": ExperimentConfig(
         splitter=FixedSplitter(val_size=0.25, random_state=29746),
