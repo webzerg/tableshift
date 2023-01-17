@@ -193,7 +193,8 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"gender": ['M'], }, drop=False),
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=_MIMIC_EXTRACT_PASSTHROUGH_COLUMNS),
-        tabular_dataset_kwargs={"task": "los_3"}),
+        tabular_dataset_kwargs={"task": "los_3",
+                                "name": "mimic_extract_los_3"}),
 
     "mimic_extract_hosp_mort": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
@@ -206,7 +207,8 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"gender": ['M'], }, drop=False),
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=_MIMIC_EXTRACT_PASSTHROUGH_COLUMNS),
-        tabular_dataset_kwargs={"task": "mort_hosp"}),
+        tabular_dataset_kwargs={"task": "mort_hosp",
+                                "name": "mimic_extract_mort_hosp"}),
 
     "mooc": ExperimentConfig(
         splitter=DomainSplitter(val_size=0.01,
