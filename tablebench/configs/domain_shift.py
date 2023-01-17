@@ -180,6 +180,17 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["IYEAR"]), ),
 
+    "brfss_blood_pressure_bmi": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "brfss_blood_pressure",
+                                "task": "blood_pressure",
+                                "years": BRFSS_YEARS},
+        domain_split_varname="BMI5CAT",
+        # OOD values: [1 underweight, 2 normal weight], [3 overweight, 4 obese]
+        domain_split_ood_values=[["1", "2"], ["3", "4"]],
+        grouper=Grouper({"SEX": [1, ]}, drop=False),
+        preprocessor_config=PreprocessorConfig(
+            passthrough_columns=["IYEAR"]), ),
+
     "candc_st": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "communities_and_crime"},
         domain_split_varname="state",
