@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 
 from tablebench.core.splitter import DomainSplitter
+from tablebench.core.utils import contains_illegal_chars
 
 np.random.seed(54329)
 
@@ -122,7 +123,8 @@ class TestDomainSplitterDtypes(unittest.TestCase):
 
         # Check that number of OOD observations over all splits matches
         # number of OOD observations in the original data.
-        ood_elems_in_splits = sum(len(v) for k, v in splits.items() if "ood" in k)
+        ood_elems_in_splits = sum(
+            len(v) for k, v in splits.items() if "ood" in k)
         ood_elems_in_data = np.isin(data["domain"].values, ood_vals).sum()
         self.assertEqual(ood_elems_in_data, ood_elems_in_splits)
 
@@ -149,6 +151,7 @@ class TestDomainSplitterDtypes(unittest.TestCase):
 
         # Check that number of OOD observations over all splits matches
         # number of OOD observations in the original data.
-        ood_elems_in_splits = sum(len(v) for k, v in splits.items() if "ood" in k)
+        ood_elems_in_splits = sum(
+            len(v) for k, v in splits.items() if "ood" in k)
         ood_elems_in_data = np.isin(data["domain"].values, ood_vals).sum()
         self.assertEqual(ood_elems_in_data, ood_elems_in_splits)
