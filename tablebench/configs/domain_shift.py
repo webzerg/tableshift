@@ -113,19 +113,6 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "acspubcov_edlvl": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acspubcov",
-                                "acs_task": "acspubcov",
-                                "years": ACS_YEARS},
-        domain_split_varname='SCHL',
-        # No high school diploma vs. GED/diploma or higher.
-        domain_split_ood_values=_to_nested(['01', '02', '03', '04',
-                                            '05', '06', '07', '08',
-                                            '09', '10', '11', '12',
-                                            '13', '14', '15']),
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
     "acsunemployment_disability": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsunemployment",
                                 "acs_task": "acsunemployment",
