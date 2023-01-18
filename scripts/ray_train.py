@@ -16,7 +16,7 @@ from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.core.utils import timestamp_as_int
 from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
     get_default_ray_local_dir
-from tablebench.models.compat import PYTORCH_MODEL_NAMES
+from tablebench.models.compat import PYTORCH_MODEL_NAMES, DOMAIN_GENERALIZATION_MODEL_NAMES
 
 LOG_LEVEL = logging.DEBUG
 
@@ -42,6 +42,7 @@ def main(experiment: str, uid: str, cache_dir: str,
          scheduler: str = None,
          gpu_models_only: bool = False,
          cpu_models_only: bool = False,
+         no_dg: bool = False
          ):
     start_time = timestamp_as_int()
     assert not (gpu_models_only and cpu_models_only)
@@ -54,6 +55,12 @@ def main(experiment: str, uid: str, cache_dir: str,
     else:
         assert model is not None
         models = [model]
+
+    if no_dg:
+        logging.info(f"no_dg is {no_dg}; dropping domain generalization models")
+        models = list(set(models) - set(DOMAIN_GENERALIZATION_MODEL_NAMES))
+
+    logging.info(f"training models {models}")
 
     if not ray_tmp_dir:
         ray_tmp_dir = get_default_ray_tmp_dir()
@@ -90,6 +97,7 @@ def main(experiment: str, uid: str, cache_dir: str,
 
     iterates = []
     for model_name in models:
+        logging.info(f"training model {model_name}")
         metric_name, mode = accuracy_metric_name_and_mode_for_model(model_name)
 
         tune_config = RayExperimentConfig(
@@ -126,6 +134,7 @@ def main(experiment: str, uid: str, cache_dir: str,
             iterates.append(df)
 
             print(df)
+            logging.info(f"finished training model {model_name}")
         except Exception as e:
             logging.warning(f"exception training {model_name}: {e}, skipping")
             continue
@@ -170,6 +179,10 @@ if __name__ == "__main__":
                              "sweep.")
     parser.add_argument("--num_workers", type=int, default=1,
                         help="Number of workers to use.")
+    parser.add_argument("--no_dg", action="store_true", default=False,
+                        help="If true, do NOT train domain generalization"
+                             "models. Set this flag when there is only a"
+                             "single training domain.")
     parser.add_argument("--no_tune", action="store_true", default=False,
                         help="If set, suppresses hyperparameter tuning of the "
                              "model (for faster testing).")
