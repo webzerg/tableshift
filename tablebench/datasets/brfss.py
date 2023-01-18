@@ -160,7 +160,9 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
 
     # Indicators for high blood pressure; see
     # https://www.nhlbi.nih.gov/health/high-blood-pressure/causes
-
+    ################ BMI/Obesity ################
+    # Four-categories of Body Mass Index (BMI)
+    Feature("BMI5CAT", cat_dtype),
     ################ Age ################
     Feature("AGEG5YR", float, "Fourteen-level age category",
             na_values=(14,)),
