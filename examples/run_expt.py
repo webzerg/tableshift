@@ -1,9 +1,18 @@
 import argparse
+import logging
 from tablebench.core import TabularDataset, TabularDatasetConfig
 
 from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.utils import get_estimator
 from tablebench.models.training import train
+
+LOG_LEVEL = logging.INFO
+
+logger = logging.getLogger()
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    level=LOG_LEVEL,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def main(experiment, cache_dir, model, debug: bool):
