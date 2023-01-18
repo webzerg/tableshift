@@ -186,7 +186,7 @@ domain_shift_experiment_configs = {
                                 "years": BRFSS_YEARS},
         domain_split_varname="BMI5CAT",
         # OOD values: [1 underweight, 2 normal weight], [3 overweight, 4 obese]
-        domain_split_ood_values=[["1", "2"], ["3", "4"]],
+        domain_split_ood_values=[[1, 2], [3, 4]],
         grouper=Grouper({"SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(
             passthrough_columns=["IYEAR"]), ),
