@@ -3,7 +3,7 @@ from typing import List, Union
 import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
-from tablebench.core.utils import sub_illegal_chars, conver
+from tablebench.core.utils import sub_illegal_chars
 from tablebench.datasets.utils import convert_numeric_dtypes, complete_cases
 from tablebench.datasets.mimic_extract_feature_lists import \
     MIMIC_EXTRACT_SHARED_FEATURES
