@@ -52,8 +52,11 @@ def column_is_of_type(x: pd.Series, dtype) -> bool:
         # Check if x is a subdtype of the more general type specified in
         # dtype; this will not perform casting of identical subtypes (i.e.
         # does not cast int64 to int).
-        return np.issubdtype(x.dtype, dtype)
-
+        try:
+            return np.issubdtype(x.dtype, dtype)
+        except Exception as e:
+            logging.error(e)
+            import ipdb;ipdb.set_trace()
 
 @dataclass(frozen=True)
 class Feature:
