@@ -21,7 +21,7 @@ from .grouper import Grouper
 from .tasks import get_task_config
 from .features import PreprocessorConfig
 from .metrics import metrics_by_group
-from .utils import make_uid
+from .utils import make_uid, convert_64bit_numeric_cols
 from tablebench.third_party.domainbed import InfiniteDataLoader
 
 
@@ -152,9 +152,17 @@ class TabularDataset(ABC):
                 self.feature_names].columns
         return
 
+    @staticmethod
+    def _check_data_source(df: pd.DataFrame):
+        """Check the data returned by DataSource.get_data()."""
+        df = convert_64bit_numeric_cols(df)
+        df.reset_index(drop=True, inplace=True)
+        return df
+
     def _initialize_data(self):
         """Load the data/labels/groups from a data source."""
-        data = self.data_source.get_data().reset_index(drop=True)
+        data = self.data_source.get_data()
+        data = self._check_data_source(data)
         data = self.task_config.feature_list.apply_schema(
             data, passthrough_columns=["Split"])
         data = self.preprocessor_config._dropna(data)

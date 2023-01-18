@@ -117,3 +117,12 @@ def contains_illegal_chars(s: str) -> bool:
 
 def sub_illegal_chars(s: str) -> str:
     return re.sub(ILLEGAL_CHARS_REGEX, "", s)
+
+
+def convert_64bit_numeric_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert float64 or int64 columns to float/int32.
+
+    Not all numpy dtypes are compatible with 64-bit precision."""
+    int64_float64_cols = list(df.select_dtypes(include=['float64', 'int64']))
+    df[int64_float64_cols] = df[int64_float64_cols].astype('float32')
+    return df

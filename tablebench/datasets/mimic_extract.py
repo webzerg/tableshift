@@ -3,7 +3,7 @@ from typing import List, Union
 import pandas as pd
 
 from tablebench.core.features import Feature, FeatureList, cat_dtype
-from tablebench.core.utils import sub_illegal_chars
+from tablebench.core.utils import sub_illegal_chars, conver
 from tablebench.datasets.utils import convert_numeric_dtypes, complete_cases
 from tablebench.datasets.mimic_extract_feature_lists import \
     MIMIC_EXTRACT_SHARED_FEATURES
@@ -155,9 +155,4 @@ def preprocess_mimic_extract(df: pd.DataFrame, task: str,
     # TableShift preprocessor.
     flattened_df.columns = [sub_illegal_chars(c) for c in flattened_df.columns]
 
-    # Some columns are of type float64; convert these to float32 (not all 
-    # numpy functions support float64 data types).
-    # Select columns with 'float64' dtype  
-    int64_float64_cols = list(flattened_df.select_dtypes(include=['float64', 'int64']))
-    flattened_df[int64_float64_cols] = flattened_df[int64_float64_cols].astype('float32')
     return flattened_df
