@@ -154,4 +154,12 @@ def preprocess_mimic_extract(df: pd.DataFrame, task: str,
     # Clean up variable names, since most columns are passed-through by the
     # TableShift preprocessor.
     flattened_df.columns = [sub_illegal_chars(c) for c in flattened_df.columns]
+    
+    # Some columns are of type float64; convert these to float32 (not all 
+    # numpy functions support float64 data types).
+    # Select columns with 'float64' dtype  
+    float64_cols = list(flattened_df.select_dtypes(include='float64'))
+
+    # The same code again calling the columns
+    flattened_df[float64_cols] = flattened_df[float64_cols].astype('float32')
     return flattened_df
