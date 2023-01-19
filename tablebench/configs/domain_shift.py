@@ -125,7 +125,7 @@ domain_shift_experiment_configs = {
     "brfss_blood_pressure_income": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "brfss_blood_pressure",
                                 "task": "blood_pressure",
-                                "years": BRFSS_YEARS},
+                                "years": (2019, 2021)},
         domain_split_varname="POVERTY",
         # Train on non-poverty observations; test (OOD) on poverty observations
         domain_split_ood_values=_to_nested([1, ]),
