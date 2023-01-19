@@ -4,7 +4,7 @@
 sudo yum install git -y
 
 wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh && \
-sh Miniconda3-py38_22.11.1-1-Linux-x86_64.sh
+bash Miniconda3-py38_22.11.1-1-Linux-x86_64.sh
 
 source ~/.bashrc && conda config --set auto_activate_base false
 
