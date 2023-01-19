@@ -251,15 +251,22 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
                                                dropna=None)
     ),
-
-    "anes_st": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
-        domain_split_varname="VCF0901b",
-        domain_split_ood_values=_to_nested(ANES_STATES),
-        grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
-                        drop=False),
+    "physionet_unit1": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "physionet"},
+        domain_split_varname="Unit1",
+        domain_split_ood_values=[[0, ], [1, ]],
+        grouper=None,
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None)),
+                                               dropna=None)
+    ),
+    "physionet_unit2": DomainShiftExperimentConfig(
+        tabular_dataset_kwargs={"name": "physionet"},
+        domain_split_varname="Unit2",
+        omain_split_ood_values=[[0, ], [1, ]],
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None)
+    ),
 
     "anes_region": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "anes", "years": [2020, ]},
