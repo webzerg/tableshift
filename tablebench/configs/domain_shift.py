@@ -72,35 +72,11 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
-    "acsfoodstamps_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsfoodstamps",
-                                "acs_task": "acsfoodstamps",
-                                "years": ACS_YEARS},
-        domain_split_varname="ACS_YEAR",
-        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
-                                 range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[[ACS_YEARS[i]] for i in
-                                range(len(ACS_YEARS) - 1)],
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
     "acsincome_region": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsincome",
                                 "acs_task": "acsincome"},
         domain_split_varname="DIVISION",
         domain_split_ood_values=_to_nested(ACS_REGIONS),
-        grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
-
-    "acsincome_year": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "acsincome",
-                                "acs_task": "acsincome",
-                                "years": ACS_YEARS},
-        domain_split_varname="ACS_YEAR",
-        domain_split_ood_values=[ACS_YEARS[i + 1] for i in
-                                 range(len(ACS_YEARS) - 1)],
-        domain_split_id_values=[[ACS_YEARS[i]] for i in
-                                range(len(ACS_YEARS) - 1)],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
@@ -115,8 +91,7 @@ domain_shift_experiment_configs = {
 
     "acsunemployment_edlvl": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsunemployment",
-                                "acs_task": "acsunemployment",
-                                "years": ACS_YEARS},
+                                "acs_task": "acsunemployment"},
         domain_split_varname='SCHL',
         # No high school diploma vs. GED/diploma or higher.
         domain_split_ood_values=[['01', '02', '03', '04',
@@ -130,10 +105,9 @@ domain_shift_experiment_configs = {
 
     "acsunemployment_mobility": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsunemployment",
-                                "acs_task": "acsunemployment",
-                                "years": ACS_YEARS},
+                                "acs_task": "acsunemployment"},
         domain_split_varname='MIG',
-        domain_split_ood_values=_to_nested(['02', '03']),
+        domain_split_ood_values=[['02', '03']],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig()),
 
