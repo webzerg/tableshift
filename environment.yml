@@ -5,6 +5,7 @@ dependencies:
   - python=3.8
   - pip
   - pip:
+    - numpy==1.23.5
     - ray[air]
     - ray[tune]
     - torch
