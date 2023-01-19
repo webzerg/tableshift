@@ -488,7 +488,7 @@ class CachedDataset:
             domains = list(set(d for ds in domains_per_split for d in ds))
             return len(domains)
 
-    def get_ray(self, split, domain=None, num_partitions=64):
+    def get_ray(self, split, domain=None, num_partitions_per_file=16):
         if domain:  # Match only the specified domain
             dir = os.path.join(self.base_dir, split, domain)
         else:  # Match any domain
@@ -497,7 +497,9 @@ class CachedDataset:
         files = glob.glob(fileglob)
         assert len(files), f"no files detected for split {split} " \
                            f"matching {fileglob}"
+        num_partitions = len(files) * num_partitions_per_file
         return ray.data \
-            .read_csv(files,
-                      meta_provider=ray.data.datasource.FastFileMetadataProvider()) \
+            .read_csv(
+                files,
+                meta_provider=ray.data.datasource.FastFileMetadataProvider()) \
             .repartition(num_partitions)
