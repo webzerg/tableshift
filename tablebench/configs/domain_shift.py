@@ -262,7 +262,7 @@ domain_shift_experiment_configs = {
     "physionet_unit2": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "physionet"},
         domain_split_varname="Unit2",
-        omain_split_ood_values=[[0, ], [1, ]],
+        domain_split_ood_values=[[0, ], [1, ]],
         grouper=None,
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
                                                dropna=None)
