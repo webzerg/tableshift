@@ -101,6 +101,7 @@ class RayExperimentConfig:
     search_alg: str = "hyperopt"
     scheduler: str = None
     random_state: int = _DEFAULT_RANDOM_STATE  # random state for determinism in the search algorithm
+    reuse_actors: bool = True
     gpu_per_worker: float = 1.0  # set to fraction to allow multiple workers per GPU
     cpu_per_worker: int = 1
 
@@ -545,6 +546,7 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                              local_dir=tune_config.ray_local_dir),
         param_space=param_space,
         tune_config=tune.TuneConfig(
+            reuse_actors=tune_config.reuse_actors,
             search_alg=tune_config.get_search_alg(),
             scheduler=tune_config.get_scheduler(),
             num_samples=tune_config.num_samples,
