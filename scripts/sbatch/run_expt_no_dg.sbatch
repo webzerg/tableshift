@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=6
 #SBATCH --partition=gpu-a40
 #SBATCH --gpus-per-node=3
-#SBATCH --mem-per-gpu=250000m
+#SBATCH --mem-per-gpu=100000m
 #SBATCH --time=15-00:00:00
 #SBATCH --account=efml
 #SBATCH --chdir=/gscratch/efml/jpgard/tableshift
