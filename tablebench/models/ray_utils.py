@@ -306,21 +306,27 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                 shard = shard.repeat()
             return shard.iter_torch_batches(batch_size=config["batch_size"])
 
-        def _prepare_eval_loaders() -> Dict:
-            if dset.is_domain_split:
+        def _prepare_eval_loaders(validation_only=False) -> Dict:
+            if validation_only and dset.is_domain_split:
+                eval_shards = ('validation', 'ood_validation')
+
+            elif validation_only:
+                eval_shards = ('validation')
+
+            elif dset.is_domain_split:
                 # Overall eval loaders (compute e.g. overall id/ood
                 # validation and test accuracy)
-                eval_loaders = {s: _prepare_shard(s) for s in
-                                ('validation', 'id_test', 'ood_test',
-                                 'ood_validation')}
+                eval_shards = (
+                    'validation', 'id_test', 'ood_test', 'ood_validation')
 
             else:
-                eval_loaders = {s: _prepare_shard(s) for s in
-                                ('validation', 'test')}
+                eval_shards = ('validation', 'test')
+
+            eval_loaders = {s: _prepare_shard(s) for s in eval_shards}
             return eval_loaders
 
         def _on_epoch_end(loss_train):
-            """Function to be called at the end of training to log
+            """Function to be called at the end of each training epoch to log
             validation/test metrics.
 
             We only compute id/ood domain-level metrics at the end of training,
@@ -330,8 +336,28 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
             computational efficiency we do not compute per-domain validation
             metrics).
             """
-            eval_loaders = _prepare_eval_loaders()
+            eval_loaders = _prepare_eval_loaders(validation_only=True)
+            logging.info(f"computing metrics on splits {eval_loaders.keys()}")
+            metrics = ray_evaluate(model, eval_loaders)
+            metrics.update(dict(train_loss=loss_train))
+            checkpoint = get_ray_checkpoint(model)
+            session.report(metrics, checkpoint=checkpoint)
+            return
 
+        def _on_train_end(loss_train):
+            """Function to be called at the end of each training epoch to log
+            validation/test metrics.
+
+            We only compute id/ood domain-level metrics at the end of training,
+            because it is expensive to compute these every epoch.
+
+            At the final step, compute detailed per-domain test metrics (for
+            computational efficiency we do not compute per-domain validation
+            metrics).
+            """
+            eval_loaders = _prepare_eval_loaders(validation_only=False)
+            # TODO(jpgard): only compute ID val accuracy here. The others we
+            #  will only compute on train end.
             id_test_loaders = {s: _prepare_shard(f"id_test_{s}")
                                for s in dset_domains['id_test']}
             oo_test_loaders = {s: _prepare_shard(f"ood_test_{s}")
@@ -339,11 +365,11 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
 
             eval_loaders.update(id_test_loaders)
             eval_loaders.update(oo_test_loaders)
+            logging.info(f"computing metrics on splits {eval_loaders.keys()}")
             metrics = ray_evaluate(model, eval_loaders)
             metrics.update(dict(train_loss=loss_train))
             checkpoint = get_ray_checkpoint(model)
             session.report(metrics, checkpoint=checkpoint)
-            return
 
         train_loss = np.nan  # initialize the training loss
 
@@ -377,7 +403,15 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                     train_loaders, criterion, **train_kwargs)
 
             # Log the metrics for this epoch
-            _on_epoch_end(train_loss)
+            if epoch == 0:
+                # Hack: the ray ResultsGrid object will only store metrics that
+                # are populated on the first run; we run a full test eval
+                # to populate all of the metrics.
+                _on_train_end(train_loss)
+            else:
+                _on_epoch_end(train_loss)
+        # Log per-domain performance only on training end.
+        _on_train_end(train_loss)
 
     # Get the default/fixed configs (these are provided to every Trainer but
     # can be overwritten if they are also in the param_space).

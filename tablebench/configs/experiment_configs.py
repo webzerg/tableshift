@@ -162,7 +162,7 @@ EXPERIMENT_CONFIGS = {
             # A43     280
             domain_split_ood_values=["A44", "A410", "A45", "A46", "A48"]
         ),
-        grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
+        grouper=Grouper({"sex": ['1.0', ], "age_geq_median": ['1.0', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(),
         tabular_dataset_kwargs={"name": "german"}),
