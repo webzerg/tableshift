@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from typing import Optional
+from typing import Optional, List
 
 import pandas as pd
 import torch
@@ -42,7 +42,8 @@ def main(experiment: str, uid: str, cache_dir: str,
          scheduler: str = None,
          gpu_models_only: bool = False,
          cpu_models_only: bool = False,
-         no_dg: bool = False
+         no_dg: bool = False,
+         exclude_models: Optional[List[str]] = None
          ):
     start_time = timestamp_as_int()
     assert not (gpu_models_only and cpu_models_only)
@@ -59,6 +60,10 @@ def main(experiment: str, uid: str, cache_dir: str,
     if no_dg:
         logging.info(f"no_dg is {no_dg}; dropping domain generalization models")
         models = list(set(models) - set(DOMAIN_GENERALIZATION_MODEL_NAMES))
+
+    if exclude_models:
+        logging.info(f"dropping models {exclude_models}")
+        models = list(set(models) - set(exclude_models))
 
     logging.info(f"training models {models}")
 
@@ -163,6 +168,9 @@ if __name__ == "__main__":
                              "speed up experiment.")
     parser.add_argument("--experiment", default="diabetes_readmission",
                         help="Experiment to run. Overridden when debug=True.")
+    parser.add_argument("--exclude_models", nargs="+", action="store", default=[],
+                        help="models to exclude, by name. Can be specified"
+                             "multiple times, e.g. --exclude_models dro mlp xgb ...")
     parser.add_argument("--gpu_models_only", default=False,
                         action="store_true",
                         help="whether to only train models that use GPU."
