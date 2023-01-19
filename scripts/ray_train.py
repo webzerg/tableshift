@@ -34,7 +34,7 @@ def main(experiment: str, uid: str, cache_dir: str,
          no_tune: bool, num_samples: int, search_alg: str,
          use_cached: bool,
          results_dir: str,
-         model: Optional[str] = None,
+         models: Optional[List[str]] = None,
          max_concurrent_trials=2,
          num_workers=1,
          gpu_per_worker: float = 1.0,
@@ -54,8 +54,7 @@ def main(experiment: str, uid: str, cache_dir: str,
     elif cpu_models_only:
         models = ["xgb", "lightgbm"]
     else:
-        assert model is not None
-        models = [model]
+        assert models is not None
 
     if no_dg:
         logging.info(f"no_dg is {no_dg}; dropping domain generalization models")
@@ -179,9 +178,11 @@ if __name__ == "__main__":
                         help="GPUs per worker. Use fractional values < 1. "
                              "(e.g. --gpu_per_worker=0.5) in order"
                              "to allow multiple workers to share GPU.")
-    parser.add_argument("--model", default="mlp",
-                        help="Model name to train. Not used if "
-                             "--cpu_models_only or --gpu_models_only is used.")
+    parser.add_argument("--models", nargs="+", action="store", default=["mlp"],
+                        help="Model names to train. Not used if "
+                             "--cpu_models_only or --gpu_models_only is used."
+                             "Can be specified multiple times, e.g."
+                             "==model mlp xgb dro ...")
     parser.add_argument("--num_samples", type=int, default=100,
                         help="Number of hparam samples to take in tuning "
                              "sweep.")
