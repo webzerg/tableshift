@@ -403,7 +403,13 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
                     train_loaders, criterion, **train_kwargs)
 
             # Log the metrics for this epoch
-            _on_epoch_end(train_loss)
+            if epoch == 0:
+                # Hack: the ray ResultsGrid object will only store metrics that
+                # are populated on the first run; we run a full test eval
+                # to populate all of the metrics.
+                _on_train_end(train_loss)
+            else:
+                _on_epoch_end(train_loss)
         # Log per-domain performance only on training end.
         _on_train_end(train_loss)
 
