@@ -189,6 +189,18 @@ EXPERIMENT_CONFIGS = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
+    "heloc": ExperimentConfig(
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname='ExternalRiskEstimateLow',
+                                domain_split_ood_values=[1]),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(),
+        tabular_dataset_kwargs={"name": "heloc"},
+    ),
+
     "mimic_extract_los_3": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
                                 ood_val_size=DEFAULT_OOD_VAL_SIZE,
