@@ -6,7 +6,7 @@ from tablebench.core.features import Feature, FeatureList, cat_dtype
 HELOC_FEATURES = FeatureList(features=[
     Feature('RiskPerformance', int, "Paid as negotiated flag (12-36 Months). "
                                     "String of Good and Bad", is_target=True),
-    Feature('ExternalRiskEstimate', int,
+    Feature('ExternalRiskEstimateLow', int,
             "Consolidated version of risk markers"),
     Feature('MSinceOldestTradeOpen', int, 'Months Since Oldest Trade Open'),
     Feature('MSinceMostRecentTradeOpen', int,
