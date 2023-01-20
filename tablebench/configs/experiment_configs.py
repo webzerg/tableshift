@@ -188,21 +188,7 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
-    # "heloc": ExperimentConfig(
-    #     splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
-    #                             ood_val_size=DEFAULT_OOD_VAL_SIZE,
-    #                             random_state=DEFAULT_RANDOM_STATE,
-    #                             id_test_size=DEFAULT_ID_TEST_SIZE,
-    #                             domain_split_varname='NetFractionRevolvingBurdenPercentile',
-    #                             # TODO(jpgard): this should be a binary
-    #                             #  split, not one with per-percentile
-    #                             #  domains. Otherwise we will have 100
-    #                             #  different dataloaders!
-    #                             domain_split_ood_values=list(range(90, 101))),
-    #     grouper=None,
-    #     preprocessor_config=PreprocessorConfig(),
-    #     tabular_dataset_kwargs={"name": "heloc"},
-    # ),
+
     "mimic_extract_los_3": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
                                 ood_val_size=DEFAULT_OOD_VAL_SIZE,
