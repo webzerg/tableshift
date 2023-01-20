@@ -105,11 +105,12 @@ EXPERIMENT_CONFIGS = {
                                 id_test_size=DEFAULT_ID_TEST_SIZE,
                                 domain_split_varname="BMI5CAT",
                                 # OOD values: [1 underweight, 2 normal weight], [3 overweight, 4 obese]
-                                domain_split_ood_values=[1, 2]),
+                                domain_split_ood_values=['3.0', '4.0']),
         grouper=Grouper({"PRACE1": [1, ], "SEX": [1, ]}, drop=False),
         preprocessor_config=PreprocessorConfig(passthrough_columns=["IYEAR"]),
-        tabular_dataset_kwargs={"task": "blood_pressure",
-                                "years": [BRFSS_YEARS[-1]]},
+        tabular_dataset_kwargs={"name": "brfss_blood_pressure",
+                                "task": "blood_pressure",
+                                "years": BRFSS_YEARS},
     ),
 
     # "White nonhispanic" (in-domain) vs. all other race/ethnicity codes (OOD)
