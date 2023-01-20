@@ -104,6 +104,7 @@ class RayExperimentConfig:
     reuse_actors: bool = True
     gpu_per_worker: float = 1.0  # set to fraction to allow multiple workers per GPU
     cpu_per_worker: int = 1
+    config_dict: dict = None
 
     def get_search_alg(self):
         logging.info(f"instantiating search alg of type {self.search_alg}")
@@ -285,6 +286,9 @@ def run_ray_tune_experiment(dset: Union[TabularDataset, CachedDataset],
         single argument, named config, but it also requires the use of the
         model_name command-line flag.
         """
+        if tune_config.config_dict:
+            logging.info(f"updating config dict with {tune_config.config_dict}")
+            config.update(tune_config.config_dict)
         auto_garbage_collect()
         model = get_estimator(model_name, **config)
         model = train.torch.prepare_model(model)
