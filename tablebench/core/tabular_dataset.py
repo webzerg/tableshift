@@ -395,6 +395,11 @@ class TabularDataset(ABC):
                     domain_dir = os.path.join(outdir, str(domain))
                     initialize_dir(domain_dir)
                     write_shards(df_, domain_dir)
+            elif self.domain_label_colname:
+                shared_domain_dir = os.path.join(outdir,
+                                                 f"all_{split}_subdomains")
+                initialize_dir(shared_domain_dir)
+                write_shards(df, shared_domain_dir)
             else:
                 # Write to {split}/{shard_filename.csv}
                 write_shards(df, outdir)
