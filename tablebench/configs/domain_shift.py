@@ -189,8 +189,6 @@ domain_shift_experiment_configs = {
     ),
 
     "heloc_externalrisk": DomainShiftExperimentConfig(
-        # HELOC task, where target domain are various upper-quantile
-        # portions of the NetFractionRevolvingBurden feature.
         tabular_dataset_kwargs={"name": "heloc"},
         domain_split_varname='ExternalRiskEstimateLow',
         domain_split_ood_values=[[0], [1]],
