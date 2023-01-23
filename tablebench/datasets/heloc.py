@@ -6,7 +6,7 @@ from tablebench.core.features import Feature, FeatureList, cat_dtype
 HELOC_FEATURES = FeatureList(features=[
     Feature('RiskPerformance', int, "Paid as negotiated flag (12-36 Months). "
                                     "String of Good and Bad", is_target=True),
-    Feature('ExternalRiskEstimate', int,
+    Feature('ExternalRiskEstimateLow', int,
             "Consolidated version of risk markers"),
     Feature('MSinceOldestTradeOpen', int, 'Months Since Oldest Trade Open'),
     Feature('MSinceMostRecentTradeOpen', int,
@@ -41,9 +41,7 @@ HELOC_FEATURES = FeatureList(features=[
     price comparision shopping."""),
     # Feature('NetFractionRevolvingBurden', int, """Net Fraction Revolving
     # Burden. This is revolving balance divided by credit limit"""),
-    Feature('NetFractionRevolvingBurdenPercentile', int,
-            "Derived feature ; integer-rounded percentile of the "
-            "'NetFractionRevolvingBurden' feature."),
+    Feature('NetFractionRevolvingBurden', int),
     Feature('NetFractionInstallBurden', int, """Net Fraction Installment 
     Burden. This is installment balance divided by original loan amount"""),
     Feature('NumRevolvingTradesWBalance', int,
@@ -62,9 +60,7 @@ def preprocess_heloc(df: pd.DataFrame) -> pd.DataFrame:
     # Transform target to integer
     target = HELOC_FEATURES.target
     df[target] = (df[target] == "Good").astype(int)
-    percentiles = percentileofscore(df['NetFractionRevolvingBurden'],
-                                    df['NetFractionRevolvingBurden'],
-                                    kind='weak')
-    df['NetFractionRevolvingBurdenPercentile'] = percentiles.astype(int)
-    df.drop(columns=['NetFractionRevolvingBurden'], inplace=True)
+
+    df['ExternalRiskEstimateLow'] = (df['ExternalRiskEstimate'] <= 63)
+    df.drop(columns=['ExternalRiskEstimate'], inplace=True)
     return df

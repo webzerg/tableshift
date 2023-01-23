@@ -188,15 +188,10 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(min_frequency=0.01),
     ),
 
-    "heloc_burden": DomainShiftExperimentConfig(
-        # HELOC task, where target domain are various upper-quantile
-        # portions of the NetFractionRevolvingBurden feature.
+    "heloc_externalrisk": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "heloc"},
-        domain_split_varname='NetFractionRevolvingBurdenPercentile',
-        domain_split_ood_values=[
-            list(range(75, 101)), list(range(90, 101)),
-            list(range(95, 101)), list(range(99, 101))
-        ],
+        domain_split_varname='ExternalRiskEstimateLow',
+        domain_split_ood_values=[[0], [1]],
         grouper=None,
         preprocessor_config=PreprocessorConfig(),
     ),
