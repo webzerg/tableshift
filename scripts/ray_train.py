@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import os
 from typing import Optional, List
@@ -16,7 +17,8 @@ from tablebench.core import TabularDataset, TabularDatasetConfig
 from tablebench.core.utils import timestamp_as_int
 from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
     get_default_ray_local_dir
-from tablebench.models.compat import PYTORCH_MODEL_NAMES, DOMAIN_GENERALIZATION_MODEL_NAMES
+from tablebench.models.compat import PYTORCH_MODEL_NAMES, \
+    DOMAIN_GENERALIZATION_MODEL_NAMES
 
 LOG_LEVEL = logging.DEBUG
 
@@ -43,7 +45,8 @@ def main(experiment: str, uid: str, cache_dir: str,
          gpu_models_only: bool = False,
          cpu_models_only: bool = False,
          no_dg: bool = False,
-         exclude_models: Optional[List[str]] = None
+         exclude_models: Optional[List[str]] = None,
+         config_dict: Optional[str] = None,
          ):
     start_time = timestamp_as_int()
     assert not (gpu_models_only and cpu_models_only)
@@ -74,6 +77,10 @@ def main(experiment: str, uid: str, cache_dir: str,
     if debug:
         logging.info("running in debug mode.")
         experiment = "_debug"
+
+    if config_dict:
+        config_dict = json.loads(config_dict)
+        logging.info(f"parsed config_dict {config_dict}")
 
     if use_cached:
         logging.info(f"loading cached data from {cache_dir}")
@@ -115,6 +122,7 @@ def main(experiment: str, uid: str, cache_dir: str,
             scheduler=scheduler,
             gpu_per_worker=gpu_per_worker,
             cpu_per_worker=cpu_per_worker,
+            config_dict=config_dict,
             mode=mode) if not no_tune else None
 
         try:
@@ -152,6 +160,13 @@ def main(experiment: str, uid: str, cache_dir: str,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config_dict", default=None,
+        help='json-formatted string of config overrides.'
+             'If provided, any parameters here will override'
+             'values provided in the config during training.'
+             'Use to e.g. specify a fixed batch size.'
+             'Example: --config_dict "{\"batch_size\": 256, \"some_list_param\": [0., 0., 1]}')
     parser.add_argument("--cache_dir", default="tmp",
                         help="Directory to cache raw data files to.")
     parser.add_argument("--cpu_models_only", default=False,
@@ -167,7 +182,8 @@ if __name__ == "__main__":
                              "speed up experiment.")
     parser.add_argument("--experiment", default="diabetes_readmission",
                         help="Experiment to run. Overridden when debug=True.")
-    parser.add_argument("--exclude_models", nargs="+", action="store", default=[],
+    parser.add_argument("--exclude_models", nargs="+", action="store",
+                        default=[],
                         help="models to exclude, by name. Can be specified"
                              "multiple times, e.g. --exclude_models dro mlp xgb ...")
     parser.add_argument("--gpu_models_only", default=False,
