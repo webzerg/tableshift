@@ -1,6 +1,7 @@
+import logging
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Sequence, Mapping, Any, List, Optional, Tuple
+from typing import Sequence, Mapping, Any, List, Optional, Tuple, Union
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -137,17 +138,26 @@ class DomainSplitter(Splitter):
     """
     id_test_size: float  # The in-domain test set.
     domain_split_varname: str
-    domain_split_ood_values: Sequence[Any]
+
+    domain_split_ood_values: Optional[Sequence[Any]] = None
     domain_split_id_values: Optional[Sequence[Any]] = None
+
+    # If domain column is greater than this value, observation will be OOD.
+    # If less than or equal to this value, observation will be ID.
+    domain_split_gt_thresh: Optional[Union[int, float]] = None
+
     drop_domain_split_col: bool = True  # If True, drop column after splitting.
     ood_val_size: float = 0  # Fraction of OOD data to use for OOD validation set.
 
-    def __call__(self, data: pd.DataFrame, labels: pd.Series,
-                 groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
-        str, List[int]]:
-        assert "domain_labels" in kwargs, "domain labels are required."
-        domain_vals = kwargs.pop("domain_labels")
-        assert isinstance(domain_vals, pd.Series)
+    def _split_from_explicit_values(self, domain_vals: pd.Series
+                                    ) -> Tuple[np.ndarray, np.ndarray]:
+
+        # Check that either in- or out-of-domain values are specified.
+        assert self.is_explicit_split()
+
+        # Check that threshold is not specified, since we are using the
+        # explicit list of values to specify ID/OOD.
+        assert self.domain_split_gt_thresh is None
 
         assert isinstance(self.domain_split_ood_values, tuple) \
                or isinstance(self.domain_split_ood_values, list), \
@@ -187,6 +197,52 @@ class DomainSplitter(Splitter):
                 f"{ood_vals}; are the values of same type"
                 f" as the column type of {domain_vals.dtype}? Examples of "
                 f"values in {self.domain_split_varname}: {vals[:10]}")
+
+        return id_idxs, ood_idxs
+
+    def _split_from_threshold(self, domain_vals: pd.Series) -> Tuple[
+        np.ndarray, np.ndarray]:
+        """Apply a threshold.
+
+        Values are OOD if > self.domain_split_gt_thresh, else ID."""
+        assert self.is_threshold_split()
+        assert not self.is_explicit_split()
+
+        if np.any(np.isnan(domain_vals)):
+            logging.warning(
+                f"detected missing values in domain column prior"
+                "to splitting; this can result in unexpected behavior"
+                "for threshold-based splits. Any nan values will"
+                f"have OOD value: {np.nan > self.domain_split_gt_thresh}")
+
+        ood_idxs = np.nonzero((domain_vals > self.domain_split_gt_thresh).values)[0]
+        id_idxs = np.nonzero((domain_vals <= self.domain_split_gt_thresh).values)[0]
+        return id_idxs, ood_idxs
+
+    def is_explicit_split(self) -> bool:
+        """Helper function to check whether an explicit split is used."""
+        return (self.domain_split_ood_values is not None) or (
+                self.domain_split_id_values is not None)
+
+    def is_threshold_split(self) -> bool:
+        """Helper function to check whether a threshold-based split is used."""
+        return (self.domain_split_gt_thresh is not None)
+
+    def __call__(self, data: pd.DataFrame, labels: pd.Series,
+                 groups: pd.DataFrame = None, *args, **kwargs) -> Mapping[
+        str, List[int]]:
+        assert "domain_labels" in kwargs, "domain labels are required."
+        domain_vals = kwargs.pop("domain_labels")
+        assert isinstance(domain_vals, pd.Series)
+
+        if self.is_explicit_split():
+            id_idxs, ood_idxs = self._split_from_explicit_values(domain_vals)
+
+        elif self.is_threshold_split():
+            id_idxs, ood_idxs = self._split_from_threshold(domain_vals)
+
+        else:
+            raise NotImplementedError("Invalid domain split specified.")
 
         assert not set(id_idxs).intersection(ood_idxs), "sanity check for " \
                                                         "nonoverlapping " \

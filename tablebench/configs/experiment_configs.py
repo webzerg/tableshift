@@ -285,5 +285,41 @@ EXPERIMENT_CONFIGS = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
                                                dropna=None),
-        tabular_dataset_kwargs={})
+        tabular_dataset_kwargs={}),
+
+    # LOS 31 is roughly the 70th %ile of data.
+    "physionet_los31": ExperimentConfig(
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname='ICULOS',
+                                domain_split_gt_thresh=31.0),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None),
+        tabular_dataset_kwargs={"name": "physionet"}),
+    # LOS 38 is roughly the 80th %ile of data.
+    "physionet_los38": ExperimentConfig(
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname='ICULOS',
+                                domain_split_gt_thresh=38.0),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None),
+        tabular_dataset_kwargs={"name": "physionet"}),
+    "physionet_los47": ExperimentConfig(
+        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                id_test_size=DEFAULT_ID_TEST_SIZE,
+                                domain_split_varname='ICULOS',
+                                domain_split_gt_thresh=47.0),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
+                                               dropna=None),
+        tabular_dataset_kwargs={"name": "physionet"}),
 }

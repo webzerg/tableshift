@@ -14,7 +14,6 @@ from pandas import DataFrame, Series
 import ray.data
 import torch
 from torch.utils.data import DataLoader
-from torch.utils.data.dataloader import default_collate
 
 from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
