@@ -365,7 +365,8 @@ class TabularDataset(ABC):
         else:
             return False
 
-    def to_sharded(self, rows_per_shard=4096):
+    def to_sharded(self, rows_per_shard=4096,
+                   domains_to_subdirectories: bool = True):
         uid = make_uid(self.name, self.splitter)
 
         base_dir = os.path.join(self.config.cache_dir, uid)
@@ -387,7 +388,7 @@ class TabularDataset(ABC):
                     df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard] \
                         .to_csv(fp, index=False)
 
-            if self.domain_label_colname:
+            if self.domain_label_colname and domains_to_subdirectories:
                 # Write to {split}/{domain_value}/{shard_filename.csv}
                 for domain in sorted(df[self.domain_label_colname].unique()):
                     df_ = df[df[self.domain_label_colname] == domain]
@@ -499,6 +500,6 @@ class CachedDataset:
         num_partitions = len(files) * num_partitions_per_file
         return ray.data \
             .read_csv(
-                files,
-                meta_provider=ray.data.datasource.FastFileMetadataProvider()) \
+            files,
+            meta_provider=ray.data.datasource.FastFileMetadataProvider()) \
             .repartition(num_partitions)
