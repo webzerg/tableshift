@@ -52,9 +52,15 @@ def main(cache_dir,
            not (experiment and domain_shift_experiment), \
         "specify either experiment or domain_shift_experiment, but not both."
 
+    cache_kwargs = {
+        "cache_dir": cache_dir,
+        "overwrite": overwrite,
+        "no_domains_to_subdirectories": no_domains_to_subdirectories,
+    }
+    logging.debug(f"cache_kwargs is: {cache_kwargs}")
     if experiment:
         expt_config = EXPERIMENT_CONFIGS[experiment]
-        _cache_experiment(expt_config, cache_dir, overwrite=overwrite)
+        _cache_experiment(expt_config, **cache_kwargs)
         print("caching tasks complete!")
         return
 
@@ -63,10 +69,7 @@ def main(cache_dir,
 
     for expt_config in domain_shift_expt_config.as_experiment_config_iterator():
         try:
-            _cache_experiment(
-                expt_config, cache_dir,
-                overwrite=overwrite,
-                no_domains_to_subdirectories=no_domains_to_subdirectories)
+            _cache_experiment(expt_config, **cache_kwargs)
         except Exception as e:
             print(f"exception when caching experiment with ood values "
                   f"{expt_config.splitter.domain_split_ood_values}: {e}")
