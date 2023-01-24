@@ -20,10 +20,10 @@ UIDS_LIST = [
     'brfss_diabetesdomain_split_varname_PRACE1domain_split_ood_value_23456domain_split_id_values_1',
     'brfss_blood_pressuredomain_split_varname_BMI5CATdomain_split_ood_value_3.04.0',
     'diabetes_readmissiondomain_split_varname_admission_source_iddomain_split_ood_value_7',
-    'nhanes_leaddomain_split_varname_INDFMPIRBelowCutoffdomain_split_ood_value_1.0',
+    'helocdomain_split_varname_ExternalRiskEstimateLowdomain_split_ood_value_0',
     'mimic_extract_los_3domain_split_varname_insurancedomain_split_ood_value_Medicare',
     'mimic_extract_mort_hospdomain_split_varname_insurancedomain_split_ood_value_MedicareMedicaid',
-    'helocdomain_split_varname_ExternalRiskEstimateLowdomain_split_ood_value_0',
+    'nhanes_leaddomain_split_varname_INDFMPIRBelowCutoffdomain_split_ood_value_1.0',
     'physionetICULOSgt47.0'
 ]
 
