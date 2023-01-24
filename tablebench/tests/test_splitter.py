@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 
 from tablebench.core.splitter import DomainSplitter
-from tablebench.core.utils import contains_illegal_chars
 
 np.random.seed(54329)
 
@@ -155,3 +154,73 @@ class TestDomainSplitterDtypes(unittest.TestCase):
             len(v) for k, v in splits.items() if "ood" in k)
         ood_elems_in_data = np.isin(data["domain"].values, ood_vals).sum()
         self.assertEqual(ood_elems_in_data, ood_elems_in_splits)
+
+
+class TestThresholdDomainSplitter(unittest.TestCase):
+    def test_float_split(self):
+
+        data = pd.DataFrame(
+            {"values1": np.arange(10),
+             "values2": np.arange(10),
+             "domain": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
+        )
+        labels = pd.Series(np.random.choice([0, 1], 10))
+
+        thresh = 0.55
+        splitter = DomainSplitter(id_test_size=0.2, val_size=0.2,
+                                  ood_val_size=0.2,
+                                  random_state=43890,
+                                  domain_split_varname="domain",
+                                  domain_split_gt_thresh=thresh)
+        splits = splitter(data, labels, domain_labels=data["domain"])
+
+        # Check splits have expected size
+        self.assertEqual(len(splits["train"]), 3)
+        self.assertEqual(len(splits["id_test"]), 1)
+        self.assertEqual(len(splits["ood_test"]), 4)
+        self.assertEqual(len(splits["validation"]), 1)
+        self.assertEqual(len(splits["ood_validation"]), 1)
+
+        # Check splits have expected domain values
+        for split in ("train", "validation", "id_test"):
+            vals = data.loc[splits[split]]["domain"]
+            self.assertTrue(np.all(vals <= thresh))
+
+        for split in ("ood_validation", "ood_test"):
+            vals = data.loc[splits[split]]["domain"]
+            self.assertTrue(np.all(vals > thresh))
+
+    def test_int_split(self):
+        # half ID, half OOD
+        domain_vals = ([10] * 50) + ([20] * 50)
+
+        data = pd.DataFrame(
+            {"values1": np.arange(100),
+             "values2": np.arange(100),
+             "domain": domain_vals}
+        )
+        labels = pd.Series(np.random.choice([0, 1], 100))
+
+        thresh = 15
+        splitter = DomainSplitter(id_test_size=0.1, val_size=0.1,
+                                  ood_val_size=0.2,
+                                  random_state=463890,
+                                  domain_split_varname="domain",
+                                  domain_split_gt_thresh=thresh)
+        splits = splitter(data, labels, domain_labels=data["domain"])
+
+        # Check splits have expected size
+        self.assertEqual(len(splits["train"]), 40)
+        self.assertEqual(len(splits["id_test"]), 5)
+        self.assertEqual(len(splits["validation"]), 5)
+        self.assertEqual(len(splits["ood_validation"]), 10)
+        self.assertEqual(len(splits["ood_test"]), 40)
+
+        # Check splits have expected domain values
+        for split in ("train", "validation", "id_test"):
+            vals = data.loc[splits[split]]["domain"]
+            self.assertTrue(np.all(vals <= thresh))
+
+        for split in ("ood_validation", "ood_test"):
+            vals = data.loc[splits[split]]["domain"]
+            self.assertTrue(np.all(vals > thresh))

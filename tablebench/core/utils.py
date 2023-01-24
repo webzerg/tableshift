@@ -85,7 +85,7 @@ def sliding_window(iterable, n):
 def make_uid(name: str, splitter: Splitter, replace_chars="*/:'$!") -> str:
     """Make a unique identifier for an experiment."""
     uid = name
-    if isinstance(splitter, DomainSplitter):
+    if isinstance(splitter, DomainSplitter) and splitter.is_explicit_split():
         attrs = {'domain_split_varname': splitter.domain_split_varname,
                  'domain_split_ood_value': ''.join(
                      str(x) for x in splitter.domain_split_ood_values)}
@@ -93,6 +93,9 @@ def make_uid(name: str, splitter: Splitter, replace_chars="*/:'$!") -> str:
             attrs['domain_split_id_values'] = ''.join(
                 str(x) for x in splitter.domain_split_id_values)
         uid += ''.join(f'{k}_{v}' for k, v in attrs.items())
+    elif isinstance(splitter, DomainSplitter) and splitter.is_threshold_split():
+        uid += f'{splitter.domain_split_varname}gt{splitter.domain_split_gt_thresh}'
+
     # if any slashes exist, replace with periods.
     for char in replace_chars:
         uid = uid.replace(char, '.')

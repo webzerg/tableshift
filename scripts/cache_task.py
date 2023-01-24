@@ -18,7 +18,8 @@ logging.basicConfig(
 
 
 def _cache_experiment(expt_config: ExperimentConfig, cache_dir,
-                      overwrite: bool):
+                      overwrite: bool,
+                      no_domains_to_subdirectories: bool):
     dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
     tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
     assert "name" in tabular_dataset_kwargs
@@ -31,22 +32,35 @@ def _cache_experiment(expt_config: ExperimentConfig, cache_dir,
                           **tabular_dataset_kwargs)
     if dset.is_cached() and (not overwrite):
         uid = make_uid(tabular_dataset_kwargs["name"], expt_config.splitter)
-        print(f"dataset with uid {uid} is already cached; skipping")
+        logging.info(f"dataset with uid {uid} is already cached; skipping")
 
     else:
+        domains_to_subdirectories = not no_domains_to_subdirectories
+        logging.info(
+            f"domains_to_subdirectories is {domains_to_subdirectories}")
         dset._initialize_data()
-        dset.to_sharded()
+        dset.to_sharded(domains_to_subdirectories=domains_to_subdirectories)
     return
 
 
-def main(cache_dir, experiment, overwrite: bool, domain_shift_experiment=None):
+def main(cache_dir,
+         experiment,
+         overwrite: bool,
+         no_domains_to_subdirectories: bool = False,
+         domain_shift_experiment=None):
     assert (experiment or domain_shift_experiment) and \
            not (experiment and domain_shift_experiment), \
         "specify either experiment or domain_shift_experiment, but not both."
 
+    cache_kwargs = {
+        "cache_dir": cache_dir,
+        "overwrite": overwrite,
+        "no_domains_to_subdirectories": no_domains_to_subdirectories,
+    }
+    logging.debug(f"cache_kwargs is: {cache_kwargs}")
     if experiment:
         expt_config = EXPERIMENT_CONFIGS[experiment]
-        _cache_experiment(expt_config, cache_dir, overwrite=overwrite)
+        _cache_experiment(expt_config, **cache_kwargs)
         print("caching tasks complete!")
         return
 
@@ -55,7 +69,7 @@ def main(cache_dir, experiment, overwrite: bool, domain_shift_experiment=None):
 
     for expt_config in domain_shift_expt_config.as_experiment_config_iterator():
         try:
-            _cache_experiment(expt_config, cache_dir, overwrite=overwrite)
+            _cache_experiment(expt_config, **cache_kwargs)
         except Exception as e:
             print(f"exception when caching experiment with ood values "
                   f"{expt_config.splitter.domain_split_ood_values}: {e}")
@@ -70,6 +84,14 @@ if __name__ == "__main__":
     parser.add_argument("--domain_shift_experiment", "-d",
                         help="Experiment to run. Overridden when debug=True."
                              "Example value: 'physionet_set'.")
+    parser.add_argument("--no_domains_to_subdirectories",
+                        action="store_true",
+                        help="If set, domains will NOT be written to separate"
+                             "subdirectories. For example, instead of writing files to"
+                             "/train/1/train_1.csv where the second level is "
+                             "the domain value, they will be written to "
+                             "/train/train_1.csv and not split by the domain"
+                             "value. Useful when using thresholding.")
     parser.add_argument("--experiment",
                         help="Experiment to run. Overridden when debug=True."
                              "Example value: 'adult'.")

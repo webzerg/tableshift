@@ -14,7 +14,6 @@ from pandas import DataFrame, Series
 import ray.data
 import torch
 from torch.utils.data import DataLoader
-from torch.utils.data.dataloader import default_collate
 
 from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
@@ -366,7 +365,8 @@ class TabularDataset(ABC):
         else:
             return False
 
-    def to_sharded(self, rows_per_shard=4096):
+    def to_sharded(self, rows_per_shard=4096,
+                   domains_to_subdirectories: bool = True):
         uid = make_uid(self.name, self.splitter)
 
         base_dir = os.path.join(self.config.cache_dir, uid)
@@ -388,13 +388,18 @@ class TabularDataset(ABC):
                     df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard] \
                         .to_csv(fp, index=False)
 
-            if self.domain_label_colname:
+            if self.domain_label_colname and domains_to_subdirectories:
                 # Write to {split}/{domain_value}/{shard_filename.csv}
                 for domain in sorted(df[self.domain_label_colname].unique()):
                     df_ = df[df[self.domain_label_colname] == domain]
                     domain_dir = os.path.join(outdir, str(domain))
                     initialize_dir(domain_dir)
                     write_shards(df_, domain_dir)
+            elif self.domain_label_colname:
+                shared_domain_dir = os.path.join(outdir,
+                                                 f"all_{split}_subdomains")
+                initialize_dir(shared_domain_dir)
+                write_shards(df, shared_domain_dir)
             else:
                 # Write to {split}/{shard_filename.csv}
                 write_shards(df, outdir)
@@ -500,6 +505,6 @@ class CachedDataset:
         num_partitions = len(files) * num_partitions_per_file
         return ray.data \
             .read_csv(
-                files,
-                meta_provider=ray.data.datasource.FastFileMetadataProvider()) \
+            files,
+            meta_provider=ray.data.datasource.FastFileMetadataProvider()) \
             .repartition(num_partitions)

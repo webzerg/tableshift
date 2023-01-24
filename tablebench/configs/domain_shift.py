@@ -246,19 +246,12 @@ domain_shift_experiment_configs = {
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
                                                dropna=None)
     ),
-    "physionet_unit1": DomainShiftExperimentConfig(
+    "physionet_los": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "physionet"},
-        domain_split_varname="Unit1",
-        domain_split_ood_values=[[0, ], [1, ]],
-        grouper=None,
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None)
-    ),
-    "physionet_unit2": DomainShiftExperimentConfig(
-        tabular_dataset_kwargs={"name": "physionet"},
-        domain_split_varname="Unit2",
-        domain_split_ood_values=[[0, ], [1, ]],
-        grouper=None,
+        domain_split_varname="set",
+        domain_split_ood_values=_to_nested(["a", "b"]),
+        grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
+                        drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
                                                dropna=None)
     ),
