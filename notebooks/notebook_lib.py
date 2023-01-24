@@ -24,6 +24,7 @@ UIDS_LIST = [
     'mimic_extract_los_3domain_split_varname_insurancedomain_split_ood_value_Medicare',
     'mimic_extract_mort_hospdomain_split_varname_insurancedomain_split_ood_value_MedicareMedicaid',
     'helocdomain_split_varname_ExternalRiskEstimateLowdomain_split_ood_value_0',
+    'physionetICULOSgt47.0'
 ]
 
 
