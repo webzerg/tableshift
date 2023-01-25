@@ -96,9 +96,10 @@ def main(experiment, uid, cache_dir, model="mlp",
         activation=config["activation"],
         **{k: config[k] for k in OPTIMIZER_ARGS})
 
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     estimator = train(
         estimator, dset,
-        device='cuda:0' if torch.cuda.is_available() else 'cpu',
+        device=device,
         config=config)
 
     split_activations = defaultdict(list)
@@ -107,6 +108,8 @@ def main(experiment, uid, cache_dir, model="mlp",
         print(split)
         loader = dset.get_dataloader(split)
         for x, y, _, _ in tqdm(loader):
+            x = x.to(device)
+            y = y.to(device)
             activations = estimator.get_activations(x)
             split_activations[split].append(activations.detach().cpu().numpy())
 
