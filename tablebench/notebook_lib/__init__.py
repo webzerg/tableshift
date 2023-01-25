@@ -199,7 +199,7 @@ def _get_results_df(expt_files: List[str], model, expt) -> pd.DataFrame:
 
 
 def read_tableshift_results(tableshift_results_dir, baseline_results_dir):
-    """Read the non-baseline results."""
+    """Read the results."""
     dfs = []
     for expt in EXPERIMENTS_LIST:
         search_glob = os.path.join(tableshift_results_dir,

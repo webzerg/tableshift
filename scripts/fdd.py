@@ -9,10 +9,12 @@ from tqdm import tqdm
 import argparse
 import logging
 from tablebench.core import CachedDataset
+import re
 from scipy.linalg import sqrtm
 from numpy import iscomplexobj, trace
 
 import numpy as np
+import pandas as pd
 
 from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.training import train
@@ -20,11 +22,13 @@ from tablebench.models.config import get_default_config
 from tablebench.models.rtdl import MLPModelWithHook
 from tablebench.models.compat import OPTIMIZER_ARGS
 
-from tablebench.notebook_lib import EXPERIMENTS_LIST
+from tablebench.notebook_lib import read_tableshift_results, \
+    best_results_by_metric
 
 
 # See https://machinelearningmastery.com/how-to-implement-the-frechet-inception-distance-fid-from-scratch/
 def fdd(id_activations, ood_activations):
+    """Compute frechet dataset distance from a set of activations."""
     Sigma_id = np.cov(id_activations, rowvar=False)
     Sigma_ood = np.cov(ood_activations, rowvar=False)
 
@@ -39,7 +43,9 @@ def fdd(id_activations, ood_activations):
            trace(Sigma_id + Sigma_ood - 2. * covmean)
 
 
-def main(experiment, uid, cache_dir, model="mlp"):
+def main(experiment, uid, cache_dir, model="mlp",
+         tableshift_results_dir="./ray_train_results",
+         baseline_results_dir='./domain_shift_results'):
     LOG_LEVEL = logging.DEBUG
 
     logger = logging.getLogger()
@@ -50,6 +56,17 @@ def main(experiment, uid, cache_dir, model="mlp"):
 
     expt_config = EXPERIMENT_CONFIGS[experiment]
 
+    results = read_tableshift_results(tableshift_results_dir,
+                                      baseline_results_dir)
+    results = pd.concat(results)
+    best_results = best_results_by_metric(results)
+    assert experiment in best_results['task'].unique(), \
+        f"experiment value {experiment} not in {best_results['task'].unique()}"
+
+    best_results = best_results.query(
+        f"estimator=='{model}' and task == '{experiment}'")
+    assert len(best_results) == 1  # sanity check for single best result
+
     logging.info(f"experiment is {experiment}")
     logging.info(f"uid is {uid}")
     logging.info(f"constructing cached dataset from {cache_dir}")
@@ -58,17 +75,24 @@ def main(experiment, uid, cache_dir, model="mlp"):
 
     config = get_default_config(model, dset)
 
+    best_config = {re.sub(".*/", '', c): best_results.loc[:, c].item()
+                   for c in best_results.columns
+                   if "config" in c}
+
+    config.update(best_config)
+
+    for k in ("n_epochs", "num_layers", "d_hidden"):
+        config[k] = int(config[k])
+
     logging.info(f"config is {config}")
 
-    kwargs = config
-
-    estimator = MLPModelWithHook(d_in=kwargs["d_in"],
-                                 d_layers=[kwargs["d_hidden"]] * kwargs[
-                                     "num_layers"],
-                                 d_out=1,
-                                 dropouts=kwargs["dropouts"],
-                                 activation=kwargs["activation"],
-                                 **{k: kwargs[k] for k in OPTIMIZER_ARGS})
+    estimator = MLPModelWithHook(
+        d_in=config["d_in"],
+        d_layers=[config["d_hidden"]] * config["num_layers"],
+        d_out=1,
+        dropouts=config["dropouts"],
+        activation=config["activation"],
+        **{k: config[k] for k in OPTIMIZER_ARGS})
 
     estimator = train(estimator, dset, device="cpu", config=config)
 
