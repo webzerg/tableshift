@@ -73,7 +73,8 @@ def main(experiment, uid, cache_dir, model="mlp",
     logging.info(f"uid is {uid}")
     logging.info(f"constructing cached dataset from {cache_dir}")
 
-    dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
+    dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid,
+                         skip_per_domain_eval=True)
 
     config = get_default_config(model, dset)
 

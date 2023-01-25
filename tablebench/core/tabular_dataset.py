@@ -428,7 +428,8 @@ class TabularDataset(ABC):
 # TODO(jpgard): CachedDataset and TabularDataset should inherit from a shared
 #  parent Dataset class.
 class CachedDataset:
-    def __init__(self, cache_dir: str, name: str, uid: str):
+    def __init__(self, cache_dir: str, name: str, uid: str,
+                 skip_per_domain_eval: bool = False):
         self.cache_dir = cache_dir
         self.uid = uid
         self.name = name
@@ -440,6 +441,9 @@ class CachedDataset:
         self.X_shape = None
         self.splits: List = None
         self.schema = None
+
+        # If true, do not do per-domain evals
+        self.skip_per_domain_eval = skip_per_domain_eval
 
         self._load_info_from_cache()
 
@@ -455,7 +459,14 @@ class CachedDataset:
     @property
     def eval_split_names(self) -> Tuple:
         """Fetch the names of the eval splits."""
-        return tuple([x for x in self.splits if "train" not in x])
+        if self.skip_per_domain_eval:
+            return tuple([x for x in self.splits if
+                          x in ("test", "id_test", "ood_test",
+                                # "validation", "ood_validation"
+                                )])
+
+        else:
+            return tuple([x for x in self.splits if "train" not in x])
 
     @property
     def domain_split_varname(self):
