@@ -5,15 +5,17 @@ rtdl source: https://github.com/Yura52/rtdl
 """
 
 import copy
-from typing import Optional, Callable, Any, Dict
+from typing import Optional, Callable, Any, Dict, Tuple
 
 import numpy as np
 import rtdl
 import scipy
 import torch
+from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tablebench.models.compat import SklearnStylePytorchModel, OPTIMIZER_ARGS
+from tablebench.models.torchutils import apply_model, get_module_attr
 from tablebench.models.training import train_epoch
 
 
@@ -66,6 +68,44 @@ class MLPModel(rtdl.MLP, SklearnStyleRTDLModel):
 
     def predict_proba(self, X) -> np.ndarray:
         return self.predict_proba(X)
+
+
+class MLPModelWithHook(MLPModel):
+    def get_activations(self, x: Tensor) -> Tuple[Tensor, Tensor]:
+        """Forward method with hook."""
+        # Set up feature extraction hooks
+
+        # Use the pre-activation, pre-dropout output of the linear layer of final block
+        block_num = len(get_module_attr(self, "blocks")) - 1
+        layer = "linear"
+        # The key used to find the activations in the dictionary.
+        activations_key = f'block{block_num}{layer}'
+
+        activation = {}
+
+        def get_activation():
+            """Utility function to fetch an activation."""
+
+            def hook(self, input, output):
+                activation[activations_key] = output.detach()
+
+            return hook
+
+        if hasattr(self, "module"):
+            # Case: distributed module; access the module explicitly.
+            self.module.blocks[block_num].linear.register_forward_hook(
+                get_activation())
+        else:  # Case: standard module.
+            self.blocks[block_num].linear.register_forward_hook(
+                get_activation())
+
+        def _get_activations(inputs) -> Tuple[Tensor, Tensor]:
+            """Apply model and return the (outputs,activations) tuple."""
+            outputs = apply_model(self, inputs).squeeze(1)
+            activations = activation[activations_key]
+            return activations
+
+        return _get_activations(x)
 
 
 class FTTransformerModel(rtdl.FTTransformer, SklearnStyleRTDLModel):
