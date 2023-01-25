@@ -453,6 +453,11 @@ class CachedDataset:
         return self.domain_label_colname is not None
 
     @property
+    def eval_split_names(self) -> Tuple:
+        """Fetch the names of the eval splits."""
+        return tuple([x for x in self.splits if "train" not in x])
+
+    @property
     def domain_split_varname(self):
         return self.domain_label_colname
 
@@ -493,7 +498,7 @@ class CachedDataset:
             domains = list(set(d for ds in domains_per_split for d in ds))
             return len(domains)
 
-    def get_ray(self, split, domain=None, num_partitions_per_file=16):
+    def _get_split_files(self, split: str, domain: Optional[str] = None):
         if domain:  # Match only the specified domain
             dir = os.path.join(self.base_dir, split, domain)
         else:  # Match any domain
@@ -502,6 +507,44 @@ class CachedDataset:
         files = glob.glob(fileglob)
         assert len(files), f"no files detected for split {split} " \
                            f"matching {fileglob}"
+        return files
+
+    def _is_valid_split(self, split) -> bool:
+        return split in os.listdir(self.base_dir)
+
+    def _check_split(self, split):
+        """Check that a split name is valid."""
+        assert self._is_valid_split(split), \
+            f"split {split} not in {list(self.splits.keys())}"
+
+    def _get_split_df(self, split):
+        self._check_split(split)
+        files = self._get_split_files(split)
+        dfs = []
+        for f in files:
+            dfs.append(pd.read_csv(f))
+        df = pd.concat(dfs)
+        return df
+
+    def _get_split_xygd(self, split) -> Tuple[
+        DataFrame, Series, DataFrame, Optional[Series]]:
+        df = self._get_split_df(split)
+        X = df[self.feature_names]
+        y = df[self.target]
+        G = df[self.group_feature_names]
+        d = df[self.domain_label_colname] \
+            if self.domain_label_colname is not None else None
+        return X, y, G, d
+
+    def get_dataloader(self, split, batch_size=2048,
+                       shuffle=True, infinite=False) -> DataLoader:
+        """Fetch a dataloader yielding (X, y, G, d) tuples."""
+        data = self._get_split_xygd(split)
+        return _make_dataloader_from_dataframes(data, batch_size, shuffle,
+                                                infinite=infinite)
+
+    def get_ray(self, split, domain=None, num_partitions_per_file=16):
+        files = self._get_split_files(split, domain)
         num_partitions = len(files) * num_partitions_per_file
         return ray.data \
             .read_csv(
