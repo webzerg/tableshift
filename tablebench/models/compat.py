@@ -120,8 +120,11 @@ class SklearnStylePytorchModel(ABC, nn.Module):
 DOMAIN_GENERALIZATION_MODEL_NAMES = ["dann", "deepcoral", "irm", "mixup", "mmd",
                                      "vrex"]
 DOMAIN_ADAPTATION_MODEL_NAMES = []
+DOMAIN_ROBUSTNESS_MODEL_NAMES = ["group_dro", "dro"]
 SKLEARN_MODEL_NAMES = ("expgrad", "histgbm", "lightgbm", "wcs", "xgb")
-PYTORCH_MODEL_NAMES = ["dro", "ft_transformer", "group_dro", "mlp", "resnet"] \
+BASELINE_MODEL_NAMES = ["ft_transformer", "mlp", "resnet"]
+PYTORCH_MODEL_NAMES = BASELINE_MODEL_NAMES \
+                      + DOMAIN_ROBUSTNESS_MODEL_NAMES \
                       + DOMAIN_GENERALIZATION_MODEL_NAMES \
                       + DOMAIN_ADAPTATION_MODEL_NAMES
 

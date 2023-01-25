@@ -15,6 +15,22 @@ from tablebench.models.compat import PYTORCH_MODEL_NAMES, \
 
 group_cols = ['task', 'estimator', 'domain_split_ood_values']
 
+task_test_set_sizes = {
+    'acsfoodstamps': {'id_test': 78628, 'ood_test': 48878},
+    'acsincome': {'id_test': 158016, 'ood_test': 75911},
+    'acspubcov': {'id_test': 500782, 'ood_test': 817877},
+    'acsunemployment': {'id_test': 161365, 'ood_test': 163611},
+    'anes': {'id_test': 520, 'ood_test': 2772},
+    'brfss_blood_pressure': {'id_test': 27052, 'ood_test': 518622},
+    'brfss_diabetes': {'id_test': 121154, 'ood_test': 209375},
+    'diabetes': {'id_test': 121154, 'ood_test': 209375},
+    'heloc': {'id_test': 278, 'ood_test': 6914},
+    'mimic_extract_hosp_mort': {'id_test': 890, 'ood_test': 13544},
+    'mimic_extract_los_3': {'id_test': 1080, 'ood_test': 11835},
+    'nhanes_lead': {'id_test': 1476, 'ood_test': 11466},
+    'physionet_los47': {'id_test': 140288, 'ood_test': 134402},
+}
+
 
 @dataclass
 class ExperimentInfo:
@@ -92,7 +108,7 @@ EXPERIMENTS_LIST = [
         'diabetes_readmission',
         '(7,)',
         True,
-    'Hospital Readmission'),
+        'Hospital Readmission'),
     ExperimentInfo(
         'helocdomain_split_varname_ExternalRiskEstimateLowdomain_split_ood_value_0',
         'heloc_externalrisk',
@@ -225,6 +241,7 @@ def read_tableshift_results(tableshift_results_dir, baseline_results_dir):
             dfs.append(df)
 
     return dfs
+
 
 def read_domain_shift_results(ds_results_dir):
     """Read the baseline results (CPU models: xgb and lightgbm only)."""
