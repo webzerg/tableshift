@@ -18,7 +18,6 @@ from numpy import iscomplexobj, trace
 import numpy as np
 import pandas as pd
 
-from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.training import train
 from tablebench.models.config import get_default_config
 from tablebench.models.rtdl import MLPModelWithHook
@@ -26,6 +25,14 @@ from tablebench.models.compat import OPTIMIZER_ARGS
 
 from tablebench.notebook_lib import read_tableshift_results, \
     best_results_by_metric
+
+LOG_LEVEL = logging.DEBUG
+
+logger = logging.getLogger()
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    level=LOG_LEVEL,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 # See https://machinelearningmastery.com/how-to-implement-the-frechet-inception-distance-fid-from-scratch/
@@ -48,15 +55,6 @@ def fdd(id_activations, ood_activations):
 def main(experiment, uid, cache_dir, model="mlp",
          tableshift_results_dir="./ray_train_results",
          baseline_results_dir='./domain_shift_results'):
-    LOG_LEVEL = logging.DEBUG
-
-    logger = logging.getLogger()
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-        level=LOG_LEVEL,
-        datefmt='%Y-%m-%d %H:%M:%S')
-
-    expt_config = EXPERIMENT_CONFIGS[experiment]
 
     results = read_tableshift_results(tableshift_results_dir,
                                       baseline_results_dir)
