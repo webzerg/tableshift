@@ -5,6 +5,8 @@ python scripts/fdd.py \
     --uid anesdomain_split_varname_VCF0112domain_split_ood_value_3.0
 """
 from collections import defaultdict
+
+import torch.cuda
 from tqdm import tqdm
 import argparse
 import logging
@@ -94,7 +96,10 @@ def main(experiment, uid, cache_dir, model="mlp",
         activation=config["activation"],
         **{k: config[k] for k in OPTIMIZER_ARGS})
 
-    estimator = train(estimator, dset, device="cpu", config=config)
+    estimator = train(
+        estimator, dset,
+        device='cuda:0' if torch.cuda.is_available() else 'cpu',
+        config=config)
 
     split_activations = defaultdict(list)
 
