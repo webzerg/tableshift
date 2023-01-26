@@ -178,7 +178,7 @@ def best_results_by_metric(
     for col in group_cols:
         assert col in df.columns, f"column {col} must be in dataframe."
     df.reset_index(inplace=True, drop=True)
-    vals = df.groupby(group_cols)[metric].idxmax().tolist()
+    vals = df.dropna(subset=group_cols+[metric]).groupby(group_cols)[metric].idxmax().tolist()
     df_out = df.loc[vals]
     assert np.all(df_out.groupby(group_cols).size() == 1)
     return df_out
