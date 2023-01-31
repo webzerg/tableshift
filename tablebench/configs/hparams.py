@@ -96,12 +96,12 @@ _wcs_search_space = {
 }
 # Matches https://arxiv.org/pdf/2106.11959.pdf; see Table 16
 _xgb_search_space = {
+    "learning_rate": tune.loguniform(1e-5, 1.),
     "max_depth": tune.randint(3, 10),
     "min_child_weight": tune.loguniform(1e-8, 1e5),
     "subsample": tune.uniform(0.5, 1),
     "colsample_bytree": tune.uniform(0.5, 1),
     "colsample_bylevel": tune.uniform(0.5, 1),
-    "learning_rate": tune.loguniform(1e-5, 1.),
     "gamma": tune.loguniform(1e-8, 1e2),
     "lambda": tune.loguniform(1e-8, 1e2),
     "alpha": tune.loguniform(1e-8, 1e2),
