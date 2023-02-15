@@ -3,13 +3,15 @@ Tests for Feature objects.
 
 To run tests: python -m unittest tablebench/tests/test_features.py -v
 """
+import copy
+import string
 import unittest
 
 import pandas as pd
 import numpy as np
 
 from tablebench.core import features
-from tablebench.core.features import Feature, cat_dtype
+from tablebench.core.features import Feature, cat_dtype, PreprocessorConfig
 
 
 class TestFeatureFillNA(unittest.TestCase):
@@ -55,15 +57,6 @@ class TestFeatureFillNA(unittest.TestCase):
         data_na = feature.fillna(data)
         self.assertEqual(pd.isnull(data_na).sum(), 4)
 
-    # def test_fillna_int_object(self):
-    #     """Tests case of categorical feature with int na_values."""
-    #     letters = list("abcdefg")
-    #     raise NotImplementedError("incomplete.")
-    #     data = pd.Series(letters * 2).astype()
-    #     feature = Feature("my_feature", cat_dtype, na_values=("a", "b"))
-    #     data_na = feature.fillna(data)
-    #     self.assertEqual(pd.isnull(data_na).sum(), 4)
-
 
 class TestColumnIsOfType(unittest.TestCase):
     def test_categorical_type_check(self):
@@ -87,3 +80,27 @@ class TestColumnIsOfType(unittest.TestCase):
         float_data = pd.Series(np.arange(10, dtype=float))
         self.assertTrue(features.column_is_of_type(float_data, float))
         self.assertFalse(features.column_is_of_type(float_data, int))
+
+
+class TestPreprocessor(unittest.TestCase):
+    def setUp(self) -> None:
+        n = 100
+        self.df = pd.DataFrame({
+            "int_a": np.arange(0, n, dtype=int),
+            "int_b": np.arange(-n, 0, dtype=int),
+            "float_a": np.random.uniform(size=n),
+            "float_b": np.random.uniform(-1., 1., size=n),
+            "string_a": np.random.choice(list(string.ascii_lowercase), size=n),
+            "cat_a": pd.Categorical(
+                np.random.choice(["typea", "typeb"], size=n)),
+        })
+        return
+
+    def test_passthrough_all(self):
+        """Test case with no transformations."""
+        data = copy.deepcopy(self.df)
+        preprocessor = PreprocessorConfig(passthrough_columns="all")
+        train_idxs = list(range(50))
+        transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
+        np.testing.assert_array_equal(data.values, transformed.values)
+        return

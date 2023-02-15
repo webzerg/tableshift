@@ -340,7 +340,7 @@ class PreprocessorConfig:
                                       f"implemented.")
 
     def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
-                      domain_label_colname: Optional[str],
+                      domain_label_colname: Optional[str] = None,
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         """Fit a feature_transformer and apply it to the input features."""
         logging.info(f"transforming columns")
