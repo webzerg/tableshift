@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import logging
-from typing import List, Any, Sequence, Optional, Mapping, Tuple, Union
+from typing import List, Any, Sequence, Optional, Mapping, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
@@ -56,12 +56,14 @@ def column_is_of_type(x: pd.Series, dtype) -> bool:
             return np.issubdtype(x.dtype, dtype)
         except Exception as e:
             logging.error(e)
-            import ipdb;ipdb.set_trace()
+            import ipdb;
+            ipdb.set_trace()
+
 
 @dataclass(frozen=True)
 class Feature:
     name: str
-    kind: Any  # a class type to which the feature should be castable.
+    kind: Any  # a data type to which the feature should be castable.
     description: str = None
     is_target: bool = False
     # Values, besides np.nan, to count as null/missing. These should be
@@ -69,6 +71,11 @@ class Feature:
     # occur for this column in the output of the preprocess_fn, not after
     # casting to `kind`), because values after casting may be unpredictable.
     na_values: Tuple = field(default_factory=tuple)
+    # Mapping of the set of values in the data to a more descriptive set of
+    # values. Used e.g. for categorical features that are coded with numeric
+    # values that map to known/named categories.
+    value_mapping: Dict[Any, Any] = None
+    name_extended: str = None  # Optional longer description of feature.
 
     def fillna(self, data: pd.Series) -> pd.Series:
         """Apply the list of na_values, filling these values in data with np.nan."""
