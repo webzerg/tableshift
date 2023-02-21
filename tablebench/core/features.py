@@ -214,8 +214,8 @@ class PreprocessorConfig:
     max_categories: int = None  # see OneHotEncoder.max_categories
 
 
-def map_column_values(col: pd.Series, mapping: dict):
-    return col.map(mapping)
+def map_values(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
+    return df.stack().map(mapping).unstack()
 
 
 def get_numeric_columns(data: pd.DataFrame) -> List[str]:
@@ -232,6 +232,22 @@ def get_categorical_columns(data: pd.DataFrame) -> List[str]:
         pattern="^(?![Tt]arget)",
         dtype_include=[np.object, np.bool, cat_dtype])(data)
     return categorical_columns
+
+
+def make_value_map_transforms(features_to_map: List[Feature]) -> List[
+    Tuple[str, FunctionTransformer, List[str]]]:
+    """Helper function to build the mapping transforms for a set of features.
+
+    The output of this function can be used as input to a ColumnTransformer.
+    """
+    transforms = [
+        (f.name,
+         FunctionTransformer(partial(map_values,
+                                     mapping=f.value_mapping),
+                             check_inverse=False,
+                             feature_names_out="one-to-one"),
+         [f.name]) for f in features_to_map]
+    return transforms
 
 
 # TODO(jpgard): implement ability to apply mapper to categorical features.
@@ -260,12 +276,14 @@ class Preprocessor:
 
         elif self.config.categorical_features == "map_values":
             assert self.feature_list is not None
-            transforms = [
-                (f.name,
-                 FunctionTransformer(partial(map_column_values,
-                                             mapping=f.value_mapping)),
-                 list(f.name))
-                for f in self.feature_list if f.value_mapping is not None]
+            features_to_map = [f for f in self.feature_list
+                               if f.value_mapping is not None
+                               and f.name in categorical_columns]
+            assert len(features_to_map), \
+                "No categorical columns with  mappings provided. Either provide " \
+                "mappings for one or more columns or set " \
+                "categorical_columns='passthrough' in the feature config. "
+            transforms = make_value_map_transforms(features_to_map)
 
         else:
             raise ValueError(f"{self.config.categorical_features} is not "
@@ -278,6 +296,17 @@ class Preprocessor:
         cols = [c for c in numeric_columns if c not in passthrough_columns]
         if self.config.numeric_features == "passthrough":
             transforms = []
+
+        elif self.config.numeric_features == "map_values":
+            assert self.feature_list is not None
+            features_to_map = [f for f in self.feature_list
+                               if f.value_mapping is not None
+                               and f.name in numeric_columns]
+            assert len(features_to_map), \
+                "No numeric columns with mappings provided. Either provide " \
+                "mappings for one or more columns or set " \
+                "numeric_columns='passthrough' in the feature config. "
+            transforms = make_value_map_transforms(features_to_map)
 
         elif self.config.numeric_features == "normalize":
             transforms = [(f'scale_{c}', StandardScaler(), [c]) for c in cols]
@@ -314,7 +343,7 @@ class Preprocessor:
             transforms,
             remainder='passthrough',
             sparse_threshold=0,
-            verbose_feature_names_out=True)
+            verbose_feature_names_out=False)
 
         self.feature_transformer.fit(data.loc[train_idxs, :])
         return
