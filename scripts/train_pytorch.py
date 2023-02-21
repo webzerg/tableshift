@@ -1,5 +1,5 @@
 import argparse
-from tablebench.core import TabularDataset, TabularDatasetConfig
+from tablebench.core import get_dataset
 
 from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tablebench.models.utils import get_estimator
@@ -16,17 +16,7 @@ def main(experiment, cache_dir, model, debug: bool):
     if experiment not in EXPERIMENT_CONFIGS:
         raise NotImplementedError(f"{experiment} is not implemented.")
 
-    expt_config = EXPERIMENT_CONFIGS[experiment]
-    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
-    tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
-    if "name" not in tabular_dataset_kwargs:
-        tabular_dataset_kwargs["name"] = experiment
-
-    dset = TabularDataset(config=dataset_config,
-                          splitter=expt_config.splitter,
-                          grouper=expt_config.grouper,
-                          preprocessor_config=expt_config.preprocessor_config,
-                          **tabular_dataset_kwargs)
+    dset = get_dataset(name=experiment, cache_dir=cache_dir)
     config = get_default_config(model, dset)
     estimator = get_estimator(model, **config)
     train(estimator, dset, device="cpu", config=config)

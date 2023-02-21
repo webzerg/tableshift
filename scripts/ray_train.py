@@ -12,8 +12,7 @@ from tablebench.models.ray_utils import RayExperimentConfig, \
     run_ray_tune_experiment, \
     accuracy_metric_name_and_mode_for_model, \
     fetch_postprocessed_results_df
-from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.core import TabularDataset, TabularDatasetConfig
+from tablebench.core import get_dataset
 from tablebench.core.utils import timestamp_as_int
 from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
     get_default_ray_local_dir
@@ -87,18 +86,7 @@ def main(experiment: str, uid: str, cache_dir: str,
         assert uid is not None, "uid is required to use a cached dataset."
         dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
     else:
-        expt_config = EXPERIMENT_CONFIGS[experiment]
-
-        dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
-        tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
-        if "name" not in tabular_dataset_kwargs:
-            tabular_dataset_kwargs["name"] = experiment
-
-        dset = TabularDataset(config=dataset_config,
-                              splitter=expt_config.splitter,
-                              grouper=expt_config.grouper,
-                              preprocessor_config=expt_config.preprocessor_config,
-                              **tabular_dataset_kwargs)
+        dset = get_dataset(name=experiment, cache_dir=cache_dir)
 
     logging.debug(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
 
