@@ -27,6 +27,8 @@ from tablebench.core import get_dataset
 dset = get_dataset(experiment, cache_dir)
 ```
 
+If you would like to use a dataset *without* a domain split, replace `get_dataset()` with `get_iid_dataset()`.
+
 The call to `get_dataset()` returns a `TabularDataset` that you can use to
 easily load tabular data in several formats, including Pandas DataFrame and
 PyTorch DataLoaders:
@@ -41,6 +43,8 @@ train_loader = dset.get_dataloader("train", batch_size=1024)
 for X, y, _, _ in train_loader:
     ...
 ```
+
+There is a complete example of a training script in `examples/run_expt.py`.
 
 # Dataset Availability
 
