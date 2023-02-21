@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 from tablebench.core import features
-from tablebench.core.features import Feature, cat_dtype, PreprocessorConfig
+from tablebench.core.features import Feature, cat_dtype, Preprocessor
 
 
 class TestFeatureFillNA(unittest.TestCase):
@@ -99,7 +99,7 @@ class TestPreprocessor(unittest.TestCase):
     def test_passthrough_all(self):
         """Test case with no transformations."""
         data = copy.deepcopy(self.df)
-        preprocessor = PreprocessorConfig(passthrough_columns="all")
+        preprocessor = Preprocessor(passthrough_columns="all")
         train_idxs = list(range(50))
         transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
         np.testing.assert_array_equal(data.values, transformed.values)

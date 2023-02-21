@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 from .splitter import Splitter, DomainSplitter
 from .grouper import Grouper
 from .tasks import get_task_config
-from .features import PreprocessorConfig
+from .features import Preprocessor, PreprocessorConfig
 from .metrics import metrics_by_group
 from .utils import make_uid, convert_64bit_numeric_cols
 from tablebench.third_party.domainbed import InfiniteDataLoader
@@ -55,7 +55,7 @@ class TabularDataset(ABC):
         self.name = name
         self.config = config
         self.grouper = grouper
-        self.preprocessor_config = preprocessor_config
+        self.preprocessor = Preprocessor(config=preprocessor_config)
         self.splitter = splitter
 
         # Dataset-specific info: features, data source, preprocessing.
@@ -164,7 +164,7 @@ class TabularDataset(ABC):
         data = self._check_data_source(data)
         data = self.task_config.feature_list.apply_schema(
             data, passthrough_columns=["Split"])
-        data = self.preprocessor_config._dropna(data)
+        data = self.preprocessor._dropna(data)
         data = self._apply_grouper(data)
         data = self._generate_splits(data)
         data = self._process_post_split(data)
@@ -233,7 +233,7 @@ class TabularDataset(ABC):
         normalization, drop features needed only for splitting)."""
         passthrough_columns = self.grouper_features + [self.target]
 
-        data = self.preprocessor_config.fit_transform(
+        data = self.preprocessor.fit_transform(
             data,
             self.splits["train"],
             domain_label_colname=self.domain_label_colname,
