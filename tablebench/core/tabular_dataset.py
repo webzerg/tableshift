@@ -55,7 +55,6 @@ class TabularDataset(ABC):
         self.name = name
         self.config = config
         self.grouper = grouper
-        self.preprocessor = Preprocessor(config=preprocessor_config)
         self.splitter = splitter
 
         # Dataset-specific info: features, data source, preprocessing.
@@ -65,6 +64,10 @@ class TabularDataset(ABC):
             cache_dir=self.config.cache_dir,
             download=self.config.download,
             **kwargs)
+
+        self.preprocessor = Preprocessor(
+            config=preprocessor_config,
+            feature_list=self.task_config.feature_list)
 
         # Placeholders for data/labels/groups and split indices.
         self._df: pd.DataFrame = None  # holds all the data

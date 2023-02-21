@@ -215,6 +215,7 @@ class Preprocessor:
     config: PreprocessorConfig
     feature_transformer: ColumnTransformer = None
     domain_label_transformer: LabelEncoder = None
+    feature_list: Optional[FeatureList] = None
 
     def _get_categorical_transforms(self, data: pd.DataFrame,
                                     categorical_columns: List[str],
