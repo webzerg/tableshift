@@ -29,10 +29,11 @@ def safe_cast(x: pd.Series, dtype):
             if 'int' in dtype.__name__.lower():
                 # Case: integer with nan values; cast to float instead. Integers
                 # are not nullable in Pandas (but "Int64" type is).
-                logging.warning(f"cannot cast feature {x.name} to "
-                                f"dtype {dtype.__name__} due to missing values; "
-                                f"attempting cast to float instead. Recommend changing"
-                                f"the feature spec for this feature to type float.")
+                logging.warning(
+                    f"cannot cast feature {x.name} to "
+                    f"dtype {dtype.__name__} due to missing values; "
+                    f"attempting cast to float instead. Recommend changing"
+                    f"the feature spec for this feature to type float.")
                 return x.astype(float)
 
 
@@ -193,7 +194,7 @@ def _transformed_columns_to_numeric(df, prefix: str,
     return df
 
 
-@dataclass 
+@dataclass
 class PreprocessorConfig:
     categorical_features: str = "one_hot"  # also applies to boolean features.
     numeric_features: str = "normalize"
@@ -206,7 +207,7 @@ class PreprocessorConfig:
 
     min_frequency: float = None  # see OneHotEncoder.min_frequency
     max_categories: int = None  # see OneHotEncoder.max_categories
-    
+
 
 # TODO(jpgard): implement ability to apply mapper to categorical features.
 @dataclass
@@ -323,9 +324,10 @@ class Preprocessor:
             data.dropna(inplace=True)
         elif self.config.dropna == "columns":
             data.dropna(axis=1, inplace=True)
-        logging.debug(f"dropped {start_len - len(data)} rows "
-                      f"containing missing values "
-                      f"({(start_len - len(data)) * 100 / start_len}% of data).")
+        logging.debug(
+            f"dropped {start_len - len(data)} rows "
+            f"containing missing values "
+            f"({(start_len - len(data)) * 100 / start_len}% of data).")
         data.reset_index(drop=True, inplace=True)
         if not len(data):
             raise ValueError(f"Data is empty after applying dropna="
