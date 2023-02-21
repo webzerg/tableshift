@@ -33,7 +33,7 @@ class DomainShiftExperimentConfig:
     domain_split_varname: str
     domain_split_ood_values: Sequence[Any]
     grouper: Optional[Grouper]
-    preprocessor_config: PreprocessorConfig
+    PreprocessorConfig_config: PreprocessorConfig
     domain_split_id_values: Optional[Sequence[Any]] = None
 
     def as_experiment_config_iterator(
@@ -58,7 +58,7 @@ class DomainShiftExperimentConfig:
                 domain_split_id_values=src,
                 random_state=random_state)
             yield ExperimentConfig(splitter=splitter, grouper=self.grouper,
-                                   preprocessor_config=self.preprocessor_config,
+                                   PreprocessorConfig_config=self.PreprocessorConfig_config,
                                    tabular_dataset_kwargs=self.tabular_dataset_kwargs)
 
 
@@ -70,7 +70,7 @@ domain_shift_experiment_configs = {
         domain_split_varname="DIVISION",
         domain_split_ood_values=_to_nested(ACS_REGIONS),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+        PreprocessorConfig_config=PreprocessorConfig()),
 
     "acsincome_region": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsincome",
@@ -78,7 +78,7 @@ domain_shift_experiment_configs = {
         domain_split_varname="DIVISION",
         domain_split_ood_values=_to_nested(ACS_REGIONS),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+        PreprocessorConfig_config=PreprocessorConfig()),
 
     "acspubcov_disability": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acspubcov",
@@ -87,7 +87,7 @@ domain_shift_experiment_configs = {
         domain_split_varname="DIS",
         domain_split_ood_values=_to_nested(['1.0']),
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+        PreprocessorConfig_config=PreprocessorConfig()),
 
     "acsunemployment_edlvl": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsunemployment",
@@ -101,7 +101,7 @@ domain_shift_experiment_configs = {
                                  ['16', '17', '18', '19',
                                   '20', '21', '22', '23', '24']],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+        PreprocessorConfig_config=PreprocessorConfig()),
 
     "acsunemployment_mobility": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "acsunemployment",
@@ -109,7 +109,7 @@ domain_shift_experiment_configs = {
         domain_split_varname='MIG',
         domain_split_ood_values=[['02', '03']],
         grouper=Grouper({"RAC1P": [1, ], "SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig()),
+        PreprocessorConfig_config=PreprocessorConfig()),
 
     "brfss_diabetes_race": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "brfss_diabetes", "task": "diabetes",
@@ -119,7 +119,7 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=[[2, 3, 4, 5, 6]],
         domain_split_id_values=_to_nested([1, ]),
         grouper=Grouper({"SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig(
+        PreprocessorConfig_config=PreprocessorConfig(
             passthrough_columns=["IYEAR"]), ),
 
     "brfss_blood_pressure_income": DomainShiftExperimentConfig(
@@ -131,7 +131,7 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested([1, ]),
         domain_split_id_values=_to_nested([0, ]),
         grouper=Grouper({"SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig(
+        PreprocessorConfig_config=PreprocessorConfig(
             passthrough_columns=["IYEAR"]), ),
 
     "brfss_blood_pressure_bmi": DomainShiftExperimentConfig(
@@ -142,7 +142,7 @@ domain_shift_experiment_configs = {
         # OOD values: [1 underweight, 2 normal weight], [3 overweight, 4 obese]
         domain_split_ood_values=[['1.0', '2.0'], ['3.0', '4.0']],
         grouper=Grouper({"SEX": [1, ]}, drop=False),
-        preprocessor_config=PreprocessorConfig(
+        PreprocessorConfig_config=PreprocessorConfig(
             passthrough_columns=["IYEAR"]), ),
 
     "candc_st": DomainShiftExperimentConfig(
@@ -151,7 +151,7 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested(CANDC_STATE_LIST),
         grouper=Grouper({"Race": [1, ], "income_level_above_median": [1, ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(),
+        PreprocessorConfig_config=PreprocessorConfig(),
     ),
 
     # Counts by domain are below. We hold out all of the smallest
@@ -172,7 +172,7 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=[["A44", "A410", "A45", "A46", "A48"]],
         grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(),
+        PreprocessorConfig_config=PreprocessorConfig(),
     ),
 
     # Integer identifier corresponding to 21 distinct values, for example, physician referral,
@@ -185,7 +185,7 @@ domain_shift_experiment_configs = {
                                  20, 22, 25],
         grouper=Grouper({"race": ["Caucasian", ], "gender": ["Male", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(min_frequency=0.01),
+        PreprocessorConfig_config=PreprocessorConfig(min_frequency=0.01),
     ),
 
     "heloc_externalrisk": DomainShiftExperimentConfig(
@@ -193,7 +193,7 @@ domain_shift_experiment_configs = {
         domain_split_varname='ExternalRiskEstimateLow',
         domain_split_ood_values=[[0], [1]],
         grouper=None,
-        preprocessor_config=PreprocessorConfig(),
+        PreprocessorConfig_config=PreprocessorConfig(),
     ),
 
     "mooc_course": DomainShiftExperimentConfig(
@@ -207,7 +207,7 @@ domain_shift_experiment_configs = {
         grouper=Grouper({"gender": ["m", ],
                          "LoE_DI": ["Bachelor's", "Master's", "Doctorate"]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(),
+        PreprocessorConfig_config=PreprocessorConfig(),
     ),
 
     "nhanes_cholesterol_race": DomainShiftExperimentConfig(
@@ -219,7 +219,7 @@ domain_shift_experiment_configs = {
         domain_split_id_values=[[3]],
         # Group by male vs. all others
         grouper=Grouper({"RIAGENDR": ["1.0", ]}, drop=False),
-        preprocessor_config=PreprocessorConfig(
+        PreprocessorConfig_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins")
     ),
@@ -232,7 +232,7 @@ domain_shift_experiment_configs = {
         # Race (non. hispanic white vs. all others; male vs. all others)
         grouper=Grouper({"RIDRETH_merged": [3, ], "RIAGENDR": ["1.0", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(
+        PreprocessorConfig_config=PreprocessorConfig(
             passthrough_columns=["nhanes_year"],
             numeric_features="kbins"),
     ),
@@ -243,8 +243,8 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested(["a", "b"]),
         grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None)
+        PreprocessorConfig_config=PreprocessorConfig(numeric_features="kbins",
+                                         dropna=None)
     ),
     "physionet_los": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={"name": "physionet"},
@@ -252,8 +252,8 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested(["a", "b"]),
         grouper=Grouper({"Age": [x for x in range(40, 100)], "Gender": [1, ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None)
+        PreprocessorConfig_config=PreprocessorConfig(numeric_features="kbins",
+                                         dropna=None)
     ),
 
     "anes_region": DomainShiftExperimentConfig(
@@ -262,8 +262,8 @@ domain_shift_experiment_configs = {
         domain_split_ood_values=_to_nested(ANES_REGIONS),
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None)),
+        PreprocessorConfig_config=PreprocessorConfig(numeric_features="kbins",
+                                         dropna=None)),
 
     # ANES: test on (2016) or (2020); train on all years prior.
     "anes_year": DomainShiftExperimentConfig(
@@ -273,8 +273,8 @@ domain_shift_experiment_configs = {
         domain_split_id_values=[ANES_YEARS[:-2], ANES_YEARS[:-1]],
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
-        preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None)),
+        PreprocessorConfig_config=PreprocessorConfig(numeric_features="kbins",
+                                         dropna=None)),
 
     "mimic_extract_los_3_ins": DomainShiftExperimentConfig(
         tabular_dataset_kwargs={'task': 'los_3', 'name': 'mimic_extract_los_3'},
@@ -286,7 +286,7 @@ domain_shift_experiment_configs = {
         # preprocessing/imputation and do not wish to modify it for these features
         # (static features are not preprocessed by MIMIC-extract). See
         # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
-        preprocessor_config=PreprocessorConfig(
+        PreprocessorConfig_config=PreprocessorConfig(
             passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
                                  if
                                  f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),
@@ -302,7 +302,7 @@ domain_shift_experiment_configs = {
         # preprocessing/imputation and do not wish to modify it for these features
         # (static features are not preprocessed by MIMIC-extract). See
         # tableshift.datasets.mimic_extract.preprocess_mimic_extract().
-        preprocessor_config=PreprocessorConfig(
+        PreprocessorConfig_config=PreprocessorConfig(
             passthrough_columns=[f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
                                  if
                                  f not in MIMIC_EXTRACT_STATIC_FEATURES.names])),

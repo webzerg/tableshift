@@ -95,7 +95,7 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None),
+                                         dropna=None),
         tabular_dataset_kwargs={}),
 
     "brfss_blood_pressure": ExperimentConfig(
@@ -284,6 +284,6 @@ EXPERIMENT_CONFIGS = {
                                 domain_split_gt_thresh=47.0),
         grouper=None,
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                               dropna=None),
+                                         dropna=None),
         tabular_dataset_kwargs={"name": "physionet"}),
 }

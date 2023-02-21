@@ -3,15 +3,13 @@ Tests for Feature objects.
 
 To run tests: python -m unittest tablebench/tests/test_features.py -v
 """
-import copy
-import string
 import unittest
 
 import pandas as pd
 import numpy as np
 
 from tablebench.core import features
-from tablebench.core.features import Feature, cat_dtype, PreprocessorConfig
+from tablebench.core.features import Feature, cat_dtype
 
 
 class TestFeatureFillNA(unittest.TestCase):
@@ -81,26 +79,3 @@ class TestColumnIsOfType(unittest.TestCase):
         self.assertTrue(features.column_is_of_type(float_data, float))
         self.assertFalse(features.column_is_of_type(float_data, int))
 
-
-class TestPreprocessor(unittest.TestCase):
-    def setUp(self) -> None:
-        n = 100
-        self.df = pd.DataFrame({
-            "int_a": np.arange(0, n, dtype=int),
-            "int_b": np.arange(-n, 0, dtype=int),
-            "float_a": np.random.uniform(size=n),
-            "float_b": np.random.uniform(-1., 1., size=n),
-            "string_a": np.random.choice(list(string.ascii_lowercase), size=n),
-            "cat_a": pd.Categorical(
-                np.random.choice(["typea", "typeb"], size=n)),
-        })
-        return
-
-    def test_passthrough_all(self):
-        """Test case with no transformations."""
-        data = copy.deepcopy(self.df)
-        preprocessor = PreprocessorConfig(passthrough_columns="all")
-        train_idxs = list(range(50))
-        transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
-        np.testing.assert_array_equal(data.values, transformed.values)
-        return

@@ -11,7 +11,7 @@ dataset_config = TabularDatasetConfig()
 dset = TabularDataset(config=dataset_config,
                       splitter=expt_config.splitter,
                       grouper=expt_config.grouper,
-                      preprocessor_config=expt_config.preprocessor_config,
+                      preprocessor_config=expt_config.preprocessor,
                       **expt_config.tabular_dataset_kwargs)
 
 X_tr, y_tr, _, d_tr = dset.get_pandas(split="train")

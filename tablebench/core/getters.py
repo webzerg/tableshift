@@ -1,8 +1,8 @@
 from typing import Optional
 
 from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
-from .tabular_dataset import TabularDataset, TabularDatasetConfig, \
-    PreprocessorConfig
+from .tabular_dataset import TabularDataset, TabularDatasetConfig
+from .features import PreprocessorConfig
 
 
 def get_dataset(name: str, cache_dir: str = "tmp",
@@ -14,7 +14,7 @@ def get_dataset(name: str, cache_dir: str = "tmp",
         name: the dataset name.
         cache_dir: the cache directory to use. TableShift will check for cached
             data files here before downloading.
-        preprocessor_config: optional PreprocessorConfig to override the default
+        preprocessor_config: optional Preprocessor to override the default
             preprocessor config. If using the TableShift benchmark, it is
             recommended to leave this as None to use the default preprocessor.
         """

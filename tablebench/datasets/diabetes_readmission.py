@@ -1,3 +1,6 @@
+import json
+import os
+
 import pandas as pd
 from tablebench.core.features import Feature, FeatureList, cat_dtype
 
@@ -20,6 +23,20 @@ DIABETES_MEDICATION_FEAT_DESCRIPTION = """Indicates if there was any diabetic
     decreased, 'steady' if the dosage did not change, and 'no' if the drug 
     was not prescribed."""
 
+
+def get_icd9(depth=3) -> dict:
+    """Fetch a dictionary mapping ICD9 codes to string descriptors."""
+    # via https://raw.githubusercontent.com/sirrice/icd9/master/codes.json
+    fp = os.path.join(os.path.dirname(__file__), "./icd9-codes.json")
+    with open(fp, "r") as f:
+        raw = f.read()
+    icd9_codes = json.loads(raw)
+    depth_mapping = {c["code"]: c["descr"]
+                     for group in icd9_codes for c in group
+                     if c['depth'] == depth}
+    return depth_mapping
+
+
 # Note: the UCI version of this dataset does *not* exactly correspond to the
 # version documented in the linked paper. For example, in the paper, 'weight'
 # is described as a numeric feature, but is discretized into bins in UCI;
@@ -35,32 +52,72 @@ DIABETES_READMISSION_FEATURES = FeatureList(features=[
     10), [10, 20), . . ., [90, 100)"""),
     Feature('weight', cat_dtype, "Weight in pounds. Grouped in 25-pound "
                                  "intervals."),
-    Feature('admission_type_id', float, """Integer identifier corresponding to 9 distinct values. Values: 1:Emergency 
-    2:Urgent 3:Elective 4:Newborn 5:Not Available 6:NULL 7:Trauma Center 8:Not Mapped."""),
-    Feature('discharge_disposition_id', float, """Integer identifier corresponding to 29 distinct values. Values: 1:
-    Discharged to home 2:Discharged/transferred to another short term hospital 3:Discharged/transferred to SNF 4:
-    Discharged/transferred to ICF 5:Discharged/transferred to another type of inpatient care institution 6:
-    Discharged/transferred to home with home health service 7:Left AMA 8:Discharged/transferred to home under care of 
-    Home IV provider 9:Admitted as an inpatient to this hospital 10:Neonate discharged to another hospital for 
-    neonatal aftercare 11:Expired 12:Still patient or expected to return for outpatient services 13:Hospice / home 
-    14:Hospice / medical facility 15:Discharged/transferred within this institution to Medicare approved swing bed 
-    16:Discharged/transferred/referred another institution for outpatient services 17:Discharged/transferred/referred 
-    to this institution for outpatient services 18:NULL 19:Expired at home. Medicaid only, hospice. 20:Expired in 
-    a medical facility. Medicaid only, hospice. 21:Expired: place unknown. Medicaid only, hospice. 22:
-    Discharged/transferred to another rehab fac including rehab units of a hospital . 23:Discharged/transferred to a 
-    long term care hospital. 24:Discharged/transferred to a nursing facility certified under Medicaid but not 
-    certified under Medicare. 25:Not Mapped 26:Unknown/Invalid 30:Discharged/transferred to another Type of Health 
-    Care Institution not Defined Elsewhere 27:Discharged/transferred to a federal health care facility. 28:
-    Discharged/transferred/referred to a psychiatric hospital of psychiatric distinct part unit of a hospital 29:
-    Discharged/transferred to a Critical Access Hospital (CAH)."""),
-    Feature('admission_source_id', int, """Integer identifier corresponding to 21 distinct values. Values: 1: Physician 
-    Referral 2:Clinic Referral 3:HMO Referral 4:Transfer from a hospital 5: Transfer from a Skilled Nursing Facility 
-    (SNF) 6: Transfer from another health care facility 7: Emergency Room 8: Court/Law Enforcement 9: Not Available 
-    10: Transfer from critial access hospital 11:Normal Delivery 12: Premature Delivery 13: Sick Baby 14: Extramural 
-    Birth 15:Not Available 17:NULL 18: Transfer From Another Home Health Agency 19:Readmission to Same Home Health 
-    Agency 20: Not Mapped 21:Unknown/Invalid 22: Transfer from hospital inpt/same fac reslt in a sep claim 23: 
-    Born inside this hospital 24: Born outside this hospital 25: Transfer from Ambulatory Surgery Center 26:
-    Transfer from Hospice"""),
+    Feature('admission_type_id', int, """Integer identifier corresponding 
+    to 9 distinct values.""",
+            value_mapping={
+                1: 'Emergency', 2: 'Urgent', 3: 'Elective', 4: 'Newborn',
+                5: 'Not Available', 6: 'NULL', 7: 'Trauma Center',
+                8: 'Not Mapped',
+            }),
+    Feature(
+        'discharge_disposition_id', int, """Integer identifier 
+    corresponding to 29 distinct values.""",
+        value_mapping={
+            1: 'Discharged to home',
+            2: 'Discharged/transferred to another short term hospital',
+            3: 'Discharged/transferred to SNF',
+            4: 'Discharged/transferred to ICF',
+            5: 'Discharged/transferred to another type of inpatient care institution',
+            6: 'Discharged/transferred to home with home health service',
+            7: 'Left AMA',
+            8: 'Discharged/transferred to home under care of Home IV provider',
+            9: 'Admitted as an inpatient to this hospital',
+            10: 'Neonate discharged to  another hospital for neonatal aftercare',
+            11: 'Expired',
+            12: 'Still patient or expected to return for outpatient services',
+            13: 'Hospice / home',
+            14: 'Hospice / medical facility',
+            15: 'Discharged/transferred within this institution to Medicare approved swing bed',
+            16: 'Discharged/transferred/referred another institution for outpatient services',
+            17: 'Discharged/transferred/referred to this institution for outpatient services',
+            18: 'NULL',
+            19: 'Expired at home. Medicaid only, hospice.',
+            20: 'Expired in a medical facility. Medicaid only, hospice.',
+            21: 'Expired: place unknown. Medicaid only, hospice.',
+            22: 'Discharged/transferred to another rehab fac including rehab units of a hospital.',
+            23: 'Discharged/transferred to a long term care hospital.',
+            24: 'Discharged/transferred to a nursing facility certified under Medicaid  but not certified under Medicare.',
+            25: 'Not Mapped',
+            26: 'Unknown/Invalid',
+            27: 'Discharged/transferred to a federal health care facility.',
+            28: 'Discharged/transferred/referred to a psychiatric hospital of psychiatric distinct part unit of a hospital',
+            29: 'Discharged/transferred to a Critical Access Hospital (CAH).',
+            30: 'Discharged/transferred to another Type of Health Care Institution not Defined Elsewhere',
+        }),
+    Feature('admission_source_id', int, """Integer identifier corresponding 
+    to 21 distinct values.""",
+            value_mapping={
+                1: 'Physician Referral', 2: 'Clinic Referral ',
+                3: 'HMO Referral', 4: 'Transfer from a hospital',
+                5: 'Transfer from a Skilled Nursing Facility (SNF)',
+                6: 'Transfer from another health care facility',
+                7: 'Emergency Room',
+                8: 'Court/Law Enforcement',
+                9: 'Not Available',
+                10: 'Transfer from critial access hospital',
+                11: 'Normal Delivery',
+                12: 'Premature Delivery',
+                13: 'Sick Baby', 14: 'Extramural Birth', 15: 'Not Available',
+                17: 'NULL',
+                18: 'Transfer From Another Home Health Agency',
+                19: 'Readmission to Same Home Health Agency',
+                20: 'Not Mapped', 21: 'Unknown/Invalid',
+                22: 'Transfer from hospital inpt/same fac reslt in a sep claim',
+                23: 'Born inside this hospital',
+                24: 'Born outside this hospital',
+                25: 'Transfer from Ambulatory Surgery Center',
+                26: 'Transfer from Hospice',
+            }),
     Feature('time_in_hospital', float, "Integer number of days between "
                                        "admission and discharge"),
     Feature('payer_code', cat_dtype, "Integer identifier corresponding to 23 "
@@ -90,12 +147,16 @@ DIABETES_READMISSION_FEATURES = FeatureList(features=[
                                        "patient in the year preceding the "
                                        "encounter"),
     Feature('diag_1', cat_dtype, "The primary diagnosis (coded as first three "
-                                 "digits of ICD9); 848 distinct values"),
+                                 "digits of ICD9); 848 distinct values",
+            value_mapping=get_icd9()
+            ),
     Feature('diag_2', cat_dtype, "Secondary diagnosis (coded as first three "
-                                 "digits of ICD9); 923 distinct values"),
+                                 "digits of ICD9); 923 distinct values",
+            value_mapping=get_icd9()),
     Feature('diag_3', cat_dtype, "Additional secondary diagnosis (coded as "
                                  "first three digits of ICD9); 954 distinct "
-                                 "values"),
+                                 "values",
+            value_mapping=get_icd9()),
     Feature('number_diagnoses', float, "Number of diagnoses entered to the "
                                        "system"),
     Feature('max_glu_serum', cat_dtype, "Indicates the range of the result or "
@@ -141,10 +202,12 @@ DIABETES_READMISSION_FEATURES = FeatureList(features=[
             DIABETES_MEDICATION_FEAT_DESCRIPTION),
     Feature('change', cat_dtype, "Indicates if there was a change in diabetic "
                                  "medications (either dosage or generic "
-                                 "name). Values: 'change' and 'no change'"),
+                                 "name). Values: 'change' and 'no change'",
+            name_extended="Change in medication"),
     Feature('diabetesMed', cat_dtype, "Indicates if there was any diabetic "
                                       "medication prescribed. Values: 'yes' "
-                                      "and 'no'"),
+                                      "and 'no'",
+            name_extended="Diabetes medication prescribed"),
     # Converted to binary (readmit vs. no readmit).
     Feature('readmitted', float, "30 days, '>30' if the patient was "
                                  "readmitted in more than 30 days, and 'No' "
