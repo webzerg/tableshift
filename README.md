@@ -27,6 +27,8 @@ from tablebench.core import get_dataset
 dset = get_dataset(experiment, cache_dir)
 ```
 
+The full list of Tableshift IDs for all available datasets is below. 
+
 If you would like to use a dataset *without* a domain split, replace `get_dataset()` with `get_iid_dataset()`.
 
 The call to `get_dataset()` returns a `TabularDataset` that you can use to
@@ -52,13 +54,13 @@ There is a complete example of a training script in `examples/run_expt.py`.
 public" below.*
 
 All of the datasets used in TableShift are publicly accessible and open-source.
-However, some datasets do require signinf a data use agreement; as a result,
+However, some datasets do require signing a data use agreement; as a result,
 some datasets must be manually fetched and stored on your local machine.
 
 A list of datasets, their names in TableShift, and the corresponding access
-levels are below:
+levels are below. The Tableshift ID is the value that should be passed as the `experiment` parameter to `get_dataset()`.
 
-| Dataset                                 | TableShift Name           | Availability                                                                                                                   |
+| Dataset                                 | TableShift ID             | Availability                                                                                                                   |
 |-----------------------------------------|---------------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | Income (ACS)                            | `acsincome`               | Public                                                                                                                         |
 | Food Stamps (ACS)                       | `acsfoodstamps`           | Public                                                                                                                         |
