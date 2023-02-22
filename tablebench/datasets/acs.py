@@ -39,35 +39,83 @@ ST_CODE_TO_STATE = {v: k for k, v in _STATE_CODES.items()}
 # Set of features shared by all ACS tasks.
 ACS_SHARED_FEATURES = FeatureList(features=[
     Feature('AGEP', int, "Age"),
-    Feature('SEX', int, """Sex 1 .Male 2 .Female"""),
+    Feature('SEX', int, "Sex",
+            value_mapping={
+                1: "Male", 2: "Female",
+            }),
     Feature('ST', cat_dtype, "State Code based on 2010 Census definitions."),
-    Feature('MAR', cat_dtype, """Marital status 1 .Married 2 .Widowed 3 
-    .Divorced 4 .Separated 5 .Never married or under 15 years old"""),
-    Feature('CIT', cat_dtype, """Citizenship status 1 .Born in the U.S. 2 
-    .Born in Puerto Rico, Guam, the U.S. Virgin Islands, or the .Northern 
-    Marianas 3 .Born abroad of American parent(s) 4 .U.S. citizen by 
-    naturalization 5 .Not a citizen of the U.S."""),
-    Feature('RAC1P', int, """Recoded detailed race code 1 .White alone 2 
-    .Black or African American alone 3 .American Indian alone 4 .Alaska 
-    Native alone 5 .American Indian and Alaska Native tribes specified; or 
-    .American Indian or Alaska Native, not specified and no other .races 6 
-    .Asian alone 7 .Native Hawaiian and Other Pacific Islander alone 8 .Some 
-    Other Race alone 9 .Two or More Races"""),
-    Feature('SCHL', cat_dtype, """Educational attainment bb .N/A (less than 3 
-    years old) 01 .No schooling completed 02 .Nursery school, preschool 03 
-    .Kindergarten 04 .Grade 1 05 .Grade 2 06 .Grade 3 07 .Grade 4 08 .Grade 5 
-    09 .Grade 6 10 .Grade 7 11 .Grade 8 12 .Grade 9 13 .Grade 10 14 .Grade 11 
-    15 .12th grade - no diploma 16 .Regular high school diploma 17 .GED or 
-    alternative credential 18 .Some college, but less than 1 year 19 .1 or 
-    more years of college credit, no degree 20 .Associate's degree 21 
-    .Bachelor's degree 22 .Master's degree 23 .Professional degree beyond a 
-    bachelor's degree 24 .Doctorate degree"""),
+    Feature('MAR', cat_dtype, """Marital status""",
+            value_mapping={
+                1: 'Married',
+                2: 'Widowed',
+                3: 'Divorced',
+                4: 'Separated',
+                5: 'Never married or under 15 years old'
+            }),
+    Feature('CIT', cat_dtype, """Citizenship status""",
+            value_mapping={
+                1: 'Born in the U.S.',
+                2: 'Born in Puerto Rico, Guam, the U.S. Virgin Islands, '
+                   'or the Northern Marianas',
+                3: 'Born abroad of American parent(s)',
+                4: 'U.S. citizen by naturalization',
+                5: 'Not a citizen of the U.S.',
+            }),
+    Feature('RAC1P', int, """Recoded detailed race code.""",
+            value_mapping={
+                1: 'White alone',
+                2: 'Black or African American alone',
+                3: 'American Indian alone',
+                4: 'Alaska Native alone',
+                5: 'American Indian and Alaska Native tribes specified; or'
+                   ' American Indian or Alaska Native, not specified and '
+                   'no other races',
+                6: 'Asian alone',
+                7: 'Native Hawaiian and Other Pacific Islander alone',
+                8: 'Some Other Race alone',
+                9: 'Two or More Races'}),
+    Feature('SCHL', cat_dtype, """Educational attainment""",
+            value_mapping={
+                np.nan: 'NA (less than 3 years old)',
+                1: 'No schooling completed',
+                2: 'Nursery school, preschool',
+                3: 'Kindergarten',
+                4: 'Grade 1',
+                5: 'Grade 2',
+                6: 'Grade 3',
+                7: 'Grade 4',
+                8: 'Grade 5',
+                9: 'Grade 6',
+                10: 'Grade 7',
+                11: 'Grade 8',
+                12: 'Grade 9',
+                13: 'Grade 10',
+                14: 'Grade 11',
+                15: '12th grade - no diploma',
+                16: 'Regular high school diploma',
+                17: 'GED or alternative credential',
+                18: 'Some college, but less than 1 year',
+                19: '1 or more years of college credit, no degree',
+                20: "Associate's degree",
+                21: "Bachelor's degree",
+                22: "Master's degree",
+                23: "Professional degree beyond a bachelor's degree",
+                24: 'Doctorate degree',
+            }),
     Feature('DIVISION', cat_dtype, """Division code based on 2010 Census 
-    definitions 0 .Puerto Rico 1 .New England (Northeast region) 2 .Middle 
-    Atlantic (Northeast region) 3 .East North Central (Midwest region) 4 
-    .West North Central (Midwest region) 5 .South Atlantic (South region) 6 
-    .East South Central (South region) 7 .West South Central (South Region) 8 
-    .Mountain (West region) 9 .Pacific (West region)"""),
+    definitions.""",
+            value_mapping={
+                0: 'Puerto Rico',
+                1: 'New England (Northeast region)',
+                2: 'Middle Atlantic (Northeast region)',
+                3: 'East North Central (Midwest region)',
+                4: 'West North Central (Midwest region)',
+                5: 'South Atlantic (South region)',
+                6: 'East South Central (South region)',
+                7: 'West South Central (South Region)',
+                8: 'Mountain (West region)',
+                9: 'Pacific (West region)',
+            }),
     Feature('ACS_YEAR', int, 'Derived feature for ACS year.')],
     documentation="https://www2.census.gov/programs-surveys/acs/tech_docs"
                   "/pums/data_dict/PUMS_Data_Dictionary_2019.pdf"
