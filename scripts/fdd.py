@@ -10,7 +10,7 @@ import torch.cuda
 from tqdm import tqdm
 import argparse
 import logging
-from tablebench.core import CachedDataset
+from tableshift.core import CachedDataset
 import re
 from scipy.linalg import sqrtm
 from numpy import iscomplexobj, trace
@@ -18,12 +18,12 @@ from numpy import iscomplexobj, trace
 import numpy as np
 import pandas as pd
 
-from tablebench.models.training import train
-from tablebench.models.config import get_default_config
-from tablebench.models.rtdl import MLPModelWithHook
-from tablebench.models.compat import OPTIMIZER_ARGS
+from tableshift.models.training import train
+from tableshift.models.config import get_default_config
+from tableshift.models.rtdl import MLPModelWithHook
+from tableshift.models.compat import OPTIMIZER_ARGS
 
-from tablebench.notebook_lib import read_tableshift_results, \
+from tableshift.notebook_lib import read_tableshift_results, \
     best_results_by_metric
 
 LOG_LEVEL = logging.DEBUG

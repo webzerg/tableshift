@@ -1,9 +1,9 @@
 import argparse
 import logging
-from tablebench.core import get_dataset
+from tableshift.core import get_dataset
 
-from tablebench.models.utils import get_estimator
-from tablebench.models.training import train
+from tableshift.models.utils import get_estimator
+from tableshift.models.training import train
 
 LOG_LEVEL = logging.INFO
 

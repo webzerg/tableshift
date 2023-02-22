@@ -1,11 +1,11 @@
 import argparse
-from tablebench.core import get_dataset
+from tableshift.core import get_dataset
 
-from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models.utils import get_estimator
-from tablebench.models.training import train
-from tablebench.configs.domain_shift import domain_shift_experiment_configs
-from tablebench.models.config import get_default_config
+from tableshift.configs.experiment_configs import EXPERIMENT_CONFIGS
+from tableshift.models.utils import get_estimator
+from tableshift.models.training import train
+from tableshift.configs.domain_shift import domain_shift_experiment_configs
+from tableshift.models.config import get_default_config
 
 
 def main(experiment, cache_dir, model, debug: bool):

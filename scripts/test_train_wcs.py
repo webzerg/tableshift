@@ -1,8 +1,8 @@
-from tablebench.core import TabularDataset, TabularDatasetConfig, \
+from tableshift.core import TabularDataset, TabularDatasetConfig, \
     DomainSplitter, Grouper, PreprocessorConfig
 
-from tablebench.configs.experiment_configs import ExperimentConfig
-from tablebench.models.utils import get_estimator
+from tableshift.configs.experiment_configs import ExperimentConfig
+from tableshift.models.utils import get_estimator
 
 experiment = "mooc"
 expt_config = ExperimentConfig(

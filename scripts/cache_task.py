@@ -2,11 +2,11 @@
 import argparse
 import logging
 
-from tablebench.core import TabularDataset, TabularDatasetConfig
-from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS, \
+from tableshift.core import TabularDataset, TabularDatasetConfig
+from tableshift.configs.experiment_configs import EXPERIMENT_CONFIGS, \
     ExperimentConfig
-from tablebench.configs.domain_shift import domain_shift_experiment_configs
-from tablebench.core.utils import make_uid
+from tableshift.configs.domain_shift import domain_shift_experiment_configs
+from tableshift.core.utils import make_uid
 
 LOG_LEVEL = logging.DEBUG
 

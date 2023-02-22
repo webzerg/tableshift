@@ -7,16 +7,16 @@ from typing import Optional, List
 import pandas as pd
 import torch
 
-from tablebench.core import CachedDataset
-from tablebench.models.ray_utils import RayExperimentConfig, \
+from tableshift.core import CachedDataset
+from tableshift.models.ray_utils import RayExperimentConfig, \
     run_ray_tune_experiment, \
     accuracy_metric_name_and_mode_for_model, \
     fetch_postprocessed_results_df
-from tablebench.core import get_dataset
-from tablebench.core.utils import timestamp_as_int
-from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
+from tableshift.core import get_dataset
+from tableshift.core.utils import timestamp_as_int
+from tableshift.configs.ray_configs import get_default_ray_tmp_dir, \
     get_default_ray_local_dir
-from tablebench.models.compat import PYTORCH_MODEL_NAMES, \
+from tableshift.models.compat import PYTORCH_MODEL_NAMES, \
     DOMAIN_GENERALIZATION_MODEL_NAMES
 
 LOG_LEVEL = logging.DEBUG

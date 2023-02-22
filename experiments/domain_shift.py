@@ -5,15 +5,15 @@ from typing import Union, Optional
 import pandas as pd
 import torch
 
-from tablebench.configs.domain_shift import domain_shift_experiment_configs
-from tablebench.core import TabularDataset, TabularDatasetConfig, \
+from tableshift.configs.domain_shift import domain_shift_experiment_configs
+from tableshift.core import TabularDataset, TabularDatasetConfig, \
     DomainSplitter, CachedDataset
-from tablebench.models.ray_utils import RayExperimentConfig, \
+from tableshift.models.ray_utils import RayExperimentConfig, \
     run_ray_tune_experiment, fetch_postprocessed_results_df, \
     accuracy_metric_name_and_mode_for_model
-from tablebench.configs.experiment_configs import ExperimentConfig
-from tablebench.core.utils import make_uid, timestamp_as_int
-from tablebench.configs.ray_configs import get_default_ray_tmp_dir, \
+from tableshift.configs.experiment_configs import ExperimentConfig
+from tableshift.core.utils import make_uid, timestamp_as_int
+from tableshift.configs.ray_configs import get_default_ray_tmp_dir, \
     get_default_ray_local_dir
 
 

@@ -1,8 +1,8 @@
-from tablebench.core import TabularDataset, TabularDatasetConfig
+from tableshift.core import TabularDataset, TabularDatasetConfig
 
-from tablebench.configs.experiment_configs import EXPERIMENT_CONFIGS
-from tablebench.models.utils import get_estimator
-from tablebench.models.config import get_default_config
+from tableshift.configs.experiment_configs import EXPERIMENT_CONFIGS
+from tableshift.models.utils import get_estimator
+from tableshift.models.config import get_default_config
 
 expt_config = EXPERIMENT_CONFIGS["_debug"]
 

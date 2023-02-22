@@ -37,5 +37,5 @@ for year in YEARS:
 
         data_sources[year][component] = links
 
-with open("./tablebench/datasets/nhanes_data_sources.json", "w") as fp:
+with open("./tableshift/datasets/nhanes_data_sources.json", "w") as fp:
     json.dump(data_sources, fp, indent=4)

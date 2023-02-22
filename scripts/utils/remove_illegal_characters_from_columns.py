@@ -8,7 +8,7 @@ import pandas as pd
 import json
 import copy
 
-from tablebench.core.utils import sub_illegal_chars
+from tableshift.core.utils import sub_illegal_chars
 
 
 def main(cache_dir, experiment, domain_split_varname, index_colname='Unnamed: 0'):

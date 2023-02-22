@@ -1,1 +1,1 @@
-from tablebench.notebook_lib import *
+from tableshift.notebook_lib import *
