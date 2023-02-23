@@ -126,6 +126,13 @@ class FeatureList:
                 return f.name
         return None
 
+    def __getitem__(self, item: str) -> Feature:
+        """Get a feature by name."""
+        for f in self.features:
+            if f.name == item:
+                return f
+        raise ValueError(f"feature {item} not in features {self.names}.")
+
     def __add__(self, other):
         if (self.target and other.target):
             raise ValueError("cannot add two lists which both contain targets.")
@@ -219,6 +226,10 @@ class PreprocessorConfig:
     # containing na values; if None do not do anything for missing values.
     dropna: Union[str, None] = "rows"
 
+    # If true, map feature name -> name_extended to features when name_extended
+    # is specified.
+    use_extended_names: bool = False
+
     min_frequency: float = None  # see OneHotEncoder.min_frequency
     max_categories: int = None  # see OneHotEncoder.max_categories
 
@@ -259,7 +270,6 @@ def make_value_map_transforms(features_to_map: List[Feature]) -> List[
     return transforms
 
 
-# TODO(jpgard): implement ability to apply mapper to categorical features.
 @dataclass
 class Preprocessor:
     config: PreprocessorConfig
@@ -449,10 +459,26 @@ class Preprocessor:
             passthrough_columns.append(domain_label_colname)
         return passthrough_columns
 
+    def map_names_extended(self, colnames: List[str]) -> List[str]:
+        """Map the original feature names to any extended feature names."""
+        assert self.feature_list is not None, \
+            "Feature list is required to map extended feature names."
+        names_out = []
+        for c in colnames:
+            if self.feature_list[c].name_extended is not None:
+                names_out.append(self.feature_list[c].name_extended)
+            else:
+                names_out.append(c)
+        return names_out
+
     def fit_transform(self, data: pd.DataFrame, train_idxs: List[int],
                       domain_label_colname: Optional[str] = None,
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         """Fit a feature_transformer and apply it to the input features."""
+
+        if self.config.use_extended_names:
+            data.columns = self.map_names_extended(data.columns.tolist())
+
         logging.info(f"transforming columns")
         if self.config.passthrough_columns == "all":
             logging.info("passthrough is 'all'; data will not be preprocessed "

@@ -10,7 +10,7 @@ import unittest
 import numpy as np
 import pandas as pd
 from tableshift.core.features import Preprocessor, PreprocessorConfig, \
-    FeatureList, Feature
+    FeatureList, Feature, cat_dtype
 
 
 class TestPreprocessor(unittest.TestCase):
@@ -73,7 +73,8 @@ class TestPreprocessor(unittest.TestCase):
             Feature("int_b", int),
             Feature("float_a", float),
             Feature("float_b", float),
-            Feature("string_a", str, value_mapping=value_map_string_a)
+            Feature("string_a", str, value_mapping=value_map_string_a),
+            Feature("cat_a", cat_dtype),
         ])
         data = copy.deepcopy(self.df)
         preprocessor = Preprocessor(
@@ -89,3 +90,31 @@ class TestPreprocessor(unittest.TestCase):
 
         self.assertTrue(np.all(np.isin(transformed["int_a"].values,
                                        list(value_map_int_a.values()))))
+
+    def test_map_name_extended(self):
+        """Test mapping of extended feature names."""
+        feature_list = FeatureList([
+            Feature("int_a", int,
+                    name_extended="Integer A value"),
+            Feature("int_b", int),
+            Feature("float_a", float),
+            Feature("float_b", float),
+            Feature("string_a", str,
+                    name_extended="String A value"),
+            Feature("cat_a", cat_dtype),
+        ])
+        data = copy.deepcopy(self.df)
+        preprocessor = Preprocessor(
+            config=PreprocessorConfig(use_extended_names=True,
+                                      passthrough_columns="all"),
+            feature_list=feature_list)
+        train_idxs = list(range(50))
+        transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
+
+        expected_names = ["Integer A value", "int_b", "float_a", "float_b",
+                          "String A value", "cat_a"]
+
+        # Check that names are mapped
+        self.assertListEqual(transformed.columns.tolist(), expected_names)
+        # Check that data is unchanged
+        np.testing.assert_array_equal(transformed.values, self.df.values)

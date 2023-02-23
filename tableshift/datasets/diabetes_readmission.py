@@ -58,10 +58,12 @@ DIABETES_READMISSION_FEATURES = FeatureList(features=[
                 1: 'Emergency', 2: 'Urgent', 3: 'Elective', 4: 'Newborn',
                 5: 'Not Available', 6: 'NULL', 7: 'Trauma Center',
                 8: 'Not Mapped',
-            }),
+            },
+            name_extended="Admission type"),
     Feature(
         'discharge_disposition_id', int, """Integer identifier 
     corresponding to 29 distinct values.""",
+        name_extended="Discharge type",
         value_mapping={
             1: 'Discharged to home',
             2: 'Discharged/transferred to another short term hospital',
@@ -96,6 +98,7 @@ DIABETES_READMISSION_FEATURES = FeatureList(features=[
         }),
     Feature('admission_source_id', int, """Integer identifier corresponding 
     to 21 distinct values.""",
+            name_extended="Admission source",
             value_mapping={
                 1: 'Physician Referral', 2: 'Clinic Referral ',
                 3: 'HMO Referral', 4: 'Transfer from a hospital',
@@ -118,92 +121,143 @@ DIABETES_READMISSION_FEATURES = FeatureList(features=[
                 25: 'Transfer from Ambulatory Surgery Center',
                 26: 'Transfer from Hospice',
             }),
-    Feature('time_in_hospital', float, "Integer number of days between "
-                                       "admission and discharge"),
+    Feature('time_in_hospital', float,
+            "Integer number of days between admission and discharge",
+            name_extended="Count of days beween admission and discharge"),
     Feature('payer_code', cat_dtype, "Integer identifier corresponding to 23 "
                                      "distinct values, for example, "
                                      "Blue Cross\Blue Shield, Medicare, "
-                                     "and self-pay"),
-    Feature('medical_specialty', cat_dtype, "Integer identifier of a "
-                                            "specialty of the admitting "
+                                     "and self-pay",
+            name_extended="Payer code"),
+    Feature('medical_specialty', cat_dtype, "Specialty of the admitting "
                                             "physician, corresponding to 84 "
                                             "distinct values, for example, "
                                             "cardiology, internal medicine, "
-                                            "family\general practice, "
-                                            "and surgeon"),
+                                            "family/general practice, "
+                                            "and surgeon.",
+            name_extended="Medical specialty of the admitting physician"),
     Feature('num_lab_procedures', float, "Number of lab tests performed "
-                                         "during the encounter"),
+                                         "during the encounter",
+            name_extended="Number of lab tests performed during the encounter"),
     Feature('num_procedures', float, "Number of procedures (other than lab "
-                                     "tests) performed during the encounter"),
+                                     "tests) performed during the encounter",
+            name_extended="Number of procedures (other than lab tests) "
+                          "performed during the encounter"),
     Feature('num_medications', float, "Number of distinct generic names "
-                                      "administered during the encounter"),
+                                      "administered during the encounter",
+            name_extended="Number of distinct generic drugs "
+                          "administered during the encounter"),
     Feature('number_outpatient', float, "Number of outpatient visits of the "
                                         "patient in the year preceding the "
-                                        "encounter"),
-    Feature('number_emergency', float, "Number of emergency visits of the "
-                                       "patient in the year preceding the "
-                                       "encounter"),
-    Feature('number_inpatient', float, "Number of inpatient visits of the "
-                                       "patient in the year preceding the "
-                                       "encounter"),
+                                        "encounter",
+            name_extended="Number of outpatient visits of the "
+                          "patient in the year preceding the "
+                          "encounter"),
+    Feature('number_emergency', float,
+            "Number of emergency visits of the "
+            "patient in the year preceding the "
+            "encounter",
+            name_extended="Number of emergency visits of the "
+                          "patient in the year preceding the "
+                          "encounter"),
+    Feature('number_inpatient', float,
+            "Number of inpatient visits of the "
+            "patient in the year preceding the "
+            "encounter",
+            name_extended="Number of inpatient visits of the "
+                          "patient in the year preceding the "
+                          "encounter"),
     Feature('diag_1', cat_dtype, "The primary diagnosis (coded as first three "
                                  "digits of ICD9); 848 distinct values",
-            value_mapping=get_icd9()
+            value_mapping=get_icd9(),
+            name_extended="Primary diagnosis",
             ),
     Feature('diag_2', cat_dtype, "Secondary diagnosis (coded as first three "
                                  "digits of ICD9); 923 distinct values",
+            name_extended="Secondary diagnosis",
             value_mapping=get_icd9()),
     Feature('diag_3', cat_dtype, "Additional secondary diagnosis (coded as "
                                  "first three digits of ICD9); 954 distinct "
                                  "values",
+            name_extended="Additional secondary diagnosis",
             value_mapping=get_icd9()),
     Feature('number_diagnoses', float, "Number of diagnoses entered to the "
-                                       "system"),
+                                       "system",
+            name_extended="Total number of diagnoses"),
     Feature('max_glu_serum', cat_dtype, "Indicates the range of the result or "
                                         "if the test was not taken. Values: "
                                         "'>200,' '>300,' 'normal,' and 'none' "
-                                        "if not measured"),
+                                        "if not measured",
+            name_extended="Max glucose serum"),
     Feature('A1Cresult', cat_dtype, "Indicates the range of the result or if "
                                     "the test was not taken. Values: '>8' if "
                                     "the result was greater than 8%, '>7' if "
                                     "the result was greater than 7% but less "
                                     "than 8%, 'normal' if the result was less "
-                                    "than 7%, and 'none' if not measured."),
+                                    "than 7%, and 'none' if not measured.",
+            name_extended='Hemoglobin A1c test result',
+            note="""From original citation: Hemoglobin A1c (HbA1c) is an 
+            important measure of glucose control, which is widely applied to 
+            measure performance of diabetes care. (See documentation link.)"""
+            ),
     Feature('metformin', cat_dtype, "Indicates if there was a change in "
                                     "diabetic medications (either dosage or "
                                     "generic name). Values: 'change' and 'no "
-                                    "change'"),
-    Feature('repaglinide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('nateglinide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('chlorpropamide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('glimepiride', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('acetohexamide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('glipizide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('glyburide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('tolbutamide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('pioglitazone', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('rosiglitazone', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('acarbose', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('miglitol', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('troglitazone', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('tolazamide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('examide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('citoglipton', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
-    Feature('insulin', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION),
+                                    "change'",
+            name_extended='Change in metformin medication'),
+    Feature('repaglinide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in repaglinide medication'),
+    Feature('nateglinide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in nateglinide medication'),
+    Feature('chlorpropamide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in chlorpropamide medication'),
+    Feature('glimepiride', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in glimepiride medication'),
+    Feature('acetohexamide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in acetohexamide medication'),
+    Feature('glipizide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in glipizide medication'),
+    Feature('glyburide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in glyburide medication'),
+    Feature('tolbutamide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in tolbutamide medication'),
+    Feature('pioglitazone', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in pioglitazone medication'),
+    Feature('rosiglitazone', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in rosiglitazone medication'),
+    Feature('acarbose', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in acarbose medication'),
+    Feature('miglitol', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in miglitol medication'),
+    Feature('troglitazone', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in troglitazone medication'),
+    Feature('tolazamide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in tolazamide medication'),
+    Feature('examide', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in examide medication'),
+    Feature('citoglipton', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in citoglipton medication'),
+    Feature('insulin', cat_dtype, DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in insulin medication'),
     Feature('glyburide-metformin', cat_dtype,
-            DIABETES_MEDICATION_FEAT_DESCRIPTION),
+            DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in glyburide-metformin medication'),
     Feature('glipizide-metformin', cat_dtype,
-            DIABETES_MEDICATION_FEAT_DESCRIPTION),
+            DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in glipizide-metformin medication'),
     Feature('glimepiride-pioglitazone', cat_dtype,
-            DIABETES_MEDICATION_FEAT_DESCRIPTION),
+            DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in glimepiride-pioglitazone medication'),
     Feature('metformin-rosiglitazone', cat_dtype,
-            DIABETES_MEDICATION_FEAT_DESCRIPTION),
+            DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in metformin-rosiglitazone medication'),
     Feature('metformin-pioglitazone', cat_dtype,
-            DIABETES_MEDICATION_FEAT_DESCRIPTION),
+            DIABETES_MEDICATION_FEAT_DESCRIPTION,
+            name_extended='Change in metformin-pioglitazone medication'),
     Feature('change', cat_dtype, "Indicates if there was a change in diabetic "
                                  "medications (either dosage or generic "
                                  "name). Values: 'change' and 'no change'",
-            name_extended="Change in medication"),
+            name_extended="Change in any medication"),
     Feature('diabetesMed', cat_dtype, "Indicates if there was any diabetic "
                                       "medication prescribed. Values: 'yes' "
                                       "and 'no'",
