@@ -506,6 +506,13 @@ class Preprocessor:
         if self.config.passthrough_columns == "all":
             logging.info("passthrough is 'all'; data will not be preprocessed "
                          "by tableshift.")
+            if self.config.use_extended_names:
+                logging.warning(
+                    "passthrough is 'all' but "
+                    "config.use_extended_names is True; extended "
+                    "names are not applied when passthrough is 'all'. Try "
+                    "setting numeric_columns='passthough', "
+                    "categorical_columns='passthrough' instead.")
             return data
 
         passthrough_columns = self.get_passthrough_columns(data,
