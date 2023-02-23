@@ -77,7 +77,11 @@ class Feature:
     # values. Used e.g. for categorical features that are coded with numeric
     # values that map to known/named categories.
     value_mapping: Dict[Any, Any] = None
-    name_extended: str = None  # Optional longer description of feature.
+    # Optional longer name of feature (can contain arbitrary text, including
+    # illegal JSON characters).
+    name_extended: str = None
+    # Additional notes regarding feature or values.
+    note: str = None
 
     def fillna(self, data: pd.Series) -> pd.Series:
         """Apply the list of na_values, filling these values in data with np.nan."""
