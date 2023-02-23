@@ -34,7 +34,12 @@ class TestPreprocessor(unittest.TestCase):
             config=PreprocessorConfig(passthrough_columns="all"))
         train_idxs = list(range(50))
         transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
+
+        # Check that values are unmodified
         np.testing.assert_array_equal(data.values, transformed.values)
+        # Check that dtypes are the same
+        self.assertListEqual(data.dtypes.tolist(),
+                             transformed.dtypes.tolist())
         return
 
     def test_passthrough_numeric(self):
@@ -45,8 +50,13 @@ class TestPreprocessor(unittest.TestCase):
         train_idxs = list(range(50))
         transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
         numeric_cols = ["int_a", "int_b", "float_a", "float_b"]
+
+        # Check that values of numeric cols are unmodified
         np.testing.assert_array_equal(data[numeric_cols].values,
                                       transformed[numeric_cols].values)
+        # Check that dtypes of numeric cols are the same
+        self.assertListEqual(data.dtypes[numeric_cols].tolist(),
+                             transformed.dtypes[numeric_cols].tolist())
         return
 
     def test_passthrough_categorical(self):
@@ -57,8 +67,13 @@ class TestPreprocessor(unittest.TestCase):
         train_idxs = list(range(50))
         transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
         categorical_cols = ["string_a", "cat_a"]
+
+        # Check that values of categorical cols are unmodified
         np.testing.assert_array_equal(data[categorical_cols].values,
                                       transformed[categorical_cols].values)
+        # Check that dtypes of numeric cols are the same
+        self.assertListEqual(data.dtypes[categorical_cols].tolist(),
+                             transformed.dtypes[categorical_cols].tolist())
         return
 
     def test_map_values(self):
