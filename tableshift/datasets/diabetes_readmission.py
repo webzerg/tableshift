@@ -61,8 +61,8 @@ DIABETES_READMISSION_FEATURES = FeatureList(features=[
             },
             name_extended="Admission type"),
     Feature(
-        'discharge_disposition_id', int, """Integer identifier 
-    corresponding to 29 distinct values.""",
+        'discharge_disposition_id', int,
+        "Integer identifier corresponding to 29 distinct values.",
         name_extended="Discharge type",
         value_mapping={
             1: 'Discharged to home',
