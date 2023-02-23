@@ -5,12 +5,11 @@ To run tests: python -m unittest tableshift/tests/test_preprocessor.py -v
 """
 
 import copy
-import string
 import unittest
 import numpy as np
 import pandas as pd
 from tableshift.core.features import Preprocessor, PreprocessorConfig, \
-    FeatureList, Feature, cat_dtype
+    FeatureList, Feature, cat_dtype, remove_verbose_prefixes
 
 
 class TestPreprocessor(unittest.TestCase):
@@ -77,18 +76,18 @@ class TestPreprocessor(unittest.TestCase):
         return
 
     def test_map_values(self):
-        """Test case where a value map is used for features."""
-        value_map_string_a = {
-            "a": "Diagnosis of disease A",
-            "b": "Diagnosis of disease B",
-            "c": "Diagnosis of disease C"}
-        value_map_int_a = {x: -x for x in range(len(self.df))}
+        """Test mapping of values."""
+
         feature_list = FeatureList([
-            Feature("int_a", int, value_mapping=value_map_int_a),
+            Feature("int_a", int,
+                    value_mapping={x: -x for x in range(len(self.df))}),
             Feature("int_b", int),
             Feature("float_a", float),
             Feature("float_b", float),
-            Feature("string_a", str, value_mapping=value_map_string_a),
+            Feature("string_a", str, value_mapping={
+                "a": "Diagnosis of disease A",
+                "b": "Diagnosis of disease B",
+                "c": "Diagnosis of disease C"}),
             Feature("cat_a", cat_dtype),
         ])
         data = copy.deepcopy(self.df)
@@ -100,11 +99,58 @@ class TestPreprocessor(unittest.TestCase):
         train_idxs = list(range(50))
         transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
 
-        self.assertTrue(np.all(np.isin(transformed["string_a"].values,
-                                       list(value_map_string_a.values()))))
+        for f in feature_list.features:
+            if f.value_mapping is not None:
+                fname = f.name
+                self.assertTrue(fname in transformed.columns)
 
-        self.assertTrue(np.all(np.isin(transformed["int_a"].values,
-                                       list(value_map_int_a.values()))))
+                self.assertTrue(np.all(
+                    np.isin(transformed[fname].values,
+                            np.array(list(f.value_mapping.values())))
+                ),
+                    msg=f"failed for feature {fname}")
+
+    def test_map_values_all(self):
+        """Test case where a value map is used for *all* features."""
+
+        feature_list = FeatureList([
+            Feature("int_a", int,
+                    value_mapping={x: -x for x in range(len(self.df))}),
+            Feature("int_b", int,
+                    value_mapping={x: x % 2 for x in
+                                   self.df["int_b"].unique()}),
+            Feature("float_a", float,
+                    value_mapping={x: x + 1000 for x in
+                                   self.df["float_a"].unique()}
+                    ),
+            Feature("float_b", float,
+                    value_mapping={x: x > 0 for x in
+                                   self.df["float_b"].unique()}),
+            Feature("string_a", str, value_mapping={
+                "a": "Diagnosis of disease A",
+                "b": "Diagnosis of disease B",
+                "c": "Diagnosis of disease C"}),
+            Feature("cat_a", cat_dtype,
+                    value_mapping={"typea": "Patient of Type A",
+                                   "typeb": "Patient of Type B"}),
+        ])
+        data = copy.deepcopy(self.df)
+        preprocessor = Preprocessor(
+            config=PreprocessorConfig(
+                categorical_features="map_values",
+                numeric_features="map_values"),
+            feature_list=feature_list)
+        train_idxs = list(range(50))
+        transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
+        for f in feature_list.features:
+            fname = f.name
+            self.assertTrue(fname in transformed.columns)
+
+            self.assertTrue(np.all(
+                np.isin(transformed[fname].values,
+                        np.array(list(f.value_mapping.values())))
+            ),
+                msg=f"failed for feature {fname}")
 
     def test_map_name_extended(self):
         """Test mapping of extended feature names."""
@@ -133,3 +179,63 @@ class TestPreprocessor(unittest.TestCase):
         self.assertListEqual(transformed.columns.tolist(), expected_names)
         # Check that data is unchanged
         np.testing.assert_array_equal(transformed.values, self.df.values)
+
+    def test_remove_verbose_prefixes(self):
+        colnames = ["onehot__x_feature", "scale__float0",
+                    "kbin__myfeature", "map__cat_feature"]
+        expected = ["x_feature", "float0",
+                    "myfeature", "cat_feature"]
+        output = remove_verbose_prefixes(colnames)
+        self.assertListEqual(output, expected)
+
+    def test_remove_verbose_prefixes_in_pipeline_onehot_normalize(self):
+        """End-to-end test that verbose prefixes are removed, with onehot/norm.
+        """
+        data = copy.deepcopy(self.df)
+        preprocessor = Preprocessor(config=PreprocessorConfig(
+            categorical_features="one_hot",
+            numeric_features="normalize",
+        ))
+        train_idxs = list(range(50))
+
+        expected_output_columns = ['int_a', 'int_b', 'float_a', 'float_b',
+                                   'string_a_c', 'string_a_b',
+                                   'string_a_a', 'cat_a_typeb', 'cat_a_typea']
+        transformed = preprocessor.fit_transform(
+            data, train_idxs=train_idxs)
+
+        self.assertListEqual(sorted(transformed.columns.tolist()),
+                             sorted(expected_output_columns))
+
+    def test_remove_verbose_prefixes_in_pipeline_map_bin(self):
+        """End-to-end test that verbose prefixes are removed, with mapping
+        and binning.
+        """
+        data = copy.deepcopy(self.df)
+
+        feature_list = FeatureList([
+            Feature("int_a", int,
+                    value_mapping={x: -x for x in range(len(self.df))}),
+            Feature("int_b", int),
+            Feature("float_a", float),
+            Feature("float_b", float),
+            Feature("string_a", str,
+                    value_mapping={
+                        "a": "Diagnosis of disease A",
+                        "b": "Diagnosis of disease B",
+                        "c": "Diagnosis of disease C"}),
+            Feature("cat_a", cat_dtype),
+        ])
+
+        preprocessor = Preprocessor(config=PreprocessorConfig(
+            categorical_features="map_values",
+            numeric_features="kbins"),
+            feature_list=feature_list)
+        train_idxs = list(range(50))
+
+        expected_output_columns = self.df.columns.tolist()
+        transformed = preprocessor.fit_transform(
+            data, train_idxs=train_idxs)
+
+        self.assertListEqual(sorted(transformed.columns.tolist()),
+                             sorted(expected_output_columns))

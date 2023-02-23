@@ -261,13 +261,25 @@ def make_value_map_transforms(features_to_map: List[Feature]) -> List[
     The output of this function can be used as input to a ColumnTransformer.
     """
     transforms = [
-        (f.name,
+        (f'map_{f.name}',
          FunctionTransformer(partial(map_values,
                                      mapping=f.value_mapping),
                              check_inverse=False,
                              feature_names_out="one-to-one"),
          [f.name]) for f in features_to_map]
     return transforms
+
+
+def remove_verbose_prefixes(colnames: List[str], sep='__') -> List[str]:
+    """Helper function to remove the prefixes added by ColumnTransformer.
+
+    Example output: 'map__col1' -> col1, 'scale_featurez' -> featurez, etc.
+
+    This allows us to retain the verbose names internally during the
+    preprocessing phase, but not actually expose those verbose names in the
+    data that is returned to the user.
+    """
+    return [c if sep not in c else c.split(sep)[1] for c in colnames]
 
 
 @dataclass
@@ -358,11 +370,15 @@ class Preprocessor:
         transforms += self._get_categorical_transforms(data,
                                                        passthrough_columns)
 
+        # Note that we use the verbose feature names to track which columns are
+        # the result of various preprocessing transformations downstream;
+        # ultimately the verbose names are cleaned up.
+
         self.feature_transformer = ColumnTransformer(
             transforms,
             remainder='passthrough',
             sparse_threshold=0,
-            verbose_feature_names_out=False)
+            verbose_feature_names_out=True)
 
         self.feature_transformer.fit(data.loc[train_idxs, :])
         return
@@ -392,6 +408,7 @@ class Preprocessor:
         if cast_dtypes:
             for colname, dtype in cast_dtypes.items():
                 transformed[colname] = transformed[colname].astype(dtype)
+        transformed.columns = remove_verbose_prefixes(transformed.columns)
         return transformed
 
     def _dropna(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -428,6 +445,9 @@ class Preprocessor:
                     raise ValueError(
                         f"[ERROR] illegal character {char} in column name "
                         f"{colname}; this will likely lead to an error.")
+                if "__" in colname:
+                    raise ValueError(f"Double underscore '__' prohibited in "
+                                     f"column names; got {colname}")
 
     def fit_transform_domain_labels(self, x: pd.Series):
         if self.config.domain_labels == "label_encode":
@@ -492,6 +512,7 @@ class Preprocessor:
         # original type post-transformation (ColumnTransformer actually casts
         # all columns to object type).
         dtypes_in = data.dtypes.to_dict()
+
         post_transform_cast_dtypes = (
             {c: dtypes_in[c] for c in passthrough_columns if
              c != domain_label_colname}
