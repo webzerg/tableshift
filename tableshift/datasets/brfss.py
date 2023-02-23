@@ -68,7 +68,7 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
     when you needed to see a doctor but could not because of cost?""",
             na_values=(7, 9),
             value_mapping={
-                1: "Yes", 2: " No", 7: "Don't know/not sure", 9: "Refused",
+                1: "Yes", 2: "No", 7: "Don't know/not sure", 9: "Refused",
             }),
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
@@ -113,8 +113,8 @@ BRFSS_ALCOHOL_FEATURES = [
             week""",
             na_values=(99900,)),
     Feature("RFBING5", cat_dtype,
-            """Binge drinkers (males having five or more drinks on one 
-            occasion, females having four or more drinks on one occasion)""",
+            "Binge drinkers (males having five or more drinks on one "
+            "occasion, females having four or more drinks on one occasion)",
             na_values=(9,),
             value_mapping={1: "No", 2: "Yes", 9: "Don't know/Refused/Missing"
                            }),
@@ -123,12 +123,12 @@ BRFSS_ALCOHOL_FEATURES = [
 BRFSS_SMOKE_FEATURES = [
     # Have you smoked at least 100 cigarettes in your entire life?
     Feature("SMOKE100", cat_dtype,
-            """Have you smoked at least 100 cigarettes in your entire life? """,
+            "Have you smoked at least 100 cigarettes in your entire life?",
             na_values=(7, 9),
             value_mapping={1: 'Yes', 2: 'No'}),
 
-    Feature("SMOKDAY2", cat_dtype, """Do you now smoke cigarettes every day, 
-    some days, or not at all?""",
+    Feature("SMOKDAY2", cat_dtype, "Do you now smoke cigarettes every day, "
+                                   "some days, or not at all?",
             na_values=(7, 9),
             value_mapping={
                 1: 'Every day', 2: 'Some days', 3: 'Not at all',
@@ -145,7 +145,7 @@ BRFSS_SMOKE_FEATURES = [
 # due to limitations on naming in the sklearn transformers module.
 
 BMI5CAT_FEATURE = Feature("BMI5CAT", cat_dtype,
-                          "Four-categories of Body Mass Index (BMI)",
+                          "Body Mass Index (BMI) category",
                           value_mapping={
                               1: 'Underweight (BMI < 1850)',
                               2: 'Normal Weight (1850 <= BMI < 2500)',
@@ -155,8 +155,7 @@ BMI5CAT_FEATURE = Feature("BMI5CAT", cat_dtype,
 BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Target ################
     Feature("DIABETES", float,
-            '(Ever told) you have diabetes (If "Yes" and respondent is'
-            ' female, ask "Was this only when you were pregnant?',
+            '(Ever told) you have diabetes',
             is_target=True, na_values=(7, 9),
             value_mapping={
                 1: 'Yes',
@@ -168,9 +167,8 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     # Below are a set of indicators for known risk factors for diabetes.
     ################ General health ################
     Feature("PHYSHLTH", float,
-            """Now thinking about your physical health, which includes 
-            physical illness and injury, for how many days during the past 30 
-            days was your physical health not good?""",
+            "For how many days during the past 30 days"
+            " was your physical health not good?",
             na_values=(77, 99),
             note="""Values: 1 - 30 Number of 
             days, 88 None, 77 Don’t know/Not sure, 99 Refused, BLANK Not 
@@ -178,9 +176,11 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ High blood pressure ################
 
     Feature("HIGH_BLOOD_PRESS", cat_dtype, na_values=(9,),
-            description="""Adults who have been told they have high blood 
-            pressure by a doctor, nurse, or other health professional. 1: No. 
-            2: Yes. 9: Don’t know/Not Sure/Refused/Missing"""),
+            description="Adults who have been told they have high blood "
+                        "pressure by a doctor, nurse, or other health "
+                        "professional.",
+            value_mapping={1: 'No', 2: 'Yes',
+                           9: " Don’t know/Not Sure/Refused/Missing"}),
     ################ High cholesterol ################
     # Cholesterol check within past five years
     Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype,
@@ -198,7 +198,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
             }),
 
     Feature("TOLDHI", cat_dtype,
-            """Have you EVER been told by a doctor, nurse or other health 
+            """Have you ever been told by a doctor, nurse or other health 
             professional that your blood cholesterol is high?""",
             na_values=(7, 9),
             value_mapping={
@@ -216,7 +216,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     *BRFSS_SMOKE_FEATURES,
     ################ Other chronic health conditions ################
     Feature("CVDSTRK3", cat_dtype,
-            """(Ever told) you had a stroke""",
+            """Ever had a stroke, or been told you had a stroke""",
             na_values=(7, 9),
             value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
                            9: 'Refused', }),
@@ -232,8 +232,8 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     *BRFSS_ALCOHOL_FEATURES,
     ################ Exercise ################
     Feature("TOTINDA", cat_dtype,
-            """Adults who reported doing physical activity or exercise during 
-            the past 30 days other than their regular job.""",
+            "Adults who reported doing physical activity or exercise during "
+            "the past 30 days other than their regular job.",
             na_values=(9,),
             value_mapping={
                 1: 'Had physical activity or exercise in last 30 days',
@@ -271,22 +271,24 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     # About how long has it been since you last visited a
     # doctor for a routine checkup?
     Feature("CHECKUP1", cat_dtype,
-            """Question: About how long has it been since you last visited a 
-            doctor for a routine checkup? [A routine checkup is a general 
-            physical exam, not an exam for a specific injury, illness, 
-            or condition.]""",
+            """Time since last visit to the doctor for a checkup""",
             na_values=(7, 9),
             value_mapping={
                 1: 'Within past year (anytime < 12 months ago)',
                 2: 'Within past 2 years (1 year but < 2 years ago)',
                 3: 'Within past 5 years (2 years but < 5 years ago)',
                 4: '5 or more years ago',
-                7: "Don’t know/Not sure", 8: 'Never', 9: 'Refuse'}
+                7: "Don’t know/Not sure", 8: 'Never', 9: 'Refuse'},
+            note="""Question: About how long has it been since you last 
+            visited a doctor for a routine checkup? [A routine checkup is a 
+            general physical exam, not an exam for a specific injury, 
+            illness, or condition.] """
             ),
     ################ Education ################
     # highest grade or year of school completed
     Feature("EDUCA", cat_dtype,
-            """Question: What is the highest grade or year of school you 
+            "Highest grade or year of school completed",
+            note="""Question: What is the highest grade or year of school you 
             completed?""",
             na_values=(9,),
             value_mapping={
@@ -358,22 +360,20 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # No questions related to this risk factor.
     ################ Other medical conditions ################
     Feature("CHCSCNCR", cat_dtype,
-            """(Ever told) (you had) skin cancer? Values: """,
+            "Have skin cancer or ever told you have skin cancer",
             na_values=(7, 9),
             value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
                            9: 'Refused'}),
     Feature("CHCOCNCR", cat_dtype,
-            """(Ever told) you had any other types of cancer?""",
+            "Have any other types of cancer or ever told you have any other "
+            "types of cancer",
             na_values=(7, 9),
             value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
                            9: 'Refused', }),
     # 6 in 10 people suffering from diabetes also have high BP
     # source: https://www.cdc.gov/bloodpressure/risk_factors.htm
     Feature("DIABETES", float,
-            """(Ever told) you have diabetes (If "Yes" and respondent is 
-            female, ask "Was this only when you were pregnant?". If 
-            Respondent says pre-diabetes or borderline diabetes, use response 
-            code 4.)""",
+            "Have diabetes or ever been told you have diabetes",
             na_values=(7, 9),
             value_mapping={
                 1: 'Yes', 2: 'Yes, but female told only during pregnancy',
