@@ -250,11 +250,7 @@ ACS_UNEMPLOYMENT_FEATURES = FeatureList(features=[
     Feature('FER', cat_dtype, """Gave birth to child within the past 12 
     months b .N/A (less than 15 years/greater than 50 years/ male) 1 .Yes 2 
     .No"""),
-    Feature('AGEP', int, "Age"),
-    Feature('CIT', cat_dtype, """Citizenship status 1 .Born in the U.S. 2 
-    .Born in Puerto Rico, Guam, the U.S. Virgin Islands, or the .Northern 
-    Marianas 3 .Born abroad of American parent(s) 4 .U.S. citizen by 
-    naturalization 5 .Not a citizen of the U.S.""")],
+    ],
     documentation="https://www2.census.gov/programs-surveys/acs/tech_docs"
                   "/pums/data_dict/PUMS_Data_Dictionary_2019.pdf"
 )

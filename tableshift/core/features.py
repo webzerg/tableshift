@@ -125,7 +125,12 @@ class FeatureList:
     def __add__(self, other):
         if (self.target and other.target):
             raise ValueError("cannot add two lists which both contain targets.")
-        return FeatureList(list(set(self.features + other.features)),
+        overlap = set(self.names).intersection(set(other.names))
+        assert not overlap, \
+            "cannot add lists with overlapping feature names; remove the " \
+            "following features from one of the FeatureLists: {}".format(list(
+                overlap))
+        return FeatureList(self.features + other.features,
                            documentation=self.documentation)
 
     def __iter__(self):
