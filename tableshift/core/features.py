@@ -250,7 +250,7 @@ def get_categorical_columns(data: pd.DataFrame) -> List[str]:
     """Helper function to extract categorical colnames from a dataset."""
     categorical_columns = make_column_selector(
         pattern="^(?![Tt]arget)",
-        dtype_include=[np.object, np.bool, cat_dtype])(data)
+        dtype_include=[object, bool, cat_dtype])(data)
     return categorical_columns
 
 
@@ -409,6 +409,10 @@ class Preprocessor:
             for colname, dtype in cast_dtypes.items():
                 transformed[colname] = transformed[colname].astype(dtype)
         transformed.columns = remove_verbose_prefixes(transformed.columns)
+
+        if self.config.use_extended_names:
+            transformed.columns = self.map_names_extended(transformed.columns.tolist())
+
         return transformed
 
     def _dropna(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -495,9 +499,6 @@ class Preprocessor:
                       domain_label_colname: Optional[str] = None,
                       passthrough_columns: List[str] = None) -> pd.DataFrame:
         """Fit a feature_transformer and apply it to the input features."""
-
-        if self.config.use_extended_names:
-            data.columns = self.map_names_extended(data.columns.tolist())
 
         logging.info(f"transforming columns")
         if self.config.passthrough_columns == "all":

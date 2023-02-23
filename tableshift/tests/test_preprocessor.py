@@ -2,6 +2,10 @@
 Tests for Preprocessor objects.
 
 To run tests: python -m unittest tableshift/tests/test_preprocessor.py -v
+
+To run a specific individual test:
+python -m unittest tableshift/tests/test_preprocessor.py \
+    tableshift.tests.test_preprocessor.TestPreprocessor.test_map_name -v
 """
 
 import copy
@@ -155,8 +159,9 @@ class TestPreprocessor(unittest.TestCase):
             ),
                 msg=f"failed for feature {fname}")
 
-    def test_map_name_extended(self):
+    def test_map_name(self):
         """Test mapping of extended feature names."""
+
         feature_list = FeatureList([
             Feature("int_a", int,
                     name_extended="Integer A value"),
@@ -170,9 +175,11 @@ class TestPreprocessor(unittest.TestCase):
         data = copy.deepcopy(self.df)
         preprocessor = Preprocessor(
             config=PreprocessorConfig(use_extended_names=True,
-                                      passthrough_columns="all"),
+                                      numeric_features="passthrough",
+                                      categorical_features="passthrough"),
             feature_list=feature_list)
         train_idxs = list(range(50))
+
         transformed = preprocessor.fit_transform(data, train_idxs=train_idxs)
 
         expected_names = ["Integer A value", "int_b", "float_a", "float_b",
