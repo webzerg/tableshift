@@ -41,70 +41,100 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
     Feature("IYEAR", float, "Year of BRFSS dataset."),
     # ################ Demographics/sensitive attributes. ################
     # Also see "INCOME2", "MARITAL", "EDUCA" features below.
-    Feature("STATE", cat_dtype, """State FIPS Code. Values: 1 Alabama, 
-    4 Arizona, 5 Arkansas, 6 California, 8 Colorado, 9 Connecticut, 
-    10 Delaware, 11 District of Columbia, 12 Florida, 13 Georgia, 15 Hawaii , 
-    16 Idaho, 17, 18 Indiana, 19 Iowa, 20 Kansas, 21 Kentucky, 22 Louisiana , 
-    23 Maine, 24 Maryland, 25 Massachusetts, 26 Michigan, 27 Minnesota, 
-    28 Mississippi, 29 Missouri, 30 Montana, 31 Nebraska, 32 Nevada, 33 New 
-    Hampshire, 34 New Jersey, 35 New Mexico, 36 New York, 37 North Carolina, 
-    38 North Dakota, 39 Ohio, 40 Oklahoma, 41 Oregon, 42 Pennsylvania, 
-    44 Rhode Island, 45 South Carolina, 46 South Dakota, 47 Tennessee, 
-    48 Texas, 49 Utah, 50 Vermont, 51 Virginia, 53 Washington, 54 West 
-    Virginia, 55 Wisconsin, 56 Wyoming, 66 Guam, 72 Puerto Rico"""),
+    Feature("STATE", cat_dtype, """State FIPS Code.""",
+            value_mapping={
+                1: 'Alabama', 4: 'Arizona', 5: 'Arkansas', 6: 'California',
+                8: 'Colorado', 9: 'Connecticut', 10: 'Delaware',
+                11: 'District of Columbia', 12: 'Florida',
+                13: 'Georgia', 15: 'Hawaii', 16: 'Idaho', 17: 'Illinois ',
+                18: 'Indiana', 19: 'Iowa', 20: 'Kansas',
+                21: 'Kentucky', 22: 'Louisiana ', 23: 'Maine', 24: 'Maryland',
+                25: 'Massachusetts',
+                26: 'Michigan', 27: 'Minnesota', 28: 'Mississippi',
+                29: 'Missouri', 30: 'Montana',
+                31: 'Nebraska', 32: 'Nevada',
+                33: 'New Hampshire', 34: 'New Jersey', 35: 'New Mexico',
+                36: 'New York', 37: 'North Carolina',
+                38: 'North Dakota', 39: 'Ohio', 40: 'Oklahoma', 41: 'Oregon',
+                42: 'Pennsylvania',
+                44: 'Rhode Island', 45: 'South Carolina', 46: 'South Dakota',
+                47: 'Tennessee',
+                48: 'Texas', 49: 'Utah', 50: 'Vermont', 51: 'Virginia',
+                53: 'Washington',
+                54: 'West Virginia',
+                55: 'Wisconsin', 56: 'Wyoming', 66: 'Guam', 72: 'Puerto Rico'
+            }),
     Feature("MEDCOST", cat_dtype, """Was there a time in the past 12 months 
     when you needed to see a doctor but could not because of cost?""",
-            na_values=(7, 9)),
+            na_values=(7, 9),
+            value_mapping={
+                1: "Yes", 2: " No", 7: "Don't know/not sure", 9: "Refused",
+            }),
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
-    Feature("PRACE1", float, """Preferred race category. Values: 1 White, 
-    2 Black or African American, 3  American Indian or Alaskan Native, 
-    4:  Asian, 5:  Native Hawaiian or other Pacific Islander, 6: Other race, 
-    7: No preferred race, 8: Multiracial but preferred race not answered, 
-    77: Don’t know/Not sure, 99: refused.""",
-            na_values=(7., 8., 77., 99.)),
-    Feature("SEX", float, """Indicate sex of respondent. 1 Male, 2 Female."""),
+    Feature("PRACE1", float, """Preferred race category.""",
+            na_values=(7., 8., 77., 99.),
+            value_mapping={
+                1: 'White',
+                2: 'Black or African American',
+                3: 'American Indian or Alaskan Native',
+                4: 'Asian', 5: 'Native Hawaiian or other Pacific Islander',
+                6: 'Other race',
+                7: 'No preferred race',
+                8: 'Multiracial but preferred race not answered',
+                77: 'Don’t know/Not sure', 9: 'refused', }),
+    Feature("SEX", float, """Indicate sex of respondent.""",
+            value_mapping={1: "Male", 2: "Female"}),
 ])
 
 BRFSS_DIET_FEATURES = [
     Feature("FRUIT_ONCE_PER_DAY", cat_dtype,
-            """Consume Fruit 1 or more times per day. Values: 1 Consumed 
-            fruit one or more times per day, 2: Consumed fruit less than one 
-            time per day, 9 Don´t know, refused or missing values""",
-            na_values=(9,)),
+            """Consume Fruit 1 or more times per day""",
+            na_values=(9,),
+            value_mapping={
+                1: 'Consumed fruit one or more times per day',
+                2: 'Consumed fruit less than one  time per day',
+                9: "Don't know, refused or missing values"
+            }),
     Feature("VEG_ONCE_PER_DAY", cat_dtype,
-            """Consume vegetables 1 or more times per day. Values: 1 Consumed 
-            vegetables one or more times per day, 2: Consumed vegetables less 
-            than one time per day, 9 Don´t know, refused or missing values""",
-            na_values=(9,)),
+            """Consume vegetables 1 or more times per day""",
+            na_values=(9,),
+            value_mapping={
+                1: 'Consumed vegetables one or more times per day',
+                2: 'Consumed vegetables less  than one time per day',
+                9: "Don't know, refused or missing values",
+            }),
 ]
 
 BRFSS_ALCOHOL_FEATURES = [
     # Calculated total number of alcoholic beverages consumed per week
     Feature("DRNK_PER_WEEK", float,
             """Calculated total number of alcoholic beverages consumed per 
-            week. Values: 0: Did not drink, 1 - 98999: Number of drinks per 
-            week, 99900: Don’t know/Not sure/Refused/Missing""",
+            week""",
             na_values=(99900,)),
     Feature("RFBING5", cat_dtype,
             """Binge drinkers (males having five or more drinks on one 
-            occasion, females having four or more drinks on one occasion). 
-            Values: 1: No, 2: Yes,  9: Don’t know/Refused/Missing""",
-            na_values=(9,)),
+            occasion, females having four or more drinks on one occasion)""",
+            na_values=(9,),
+            value_mapping={1: "No", 2: "Yes", 9: "Don't know/Refused/Missing"
+                           }),
 ]
 
 BRFSS_SMOKE_FEATURES = [
     # Have you smoked at least 100 cigarettes in your entire life?
     Feature("SMOKE100", cat_dtype,
-            """Have you smoked at least 100 cigarettes in your entire life? 
-            Values: 1: Yes, 2: N0, 7: Don’t know/Not Sure, 9: Refused, 
-            BLANK Not asked or Missing.""",
-            na_values=(7, 9)),
+            """Have you smoked at least 100 cigarettes in your entire life? """,
+            na_values=(7, 9),
+            value_mapping={1: 'Yes', 2: 'No'}),
 
     Feature("SMOKDAY2", cat_dtype, """Do you now smoke cigarettes every day, 
-    some days, or not at all? 1 Every day, 2 Some days, 3 Not at all, 7 Don´t 
-    Know/Not Sure, 9 Refused, BLANK Not asked or Missing.""",
-            na_values=(7, 9)),
+    some days, or not at all?""",
+            na_values=(7, 9),
+            value_mapping={
+                1: 'Every day', 2: 'Some days', 3: 'Not at all',
+                7: 'Don´t Know/Not Sure',
+                9: 'Refused'
+            }),
 ]
 
 # Brief feature descriptions below; for the full question/description
@@ -114,30 +144,37 @@ BRFSS_SMOKE_FEATURES = [
 # underscores, where present, are removed in the preprocess_brfss() function
 # due to limitations on naming in the sklearn transformers module.
 
-BMI5CAT_FEATURE = Feature("BMI5CAT", cat_dtype, """Four-categories of Body Mass Index ( 
-    BMI). Values: 1 Underweight (_BMI5 < 1850), 2 Normal Weight (1850 <= 
-    _BMI5 < 2500), 3 Overweight (2500 <= _BMI5 < 3000), 4 Obese (3000 <= 
-    _BMI5 < 9999), BLANK Don’t know/Refused/Missing.""")
+BMI5CAT_FEATURE = Feature("BMI5CAT", cat_dtype,
+                          "Four-categories of Body Mass Index (BMI)",
+                          value_mapping={
+                              1: 'Underweight (BMI < 1850)',
+                              2: 'Normal Weight (1850 <= BMI < 2500)',
+                              3: 'Overweight (2500 <= BMI < 3000)',
+                              4: 'Obese (3000 <= BMI < 9999)'
+                          })
 BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Target ################
     Feature("DIABETES", float,
-            """(Ever told) you have diabetes (If "Yes" and respondent is 
-            female, ask "Was this only when you were pregnant?". If 
-            Respondent says pre-diabetes or borderline diabetes, use response 
-            code 4.). Values: 1 Yes, 2 Yes, but female told only during 
-            pregnancy, 3 No, 4 No, pre-diabetes or borderline diabetes, 
-            7 Don’t know/Not Sure, 9 Refused, BLANK Not asked or Missing.""",
-            is_target=True, na_values=(7, 9)),
+            '(Ever told) you have diabetes (If "Yes" and respondent is'
+            ' female, ask "Was this only when you were pregnant?',
+            is_target=True, na_values=(7, 9),
+            value_mapping={
+                1: 'Yes',
+                2: 'Yes but female told only during pregnancy',
+                3: 'No', 4: 'No, prediabetes or borderline diabetes',
+                7: 'Don’t know / Not Sure', 9: 'Refused'
+            }),
 
     # Below are a set of indicators for known risk factors for diabetes.
     ################ General health ################
     Feature("PHYSHLTH", float,
             """Now thinking about your physical health, which includes 
             physical illness and injury, for how many days during the past 30 
-            days was your physical health not good? Values: 1 - 30 Number of 
+            days was your physical health not good?""",
+            na_values=(77, 99),
+            note="""Values: 1 - 30 Number of 
             days, 88 None, 77 Don’t know/Not sure, 99 Refused, BLANK Not 
-            asked or Missing""",
-            na_values=(77, 99)),
+            asked or Missing"""),
     ################ High blood pressure ################
 
     Feature("HIGH_BLOOD_PRESS", cat_dtype, na_values=(9,),
@@ -147,40 +184,48 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ High cholesterol ################
     # Cholesterol check within past five years
     Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype,
-            """Aligned version of 'CHOLCHK*' features from 2015-2021; see 
-            _align_chol_chk() below. Values: 1 Never, 2 Within the past year 
-            (anytime less than 12 months ago), 3 Within the past 2 years (1 
-            year but less than 2 years ago), 4 Within the past 5 years (2 
-            years but less than 5 years ago), 5 5 or more years ago, 7 Don’t 
-            know/Not Sure, 9 Refused—Go to next section, BLANK Not asked or 
-            Missing.""",
-            na_values=(9,)),
+            "About how long has it been since you last"
+            " had your blood cholesterol checked?",
+            note="""Aligned version of 'CHOLCHK*' features from 2015-2021; see 
+            _align_chol_chk() below..""",
+            na_values=(9,),
+            value_mapping={
+                1: 'Never',
+                2: 'Within the past year (anytime less than 12 months ago)',
+                3: 'Within the past 2 years (more than 1 year but less than 2 years ago)',
+                4: 'Within the past 5 years (more than 2 years but less than 5 years ago)',
+                5: '5 or more years ago', 7: "Don’t know/Not Sure", 9: 'Refused'
+            }),
 
     Feature("TOLDHI", cat_dtype,
             """Have you EVER been told by a doctor, nurse or other health 
-            professional that your blood cholesterol is high? Values: 1: Yes, 
-            2: No, 7 Don’t know/Not Sure, 9 Refused, BLANK Not asked or 
-            Missing.""",
-            na_values=(7, 9)),
+            professional that your blood cholesterol is high?""",
+            na_values=(7, 9),
+            value_mapping={
+                1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure", 9: 'Refused',
+            }),
     ################ BMI/Obesity ################
     # Calculated Body Mass Index (BMI)
-    Feature("BMI5", float, """Computed Body Mass Index (BMI). Values: 1 - 
-    9999 1 or greater - Notes: WTKG3/(HTM4*HTM4) (Has 2 implied decimal 
-    places); BLANK: Don’t know/Refused/Missing."""),
+    Feature("BMI5", float, """Computed Body Mass Index (BMI)""",
+            note="""Values: 1 - 9999 1 or greater - Notes: WTKG3/(HTM4*HTM4) 
+            (Has 2 implied decimal places); BLANK: Don’t 
+            know/Refused/Missing."""),
     # Four-categories of Body Mass Index (BMI)
     BMI5CAT_FEATURE,
     ################ Smoking ################
     *BRFSS_SMOKE_FEATURES,
     ################ Other chronic health conditions ################
     Feature("CVDSTRK3", cat_dtype,
-            """(Ever told) you had a stroke.. Values: 1 Yes, 2 No, 7 Don’t 
-            know/Not sure, 9 Refused, BLANK Not asked or Missing.""",
-            na_values=(7, 9)),
+            """(Ever told) you had a stroke""",
+            na_values=(7, 9),
+            value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
+                           9: 'Refused', }),
     Feature("MICHD", cat_dtype, """Question: Respondents that have ever 
     reported having coronary heart disease (CHD) or myocardial infarction ( 
-    MI). Values: 1 Reported having MI or CHD (Notes: CVDINFR4=1 OR 
-    CVDCRHD4=1), 2 Did not report having MI or CHD (Notes: CVDINFR4=2 AND 
-    CVDCRHD4=2), BLANK Not asked or Missing."""),
+    MI).""", value_mapping={
+        1: 'Reported having myocardial infarction or coronary heart disease',
+        2: 'Did not report having myocardial infarction or coronary heart disease',
+    }),
     ################ Diet ################
     *BRFSS_DIET_FEATURES,
     ################ Alcohol Consumption ################
@@ -188,32 +233,40 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Exercise ################
     Feature("TOTINDA", cat_dtype,
             """Adults who reported doing physical activity or exercise during 
-            the past 30 days other than their regular job. Values: 1 Had 
-            physical activity or exercise, 2 No physical activity or exercise 
-            in last 30 days, 9 Don’t know/Refused/Missing.""",
-            na_values=(9,)),
+            the past 30 days other than their regular job.""",
+            na_values=(9,),
+            value_mapping={
+                1: 'Had physical activity or exercise in last 30 days',
+                2: 'No physical activity or exercise in last 30 days'
+            }),
     ################ Household income ################
     Feature("INCOME", cat_dtype,
-            """Question: Is your annual household income from all sources: ( 
-            If respondent refuses at any income level, code 'Refused'.) 
-            Values: 1: Less than $10,000, 2: Less than $15,000 ($10,000 to 
-            less than $15,000), 3: Less than $20,000 ($15,000 to less than 
-            $20,000), 4: Less than $25,000 ($20,000 to less than $25,000), 
-            5: Less than $35,000 ($25,000 to less than $35,000), 6: Less than 
-            $50,000 ($35,000 to less than $50,000), 7: Less than $75, 
-            000 ($50,000 to less than $75,000), 8 (BRFSS 2015-2019) $75, 
-            000 or more / (BRFSS 2021) Less than $100,000? ($75,000 to < 
-            $100,000), 9: Less than $150,000? ($100,000 to < $150,000)?, 
-            10: Less than $200,000? ($150,000 to < $200,000), 11: $200,000 
-            or more, 77 Don’t know/Not sure, 99 Refused, BLANK Not asked 
-            or Missing.""",
-            na_values=(77, 99)),
+            """Annual household income from all sources""",
+            na_values=(77, 99),
+            value_mapping={
+                1: 'Less than $10,000',
+                2: 'Less than $15,000 ($10,000 to less than $15,000)',
+                3: 'Less than $20,000 ($15,000 to less than $20,000)',
+                4: 'Less than $25,000 ($20,000 to less than $25,000)',
+                5: 'Less than $35,000 ($25,000 to less than $35,000)',
+                6: 'Less than $50,000 ($35,000 to less than $50,000)',
+                7: 'Less than $75, 000 ($50,000 to less than $75,000)',
+                8: '$75,000 or more (BRFSS 2015-2019) or less than $100,'
+                   '000 ($75,000 to < $100,000) (BRFSS 2021)',
+                9: 'Less than $150,000 ($100,000 to < $150,000)',
+                10: 'Less than $200,000 ($150,000 to < $200,000)',
+                11: '$200,000  or more',
+                77: 'Don’t know/Not sure', 99: 'Refused',
+            }),
     ################ Marital status ################
     Feature("MARITAL", cat_dtype,
-            """Question: Are you: (marital status) 1 Married, 2 Divorced, 
-            3 Widowed, 4 Separated, 5 Never married, 6 A member of an 
-            unmarried couple, 9 Refused, BLANK Not asked or Missing""",
-            na_values=(9,)),
+            "Marital status",
+            na_values=(9,),
+            value_mapping={
+                1: 'Married', 2: 'Divorced',
+                3: 'Widowed', 4: 'Separated', 5: 'Never married',
+                6: 'A member of an unmarried couple', 9: 'Refused'
+            }),
     ################ Time since last checkup
     # About how long has it been since you last visited a
     # doctor for a routine checkup?
@@ -221,43 +274,50 @@ BRFSS_DIABETES_FEATURES = FeatureList([
             """Question: About how long has it been since you last visited a 
             doctor for a routine checkup? [A routine checkup is a general 
             physical exam, not an exam for a specific injury, illness, 
-            or condition.] Values: 1 Within past year (anytime < 12 months 
-            ago), 2 Within past 2 years (1 year but < 2 years ago), 3 Within 
-            past 5 years (2 years but < 5 years ago), 4 5 or more years ago, 
-            7 Don’t know/Not sure, 8 Never, 9 Refused, BLANK Not asked or 
-            Missing.""",
-            na_values=(7, 9)),
+            or condition.]""",
+            na_values=(7, 9),
+            value_mapping={
+                1: 'Within past year (anytime < 12 months ago)',
+                2: 'Within past 2 years (1 year but < 2 years ago)',
+                3: 'Within past 5 years (2 years but < 5 years ago)',
+                4: '5 or more years ago',
+                7: "Don’t know/Not sure", 8: 'Never', 9: 'Refuse'}
+            ),
     ################ Education ################
     # highest grade or year of school completed
     Feature("EDUCA", cat_dtype,
             """Question: What is the highest grade or year of school you 
-            completed? Values: 1 Never attended school or only kindergarten, 
-            2 Grades 1 through 8 (Elementary), 3 Grades 9 through 11 (Some 
-            high school), 4 Grade 12 or GED (High school graduate), 5 College 
-            1 year to 3 years (Some college or technical school), 6 College 4 
-            years or more (College graduate), 9 Refused, BLANK Not asked or 
-            Missing.""",
-            na_values=(9,)),
+            completed?""",
+            na_values=(9,),
+            value_mapping={
+                1: 'Never attended school or only kindergarten',
+                2: 'Grades 1 through 8 (Elementary)',
+                3: 'Grades 9 through 11 (Some high school)',
+                4: 'Grade 12 or GED (High school graduate)',
+                5: 'College 1 year to 3 years (Some college or technical school)',
+                6: 'College 4 years or more (College graduate)', 9: 'Refused'
+            }),
     ################ Health care coverage ################
     # Note: we keep missing values (=9) for this column since they are grouped
     # with respondents aged over 64; otherwise dropping the observations
     # with this value would exclude all respondents over 64.
     Feature("HEALTH_COV", cat_dtype,
-            """Respondents aged 18-64 who have any form of health care 
-            coverage. Values: 1: Have health care coverage (Notes: 18 <= AGE <=64 and 
-            HLTHPLN1 = 1), 2: Do not have health care coverage (Notes: 18 <= 
-            AGE <=64 and HLTHPLN1 = 2), 9: Don’t know/Not Sure, Refused or 
-            Missing (Notes: AGE > 64 or AGE = Missing or HLTHPLN1 = 7 or 9 or 
-            Missing)."""),
+            "Respondents aged 18-64 who have any form of health care coverage",
+            value_mapping={
+                1: 'Have health care coverage',
+                2: 'Do not have health care coverage',
+                9: "Not aged 18-64, Don’t know/Not Sure, Refused or Missing"
+            }),
     ################ Mental health ################
     # for how many days during the past 30
     # days was your mental health not good?
     Feature("MENTHLTH", float,
             """Now thinking about your mental health, which includes stress, 
             depression, and problems with emotions, for how many days during 
-            the past 30 days was your mental health not good? Values: 1 - 30: 
-            Number of days, 88: None, 77: Don’t know/Not sure, 99: Refused.""",
-            na_values=(77, 99)),
+            the past 30 days was your mental health not good?""",
+            na_values=(77, 99),
+            note="""Values: 1 - 30: Number of days, 88: None, 77: Don’t 
+            know/Not sure, 99: Refused."""),
 ]) + BRFSS_SHARED_FEATURES
 
 BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
@@ -275,12 +335,16 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # Four-categories of Body Mass Index (BMI)
     BMI5CAT_FEATURE,
     ################ Age ################
-    Feature("AGEG5YR", float, """Fourteen-level age category. Values: 1: Age 
-    18 to 24, 2: Age 25 to 29, 3 Age 30 to 34, 4 Age 35 to 39, 5 Age 40 to 
-    44, 6 Age 45 to 49, 7 Age 50 to 54, 8 Age 55 to 59, 9 Age 60 to 64, 
-    10 Age 65 to 69, 11 Age 70 to 74, 12 Age 75 to 79, 13 Age 80 or older, 
-    14 Don’t know/Refused/Missing.""",
-            na_values=(14,)),
+    Feature("AGEG5YR", float, """Fourteen-level age category""",
+            na_values=(14,),
+            value_mapping={
+                1: 'Age 18 to 24', 2: 'Age 25 to 29', 3: ' Age 30 to 34',
+                4: 'Age 35 to 39',
+                5: 'Age 40 to 44', 6: 'Age 45 to 49', 7: 'Age 50 to 54',
+                8: 'Age 55 to 59', 9: 'Age 60 to 64',
+                10: 'Age 65 to 69', 11: 'Age 70 to 74',
+                12: 'Age 75 to 79', 13: 'Age 80 or older',
+                14: 'Don’t know/Refused/Missing'}),
     ################ Family history and genetics ################
     # No questions related to this risk factor.
     ################ Lifestyle habits ################
@@ -294,23 +358,30 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # No questions related to this risk factor.
     ################ Other medical conditions ################
     Feature("CHCSCNCR", cat_dtype,
-            """(Ever told) (you had) skin cancer? Values: 1 Yes, 2 No, 
-            7 Don’t know / Not sure, 9 Refused, BLANK Not asked or Missing.""",
-            na_values=(7, 9)),
+            """(Ever told) (you had) skin cancer? Values: """,
+            na_values=(7, 9),
+            value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
+                           9: 'Refused'}),
     Feature("CHCOCNCR", cat_dtype,
-            """(Ever told) you had any other types of cancer? Values: 1 Yes, 
-            2 No, 7 Don’t know / Not sure, 9 Refused.""",
-            na_values=(7, 9)),
+            """(Ever told) you had any other types of cancer?""",
+            na_values=(7, 9),
+            value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
+                           9: 'Refused', }),
     # 6 in 10 people suffering from diabetes also have high BP
     # source: https://www.cdc.gov/bloodpressure/risk_factors.htm
     Feature("DIABETES", float,
             """(Ever told) you have diabetes (If "Yes" and respondent is 
             female, ask "Was this only when you were pregnant?". If 
             Respondent says pre-diabetes or borderline diabetes, use response 
-            code 4.). Values: 1 Yes, 2 Yes, but female told only during 
-            pregnancy, 3 No, 4 No, pre-diabetes or borderline diabetes, 
-            7 Don’t know/Not Sure, 9 Refused, BLANK Not asked or Missing.""",
-            na_values=(7, 9)),
+            code 4.)""",
+            na_values=(7, 9),
+            value_mapping={
+                1: 'Yes', 2: 'Yes, but female told only during pregnancy',
+                3: 'No',
+                4: 'No, pre-diabetes or borderline diabetes',
+                7: "Don’t know/Not Sure",
+                9: "Refused, BLANK Not asked or Missing"
+            }),
 
     ################ Race/ethnicity ################
     # Covered in BRFSS_SHARED_FEATURES.
@@ -321,13 +392,18 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     Feature("POVERTY", int,
             description="Binary indicator for whether an individuals' income "
                         "falls below the 2021 poverty guideline for family of "
-                        "four."),
+                        "four.",
+            value_mapping={1: "Yes", 0: "No"}),
     # Type job status; related to early/late shifts which is a risk factor.
-    Feature("EMPLOY1", cat_dtype, """Question: Are you currently…? Values: 1 
-    Employed for wages, 2 Self-employed, 3 Out of work for 1 year or more, 
-    4 Out of work for less than 1 year, 5 A homemaker, 6 A student, 
-    7 Retired, 8 Unable to work, 9 Refused.""",
-            na_values=(9,)),
+    Feature("EMPLOY1", cat_dtype, """Current employment""",
+            na_values=(9,),
+            value_mapping={
+                1: 'Employed for wages', 2: 'Self-employed',
+                3: 'Out of work for 1 year or more',
+                4: 'Out of work for less than 1 year', 5: 'A homemaker',
+                6: 'A student',
+                7: 'Retired', 8: 'Unable to work', 9: 'Refused'
+            }),
     # Additional relevant features in BRFSS_SHARED_FEATURES.
 ]) + BRFSS_SHARED_FEATURES
 
