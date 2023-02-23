@@ -9,7 +9,6 @@ from pandas.api.types import CategoricalDtype as cat_dtype
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler, \
     LabelEncoder, FunctionTransformer
-from tqdm import tqdm
 from tableshift.core.discretization import KBinsDiscretizer
 from tableshift.core.utils import sub_illegal_chars
 
@@ -205,8 +204,10 @@ def _transformed_columns_to_numeric(df, prefix: str,
     one-hot-encoded columns.
     """
     cols_to_transform = [c for c in df.columns if c.startswith(prefix)]
-    logging.debug(f"casting {len(cols_to_transform)} columns to type {to_type}")
-    for c in tqdm(cols_to_transform):
+    logging.debug(f"casting {len(cols_to_transform)} columns to type {to_type}"
+                  "; this can be slow for large datasets.")
+    for i, c in enumerate(cols_to_transform):
+        logging.debug(f"casting feature {i} of {len(cols_to_transform)} {c}")
         df[c] = df[c].astype(to_type)
     return df
 
@@ -411,7 +412,8 @@ class Preprocessor:
         transformed.columns = remove_verbose_prefixes(transformed.columns)
 
         if self.config.use_extended_names:
-            transformed.columns = self.map_names_extended(transformed.columns.tolist())
+            transformed.columns = self.map_names_extended(
+                transformed.columns.tolist())
 
         return transformed
 
