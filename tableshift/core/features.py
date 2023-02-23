@@ -383,8 +383,8 @@ class Preprocessor:
         transformed.columns = [sub_illegal_chars(c) for c in
                                transformed.columns]
 
-        # By default transformed columns will be cast to 'object' dtype; we cast them
-        # back to a numeric type.
+        # By default transformed columns will be cast to 'object' dtype; we
+        # cast them back to a numeric type.
         transformed = _transformed_columns_to_numeric(transformed, "onehot_",
                                                       np.int8)
         transformed = _transformed_columns_to_numeric(transformed, "scale_")
@@ -489,8 +489,8 @@ class Preprocessor:
                                                            passthrough_columns)
 
         # All non-domain label passthrough columns will be cast to their
-        # original type post-transformation (ColumnTransformer
-        # actually casts all columns to object type).
+        # original type post-transformation (ColumnTransformer actually casts
+        # all columns to object type).
         dtypes_in = data.dtypes.to_dict()
         post_transform_cast_dtypes = (
             {c: dtypes_in[c] for c in passthrough_columns if
@@ -508,9 +508,9 @@ class Preprocessor:
 
         if domain_label_colname:
             # Case: fit the domain label transformer and apply it.
-            transformed.loc[:,
-            domain_label_colname] = self.fit_transform_domain_labels(
-                transformed.loc[:, domain_label_colname])
+            transformed.loc[:, domain_label_colname] = \
+                self.fit_transform_domain_labels(
+                    transformed.loc[:, domain_label_colname])
 
         self._post_transform_summary(transformed)
         logging.info("transforming columns complete.")
