@@ -39,6 +39,9 @@ class TestPreprocessor(unittest.TestCase):
         # Check that dtypes are the same
         self.assertListEqual(data.dtypes.tolist(),
                              transformed.dtypes.tolist())
+        # Check that feature names are the same
+        self.assertListEqual(sorted(transformed.columns.tolist()),
+                             sorted(self.df.columns.tolist()))
         return
 
     def test_passthrough_numeric(self):
