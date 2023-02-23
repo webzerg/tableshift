@@ -23,7 +23,7 @@ with `conda activate tableshift`.
 one of the TableShift datasets, it's as simple as this:
 
 ``` 
-from tablebench.core import get_dataset
+from tableshift.core import get_dataset
 dset = get_dataset(experiment, cache_dir)
 ```
 
