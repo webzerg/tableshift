@@ -8,7 +8,7 @@ import pandas as pd
 from pandas.api.types import CategoricalDtype as cat_dtype
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler, \
-    LabelEncoder, FunctionTransformer
+    LabelEncoder, FunctionTransformer, OrdinalEncoder
 from tableshift.core.discretization import KBinsDiscretizer
 from tableshift.core.utils import sub_illegal_chars
 
@@ -215,7 +215,7 @@ def _transformed_columns_to_numeric(df, prefix: str,
 @dataclass
 class PreprocessorConfig:
     # Preprocessing for categorical features (also applies to boolean features).
-    # Options are: one_hot, map_values, passthrough.
+    # Options are: one_hot, map_values, label_encode, passthrough.
     categorical_features: str = "one_hot"
     # Preprocessing for float and int features.
     # Options: normalize, passthrough.
@@ -316,6 +316,11 @@ class Preprocessor:
                 "mappings for one or more columns or set " \
                 "categorical_columns='passthrough' in the feature config. "
             transforms = make_value_map_transforms(features_to_map)
+
+        elif self.config.categorical_features == "label_encode":
+            transforms = [(f'le_{c}', OrdinalEncoder(), [c])
+                          for c in categorical_columns
+                          if c not in passthrough_columns]
 
         else:
             raise ValueError(f"{self.config.categorical_features} is not "

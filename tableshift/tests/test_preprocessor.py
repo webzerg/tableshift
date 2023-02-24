@@ -82,6 +82,19 @@ class TestPreprocessor(unittest.TestCase):
                              transformed.dtypes[categorical_cols].tolist())
         return
 
+    def test_label_encoder(self):
+        preprocessor_config = PreprocessorConfig(
+            categorical_features="label_encode")
+        preprocessor = Preprocessor(config=preprocessor_config)
+        data = copy.deepcopy(self.df)
+        train_idxs = list(range(50))
+        transformed = preprocessor.fit_transform(data=data,
+                                                 train_idxs=train_idxs)
+        for feat in ("string_a", "cat_a"):
+            self.assertTrue(
+                np.issubdtype(transformed[feat].dtype, float) or
+                np.issubdtype(transformed[feat].dtype, int))
+
     def test_map_values(self):
         """Test mapping of values."""
 
