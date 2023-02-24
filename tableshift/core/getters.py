@@ -10,7 +10,8 @@ from .splitter import RandomSplitter
 def get_dataset(name: str, cache_dir: str = "tmp",
                 preprocessor_config: Optional[
                     PreprocessorConfig] = None,
-                initialize_data: bool = True) -> TabularDataset:
+                initialize_data: bool = True,
+                **kwargs) -> TabularDataset:
     """Helper function to fetch a dataset with the default benchmark parameters.
 
     Args:
@@ -21,6 +22,8 @@ def get_dataset(name: str, cache_dir: str = "tmp",
             preprocessor config. If using the TableShift benchmark, it is
             recommended to leave this as None to use the default preprocessor.
         initialize_data: passed to TabularDataset constructor.
+        kwargs: optional kwargs to be passed to TabularDataset; these will
+            override their respective kwargs in the experiment config.
         """
     assert name in EXPERIMENT_CONFIGS.keys(), \
         f"Dataset name {name} is not available; choices are: " \
@@ -37,7 +40,7 @@ def get_dataset(name: str, cache_dir: str = "tmp",
     dset = TabularDataset(
         config=dataset_config,
         splitter=expt_config.splitter,
-        grouper=expt_config.grouper,
+        grouper=kwargs.get("grouper", expt_config.grouper),
         preprocessor_config=preprocessor_config,
         initialize_data=initialize_data,
         **tabular_dataset_kwargs)
@@ -50,7 +53,8 @@ def get_iid_dataset(name: str, cache_dir: str = "tmp",
                     random_state: int = DEFAULT_RANDOM_STATE,
                     preprocessor_config: Optional[
                         PreprocessorConfig] = None,
-                    initialize_data: bool = True
+                    initialize_data: bool = True,
+                    **kwargs
                     ) -> TabularDataset:
     """Helper function to fetch an IID dataset.
 
@@ -70,6 +74,8 @@ def get_iid_dataset(name: str, cache_dir: str = "tmp",
             preprocessor config. If using the TableShift benchmark, it is
             recommended to leave this as None to use the default preprocessor.
         initialize_data: passed to TabularDataset constructor.
+        kwargs: optional kwargs to be passed to TabularDataset; these will
+            override their respective kwargs in the experiment config.
         """
     assert name in EXPERIMENT_CONFIGS.keys(), \
         f"Dataset name {name} is not available; choices are: " \
@@ -88,7 +94,7 @@ def get_iid_dataset(name: str, cache_dir: str = "tmp",
         splitter=RandomSplitter(val_size=val_size,
                                 random_state=random_state,
                                 test_size=test_size),
-        grouper=expt_config.grouper,
+        grouper=kwargs.get("grouper", expt_config.grouper),
         preprocessor_config=preprocessor_config,
         initialize_data=initialize_data,
         **tabular_dataset_kwargs)
