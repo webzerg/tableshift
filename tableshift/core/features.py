@@ -318,7 +318,10 @@ class Preprocessor:
             transforms = make_value_map_transforms(features_to_map)
 
         elif self.config.categorical_features == "label_encode":
-            transforms = [(f'le_{c}', OrdinalEncoder(), [c])
+            transforms = [(f'le_{c}',
+                           OrdinalEncoder(unknown_value=-2,
+                                          encoded_missing_value=-1),
+                           [c])
                           for c in categorical_columns
                           if c not in passthrough_columns]
 
