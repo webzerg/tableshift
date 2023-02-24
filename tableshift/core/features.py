@@ -319,7 +319,8 @@ class Preprocessor:
 
         elif self.config.categorical_features == "label_encode":
             transforms = [(f'le_{c}',
-                           OrdinalEncoder(unknown_value=-2,
+                           OrdinalEncoder(handle_unknown='use_encoded_value',
+                                          unknown_value=-2,
                                           encoded_missing_value=-1),
                            [c])
                           for c in categorical_columns
