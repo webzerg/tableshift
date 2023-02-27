@@ -49,17 +49,18 @@ class TestCachedDataset(unittest.TestCase):
     def _test_cache_and_load(self, name: str):
         """Cache a dataset and reload it."""
         with tempfile.TemporaryDirectory() as td:
+            preprocessor_config = PreprocessorConfig(passthrough_columns="all")
             dset = TabularDataset(name=name,
                                   config=TabularDatasetConfig(cache_dir=td),
                                   grouper=None,
                                   splitter=RandomSplitter(val_size=0.25,
                                                           random_state=68594,
                                                           test_size=0.25),
-                                  preprocessor_config=PreprocessorConfig(
-                                      passthrough_columns="all"))
+                                  preprocessor_config=preprocessor_config)
             dset.to_sharded(rows_per_shard=64)
 
-            cached_dset = CachedDataset(cache_dir=td, name=name)
+            cached_dset = CachedDataset(cache_dir=td, name=name,
+                                        preprocessor_config=preprocessor_config)
             for split in ("train", "validation", "test"):
                 dset_split = dset.get_pandas(split)
                 cached_dset_split = cached_dset.get_pandas(split)

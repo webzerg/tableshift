@@ -50,7 +50,7 @@ class TabularDatasetConfig:
 class Dataset(ABC):
     """Absract class to represent a dataset."""
     name: str
-
+    preprocessor_config: PreprocessorConfig
     splitter: Splitter = None
     splits = None  # dict mapping {split_name: list of idxs in split}
 
@@ -156,10 +156,11 @@ class TabularDataset(Dataset):
                  preprocessor_config: PreprocessorConfig,
                  grouper: Optional[Grouper], initialize_data=True,
                  **kwargs):
-        super().__init__(name=name)
+        super().__init__(name=name,
+                         preprocessor_config=preprocessor_config,
+                         splitter=splitter)
         self.config = config
         self.grouper = grouper
-        self.splitter = splitter
 
         # Dataset-specific info: features, data source, preprocessing.
 
@@ -170,7 +171,7 @@ class TabularDataset(Dataset):
             **kwargs)
 
         self.preprocessor = Preprocessor(
-            config=preprocessor_config,
+            config=self.preprocessor_config,
             feature_list=self.task_config.feature_list)
 
         # Placeholders for data/labels/groups and split indices.
@@ -491,8 +492,8 @@ class TabularDataset(Dataset):
 
 
 class CachedDataset(Dataset):
-    def __init__(self, cache_dir: str, name: str):
-        super().__init__(name=name)
+    def __init__(self, cache_dir: str, **kwargs):
+        super().__init__(**kwargs)
         self.cache_dir = cache_dir
 
         self.domain_label_values = None
