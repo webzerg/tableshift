@@ -64,6 +64,10 @@ class Dataset(ABC):
     skip_per_domain_eval: bool = False
 
     @property
+    def uid(self) -> str:
+        return make_uid(self.name, self.splitter)
+
+    @property
     def is_domain_split(self) -> bool:
         """Return True if this dataset uses a DomainSplitter, else False."""
         return self.domain_label_colname is not None
@@ -93,6 +97,12 @@ class Dataset(ABC):
     def n_domains(self) -> int:
         raise
 
+    @property
+    @abstractmethod
+    def base_dir(self) -> str:
+        "Return the location of the directory {cache_dir}/{uid}."
+        raise
+
     @abstractmethod
     def _is_valid_split(self, split) -> bool:
         raise
@@ -118,6 +128,11 @@ class Dataset(ABC):
             if self.domain_label_colname is not None else None
         return X, y, G, d
 
+    def get_pandas(self, split) -> Tuple[
+        DataFrame, Series, DataFrame, Optional[Series]]:
+        """Fetch the (data, labels, groups, domains) for this TabularDataset."""
+        return self._get_split_xygd(split)
+
     def get_dataloader(self, split, batch_size=2048,
                        shuffle=True, infinite=False) -> DataLoader:
         """Fetch a dataloader yielding (X, y, G, d) tuples."""
@@ -127,6 +142,12 @@ class Dataset(ABC):
             data = data[:-1]
         return _make_dataloader_from_dataframes(data, batch_size, shuffle,
                                                 infinite=infinite)
+
+    def get_cache_dir(self, split: str, domain: Optional[Any] = None):
+        if domain is None:
+            return os.path.join(self.base_dir, split)
+        else:
+            return os.path.join(self.base_dir, split, str(domain))
 
 
 class TabularDataset(Dataset):
@@ -324,11 +345,6 @@ class TabularDataset(Dataset):
         idxs = self._get_split_idxs(split)
         return self._df.iloc[idxs]
 
-    def get_pandas(self, split) -> Tuple[
-        DataFrame, Series, DataFrame, Optional[Series]]:
-        """Fetch the (data, labels, groups, domains) for this TabularDataset."""
-        return self._get_split_xygd(split)
-
     def get_domain_dataloaders(
             self, split, batch_size=2048,
             shuffle=True, infinite=True) -> Dict[Any, DataLoader]:
@@ -401,33 +417,36 @@ class TabularDataset(Dataset):
         return metrics
 
     def is_cached(self) -> bool:
-        uid = make_uid(self.name, self.splitter)
-        base_dir = os.path.join(self.config.cache_dir, uid)
+        base_dir = os.path.join(self.config.cache_dir, self.uid)
         if os.path.exists(os.path.join(base_dir, "info.json")):
             return True
         else:
             return False
 
+    @property
+    def base_dir(self) -> str:
+        return os.path.join(self.config.cache_dir, self.uid)
+
     def to_sharded(self, rows_per_shard=4096,
                    domains_to_subdirectories: bool = True):
-        uid = make_uid(self.name, self.splitter)
 
-        base_dir = os.path.join(self.config.cache_dir, uid)
+        base_dir = self.base_dir
 
         def initialize_dir(dirname):
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
 
         for split in self.splits:
-            outdir = os.path.join(base_dir, split)
-            logging.info(f"caching task {uid} split {split} to {outdir}")
-            initialize_dir(outdir)
+
+            logging.info(f"caching task split {split} to {self.base_dir}")
+
             df = self._get_split_df(split)
 
             def write_shards(df, dirname):
                 num_shards = math.ceil(len(df) / rows_per_shard)
                 for i in range(num_shards):
                     fp = os.path.join(dirname, f"{split}_{i:05d}.csv")
+                    logging.debug('writing file to %s' % fp)
                     df.iloc[i * rows_per_shard:(i + 1) * rows_per_shard] \
                         .to_csv(fp, index=False)
 
@@ -435,16 +454,19 @@ class TabularDataset(Dataset):
                 # Write to {split}/{domain_value}/{shard_filename.csv}
                 for domain in sorted(df[self.domain_label_colname].unique()):
                     df_ = df[df[self.domain_label_colname] == domain]
-                    domain_dir = os.path.join(outdir, str(domain))
+                    domain_dir = self.get_cache_dir(split, domain)
                     initialize_dir(domain_dir)
                     write_shards(df_, domain_dir)
             elif self.domain_label_colname:
-                shared_domain_dir = os.path.join(outdir,
-                                                 f"all_{split}_subdomains")
+                # Write to {split}/all_{split}_subdomains/{shard_filename.csv}
+                shared_domain_dir = self.get_cache_dir(
+                    split, f"all_{split}_subdomains")
                 initialize_dir(shared_domain_dir)
                 write_shards(df, shared_domain_dir)
             else:
                 # Write to {split}/{shard_filename.csv}
+                outdir = self.get_cache_dir(split)
+                initialize_dir(outdir)
                 write_shards(df, outdir)
 
         # write metadata
@@ -469,10 +491,9 @@ class TabularDataset(Dataset):
 
 
 class CachedDataset(Dataset):
-    def __init__(self, cache_dir: str, name: str, uid: str):
+    def __init__(self, cache_dir: str, name: str):
         super().__init__(name=name)
         self.cache_dir = cache_dir
-        self.uid = uid
 
         self.domain_label_values = None
         self.group_feature_names = None
@@ -494,6 +515,7 @@ class CachedDataset(Dataset):
             return False
 
     def _load_info_from_cache(self):
+        """Load the dataset metadata from cache (data is lazily loaded)."""
         logging.info(f"loading from {self.base_dir}")
         with open(os.path.join(self.base_dir, "info.json"), "r") as f:
             ds_info = json.loads(f.read())
@@ -524,12 +546,10 @@ class CachedDataset(Dataset):
             return len(domains)
 
     def _get_split_files(self, split: str, domain: Optional[str] = None):
-        if domain:  # Match only the specified domain
-            dir = os.path.join(self.base_dir, split, domain)
-        else:  # Match any domain
-            dir = os.path.join(self.base_dir, split, "*")
-        fileglob = os.path.join(dir, "*.csv")
+        cache_dir = self.get_cache_dir(split, domain)
+        fileglob = os.path.join(cache_dir, "*.csv")
         files = glob.glob(fileglob)
+
         assert len(files), f"no files detected for split {split} " \
                            f"matching {fileglob}"
         return files
@@ -544,6 +564,7 @@ class CachedDataset(Dataset):
         for f in files:
             dfs.append(pd.read_csv(f))
         df = pd.concat(dfs)
+
         return df
 
     def get_ray(self, split, domain=None, num_partitions_per_file=16):
