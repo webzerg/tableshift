@@ -54,6 +54,8 @@ def get_iid_dataset(name: str, cache_dir: str = "tmp",
                     preprocessor_config: Optional[
                         PreprocessorConfig] = None,
                     initialize_data: bool = True,
+                    use_cached: bool = False,
+                    uid: str = None,
                     **kwargs
                     ) -> TabularDataset:
     """Helper function to fetch an IID dataset.
@@ -74,6 +76,9 @@ def get_iid_dataset(name: str, cache_dir: str = "tmp",
             preprocessor config. If using the TableShift benchmark, it is
             recommended to leave this as None to use the default preprocessor.
         initialize_data: passed to TabularDataset constructor.
+        use_cached: if True, load a cached dataset from cache_dir
+            with specified uid.
+        uid: uid to use for the cached dataset. Not used when use_cached=False.
         kwargs: optional kwargs to be passed to TabularDataset; these will
             override their respective kwargs in the experiment config.
         """
@@ -89,13 +94,20 @@ def get_iid_dataset(name: str, cache_dir: str = "tmp",
 
     if preprocessor_config is None:
         preprocessor_config = expt_config.preprocessor_config
-    dset = TabularDataset(
-        config=dataset_config,
-        splitter=RandomSplitter(val_size=val_size,
-                                random_state=random_state,
-                                test_size=test_size),
-        grouper=kwargs.get("grouper", expt_config.grouper),
-        preprocessor_config=preprocessor_config,
-        initialize_data=initialize_data,
-        **tabular_dataset_kwargs)
+    if not use_cached:
+        dset = TabularDataset(
+            config=dataset_config,
+            splitter=RandomSplitter(val_size=val_size,
+                                    random_state=random_state,
+                                    test_size=test_size),
+            grouper=kwargs.get("grouper", expt_config.grouper),
+            preprocessor_config=preprocessor_config,
+            initialize_data=initialize_data,
+            **tabular_dataset_kwargs)
+    else:
+
+        logging.info(f"loading cached data from {cache_dir}")
+        assert uid is not None, "uid is required to use a cached dataset."
+        dset = CachedDataset(cache_dir=cache_dir, name=experiment, uid=uid)
+
     return dset
