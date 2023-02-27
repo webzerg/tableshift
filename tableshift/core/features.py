@@ -218,7 +218,7 @@ class PreprocessorConfig:
     # Options are: one_hot, map_values, label_encode, passthrough.
     categorical_features: str = "one_hot"
     # Preprocessing for float and int features.
-    # Options: normalize, passthrough.
+    # Options: normalize, passthrough, map_values.
     numeric_features: str = "normalize"
     domain_labels: str = "label_encode"
     passthrough_columns: Union[
@@ -311,11 +311,17 @@ class Preprocessor:
             features_to_map = [f for f in self.feature_list
                                if f.value_mapping is not None
                                and f.name in categorical_columns]
-            assert len(features_to_map), \
-                "No categorical columns with  mappings provided. Either provide " \
-                "mappings for one or more columns or set " \
-                "categorical_columns='passthrough' in the feature config. "
-            transforms = make_value_map_transforms(features_to_map)
+            if not len(features_to_map):
+                # Case: map_values is specified, but there are no features
+                # with mappable values.
+                logging.warning(
+                    "No categorical columns with  mappings provided. Either "
+                    "provide mappings for one or more columns or set "
+                    "categorical_columns='passthrough' in the feature config.")
+                transforms = []
+            else:
+                # Case: there are categorical features to map.
+                transforms = make_value_map_transforms(features_to_map)
 
         elif self.config.categorical_features == "label_encode":
             transforms = [(f'le_{c}',
@@ -343,11 +349,17 @@ class Preprocessor:
             features_to_map = [f for f in self.feature_list
                                if f.value_mapping is not None
                                and f.name in numeric_columns]
-            assert len(features_to_map), \
-                "No numeric columns with mappings provided. Either provide " \
-                "mappings for one or more columns or set " \
-                "numeric_columns='passthrough' in the feature config. "
-            transforms = make_value_map_transforms(features_to_map)
+            if not len(features_to_map):
+                # Case: map_values is specified, but there are no features
+                # with mappable values.
+                logging.warning(
+                    "No numeric columns with mappings provided. Either provide "
+                    "mappings for one or more columns or set "
+                    "numeric_columns='passthrough' in the feature config.")
+                transforms = []
+            else:
+                # Case: there are features with mappable values.
+                transforms = make_value_map_transforms(features_to_map)
 
         elif self.config.numeric_features == "normalize":
             transforms = [(f'scale_{c}', StandardScaler(), [c]) for c in cols]
