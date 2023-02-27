@@ -95,7 +95,9 @@ def get_iid_dataset(name: str, cache_dir: str = "tmp",
 
     if preprocessor_config is None:
         preprocessor_config = expt_config.preprocessor_config
+
     if not use_cached:
+
         dset = TabularDataset(
             config=dataset_config,
             splitter=RandomSplitter(val_size=val_size,
@@ -108,7 +110,6 @@ def get_iid_dataset(name: str, cache_dir: str = "tmp",
     else:
 
         logging.info(f"loading cached data from {cache_dir}")
-        assert uid is not None, "uid is required to use a cached dataset."
         dset = CachedDataset(cache_dir=cache_dir, name=name)
 
     return dset
