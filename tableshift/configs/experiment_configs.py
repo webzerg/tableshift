@@ -185,7 +185,7 @@ EXPERIMENT_CONFIGS = {
 
     "german": ExperimentConfig(
         splitter=RandomSplitter(val_size=0.01, test_size=0.2, random_state=832),
-        grouper=Grouper({"sex": ['1', ], "age_geq_median": ['1', ]},
+        grouper=Grouper({"sex": ['1.0', ], "age_geq_median": ['1.0', ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
