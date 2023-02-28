@@ -94,3 +94,35 @@ source (see `data_sources.py` and the `tableshift.datasets` module).
 More information about the tasks, datasets, splitting variables, data sources, and motivation are available in the TableShift paper; we provide a summary excerpted from the paper below.
 
 <img src="img/tableshift_tasks.png">
+
+# Example Training Script and Code
+
+A sample training script is located at `examples/run_expt.py`. However, training a scikit-learn model is as simple as:
+
+``` 
+from tableshift.core import get_dataset
+from sklearn.ensemble import GradientBoostingClassifier
+
+dset = get_dataset("diabetes_readmission")
+X_train, y_train, _, _ = dset.get_pandas("train")
+
+# Train
+estimator = GradientBoostingClassifier()
+trained_estimator = estimator.fit(X_train, y_train)
+
+# Test
+for split in ('id_test', 'ood_test'):
+    X, y, _, _ = dset.get_pandas(split)
+    preds = estimator.predict(X)
+    acc = (preds == y).mean()
+    print(f'accuracy on split {split} is: {acc:.3f}')
+```
+
+The code should output the following:
+
+```  
+accuracy on split id_test is: 0.655
+accuracy on split ood_test is: 0.619
+```
+
+Now, please close that domain gap!
