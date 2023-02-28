@@ -89,6 +89,8 @@ Note that details on the data source, which files to load, and the feature
 codings are provided in the TableShift source code for each dataset and data
 source (see `data_sources.py` and the `tableshift.datasets` module).
 
+# Dataset Details
+
 More information about the tasks, datasets, splitting variables, data sources, and motivation are available in the TableShift paper; we provide a summary excerpted from the paper below.
 
 <img src="img/tableshift_tasks.png">
