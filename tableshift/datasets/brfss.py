@@ -38,10 +38,12 @@ BRFSS_STATE_LIST = [
 # Features shared across BRFSS prediction tasks.
 BRFSS_SHARED_FEATURES = FeatureList(features=[
     # Derived feature for year.
-    Feature("IYEAR", float, "Year of BRFSS dataset."),
+    Feature("IYEAR", float, "Year of BRFSS dataset.",
+            name_extended="Survey year"),
     # ################ Demographics/sensitive attributes. ################
     # Also see "INCOME2", "MARITAL", "EDUCA" features below.
     Feature("STATE", cat_dtype, """State FIPS Code.""",
+            name_extended="State",
             value_mapping={
                 1: 'Alabama', 4: 'Arizona', 5: 'Arkansas', 6: 'California',
                 8: 'Colorado', 9: 'Connecticut', 10: 'Delaware',
@@ -66,6 +68,9 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
             }),
     Feature("MEDCOST", cat_dtype, """Was there a time in the past 12 months 
     when you needed to see a doctor but could not because of cost?""",
+            name_extended="Answer to the question 'Was there a time in the "
+                          "past 12 months when you needed to see a doctor but "
+                          "could not because of cost?'",
             na_values=(7, 9),
             value_mapping={
                 1: "Yes", 2: "No", 7: "Don't know/not sure", 9: "Refused",
@@ -73,6 +78,7 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
     # Preferred race category; note that ==1 is equivalent to
     # "White non-Hispanic race group" variable _RACEG21
     Feature("PRACE1", float, """Preferred race category.""",
+            name_extended="Preferred race category",
             na_values=(7., 8., 77., 99.),
             value_mapping={
                 1: 'White',
@@ -84,12 +90,14 @@ BRFSS_SHARED_FEATURES = FeatureList(features=[
                 8: 'Multiracial but preferred race not answered',
                 77: 'Don’t know/Not sure', 9: 'refused', }),
     Feature("SEX", float, """Indicate sex of respondent.""",
+            name_extended="Sex of respondent",
             value_mapping={1: "Male", 2: "Female"}),
 ])
 
 BRFSS_DIET_FEATURES = [
     Feature("FRUIT_ONCE_PER_DAY", cat_dtype,
             """Consume Fruit 1 or more times per day""",
+            name_extended="Fruit consumption",
             na_values=(9,),
             value_mapping={
                 1: 'Consumed fruit one or more times per day',
@@ -98,6 +106,7 @@ BRFSS_DIET_FEATURES = [
             }),
     Feature("VEG_ONCE_PER_DAY", cat_dtype,
             """Consume vegetables 1 or more times per day""",
+            name_extended="Vegetable consumption",
             na_values=(9,),
             value_mapping={
                 1: 'Consumed vegetables one or more times per day',
@@ -111,13 +120,15 @@ BRFSS_ALCOHOL_FEATURES = [
     Feature("DRNK_PER_WEEK", float,
             """Calculated total number of alcoholic beverages consumed per 
             week""",
+            name_extended="Total number of alcoholic beverages consumed per week",
             na_values=(99900,)),
     Feature("RFBING5", cat_dtype,
             "Binge drinkers (males having five or more drinks on one "
             "occasion, females having four or more drinks on one occasion)",
             na_values=(9,),
             value_mapping={1: "No", 2: "Yes", 9: "Don't know/Refused/Missing"
-                           }),
+                           },
+            name_extended="Respondent is binge drinker"),
 ]
 
 BRFSS_SMOKE_FEATURES = [
@@ -125,7 +136,9 @@ BRFSS_SMOKE_FEATURES = [
     Feature("SMOKE100", cat_dtype,
             "Have you smoked at least 100 cigarettes in your entire life?",
             na_values=(7, 9),
-            value_mapping={1: 'Yes', 2: 'No'}),
+            value_mapping={1: 'Yes', 2: 'No'},
+            name_extended="Answer to the question 'Have you smoked at least "
+                          "100 cigarettes in your entire life?'"),
 
     Feature("SMOKDAY2", cat_dtype, "Do you now smoke cigarettes every day, "
                                    "some days, or not at all?",
@@ -134,7 +147,9 @@ BRFSS_SMOKE_FEATURES = [
                 1: 'Every day', 2: 'Some days', 3: 'Not at all',
                 7: 'Don´t Know/Not Sure',
                 9: 'Refused'
-            }),
+            },
+            name_extended="Answer to the question 'Do you now smoke "
+                          "cigarettes every day, some days, or not at all?'"),
 ]
 
 # Brief feature descriptions below; for the full question/description
@@ -146,16 +161,26 @@ BRFSS_SMOKE_FEATURES = [
 
 BMI5CAT_FEATURE = Feature("BMI5CAT", cat_dtype,
                           "Body Mass Index (BMI) category",
+                          name_extended="Body Mass Index (BMI) category",
                           value_mapping={
                               1: 'Underweight (BMI < 1850)',
                               2: 'Normal Weight (1850 <= BMI < 2500)',
                               3: 'Overweight (2500 <= BMI < 3000)',
                               4: 'Obese (3000 <= BMI < 9999)'
                           })
+PHYSICAL_ACTIVITY_FEATURE = Feature("TOTINDA", cat_dtype,
+                                    "Adults who reported doing physical activity or exercise during " \
+                                    "the past 30 days other than their regular job.",
+                                    na_values=(9,), value_mapping={
+        1: 'Had physical activity or exercise in last 30 days',
+        2: 'No physical activity or exercise in last 30 days'},
+                                    name_extended="Physical activity or exercise during the past 30 " \
+                                                  "days other than their regular job")
 BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Target ################
     Feature("DIABETES", float,
             '(Ever told) you have diabetes',
+            name_extended='(Ever told) you have diabetes',
             is_target=True, na_values=(7, 9),
             value_mapping={
                 1: 'Yes',
@@ -169,6 +194,8 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     Feature("PHYSHLTH", float,
             "For how many days during the past 30 days"
             " was your physical health not good?",
+            name_extended="Number of days during the past 30 days where "
+                          "physical health was not good",
             na_values=(77, 99),
             note="""Values: 1 - 30 Number of 
             days, 88 None, 77 Don’t know/Not sure, 99 Refused, BLANK Not 
@@ -179,6 +206,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
             description="Adults who have been told they have high blood "
                         "pressure by a doctor, nurse, or other health "
                         "professional.",
+            name_extended="(Ever told) you have high blood pressure",
             value_mapping={1: 'No', 2: 'Yes',
                            9: " Don’t know/Not Sure/Refused/Missing"}),
     ################ High cholesterol ################
@@ -186,6 +214,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     Feature("CHOL_CHK_PAST_5_YEARS", cat_dtype,
             "About how long has it been since you last"
             " had your blood cholesterol checked?",
+            name_extended="Time since last blooc cholesterol check",
             note="""Aligned version of 'CHOLCHK*' features from 2015-2021; see 
             _align_chol_chk() below..""",
             na_values=(9,),
@@ -200,6 +229,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     Feature("TOLDHI", cat_dtype,
             """Have you ever been told by a doctor, nurse or other health 
             professional that your blood cholesterol is high?""",
+            name_extended="Ever been told you have high blood cholesterol",
             na_values=(7, 9),
             value_mapping={
                 1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure", 9: 'Refused',
@@ -207,6 +237,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ BMI/Obesity ################
     # Calculated Body Mass Index (BMI)
     Feature("BMI5", float, """Computed Body Mass Index (BMI)""",
+            name_extended='Body Mass Index (BMI)',
             note="""Values: 1 - 9999 1 or greater - Notes: WTKG3/(HTM4*HTM4) 
             (Has 2 implied decimal places); BLANK: Don’t 
             know/Refused/Missing."""),
@@ -217,31 +248,31 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Other chronic health conditions ################
     Feature("CVDSTRK3", cat_dtype,
             """Ever had a stroke, or been told you had a stroke""",
+            name_extended="Ever had a stroke, or been told you had a stroke",
             na_values=(7, 9),
             value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
                            9: 'Refused', }),
     Feature("MICHD", cat_dtype, """Question: Respondents that have ever 
     reported having coronary heart disease (CHD) or myocardial infarction ( 
-    MI).""", value_mapping={
-        1: 'Reported having myocardial infarction or coronary heart disease',
-        2: 'Did not report having myocardial infarction or coronary heart disease',
-    }),
+    MI).""",
+            name_extended="Reports of coronary heart disease (CHD) or "
+                          "myocardial infarction (MI)",
+            value_mapping={
+                1: 'Reported having myocardial infarction or coronary heart '
+                   'disease',
+                2: 'Did not report having myocardial infarction or coronary '
+                   'heart disease',
+            }),
     ################ Diet ################
     *BRFSS_DIET_FEATURES,
     ################ Alcohol Consumption ################
     *BRFSS_ALCOHOL_FEATURES,
     ################ Exercise ################
-    Feature("TOTINDA", cat_dtype,
-            "Adults who reported doing physical activity or exercise during "
-            "the past 30 days other than their regular job.",
-            na_values=(9,),
-            value_mapping={
-                1: 'Had physical activity or exercise in last 30 days',
-                2: 'No physical activity or exercise in last 30 days'
-            }),
+    PHYSICAL_ACTIVITY_FEATURE,
     ################ Household income ################
     Feature("INCOME", cat_dtype,
             """Annual household income from all sources""",
+            name_extended="Annual household income from all sources",
             na_values=(77, 99),
             value_mapping={
                 1: 'Less than $10,000',
@@ -261,6 +292,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Marital status ################
     Feature("MARITAL", cat_dtype,
             "Marital status",
+            name_extended="Marital status",
             na_values=(9,),
             value_mapping={
                 1: 'Married', 2: 'Divorced',
@@ -272,6 +304,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     # doctor for a routine checkup?
     Feature("CHECKUP1", cat_dtype,
             """Time since last visit to the doctor for a checkup""",
+            name_extended="Time since last visit to the doctor for a checkup",
             na_values=(7, 9),
             value_mapping={
                 1: 'Within past year (anytime < 12 months ago)',
@@ -288,6 +321,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     # highest grade or year of school completed
     Feature("EDUCA", cat_dtype,
             "Highest grade or year of school completed",
+            name_extended="Highest grade or year of school completed",
             note="""Question: What is the highest grade or year of school you 
             completed?""",
             na_values=(9,),
@@ -305,6 +339,7 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     # with this value would exclude all respondents over 64.
     Feature("HEALTH_COV", cat_dtype,
             "Respondents aged 18-64 who have any form of health care coverage",
+            name_extended='Current health care coverage',
             value_mapping={
                 1: 'Have health care coverage',
                 2: 'Do not have health care coverage',
@@ -317,6 +352,8 @@ BRFSS_DIABETES_FEATURES = FeatureList([
             """Now thinking about your mental health, which includes stress, 
             depression, and problems with emotions, for how many days during 
             the past 30 days was your mental health not good?""",
+            name_extended="Answer to the question 'for how many days during "
+                          "the past 30 days was your mental health not good?'",
             na_values=(77, 99),
             note="""Values: 1 - 30: Number of days, 88: None, 77: Don’t 
             know/Not sure, 99: Refused."""),
@@ -339,6 +376,7 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     ################ Age ################
     Feature("AGEG5YR", float, """Fourteen-level age category""",
             na_values=(14,),
+            name_extended="Age group",
             value_mapping={
                 1: 'Age 18 to 24', 2: 'Age 25 to 29', 3: ' Age 30 to 34',
                 4: 'Age 35 to 39',
@@ -352,21 +390,22 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     ################ Lifestyle habits ################
     *BRFSS_DIET_FEATURES,
     *BRFSS_ALCOHOL_FEATURES,
-    # Adults who reported doing physical activity or exercise
-    # during the past 30 days other than their regular job
-    Feature("TOTINDA", cat_dtype, na_values=(9,)),
+    PHYSICAL_ACTIVITY_FEATURE,
     *BRFSS_SMOKE_FEATURES,
     ################ Medicines ################
     # No questions related to this risk factor.
     ################ Other medical conditions ################
     Feature("CHCSCNCR", cat_dtype,
             "Have skin cancer or ever told you have skin cancer",
+            name_extended="Have skin cancer or ever told you have skin cancer",
             na_values=(7, 9),
             value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
                            9: 'Refused'}),
     Feature("CHCOCNCR", cat_dtype,
             "Have any other types of cancer or ever told you have any other "
             "types of cancer",
+            name_extended="Have any other types of cancer or ever told you "
+                          "have any other types of cancer",
             na_values=(7, 9),
             value_mapping={1: 'Yes', 2: 'No', 7: "Don’t know/Not Sure",
                            9: 'Refused', }),
@@ -374,6 +413,7 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
     # source: https://www.cdc.gov/bloodpressure/risk_factors.htm
     Feature("DIABETES", float,
             "Have diabetes or ever been told you have diabetes",
+            name_extended="Have diabetes or ever been told you have diabetes",
             na_values=(7, 9),
             value_mapping={
                 1: 'Yes', 2: 'Yes, but female told only during pregnancy',
@@ -393,9 +433,13 @@ BRFSS_BLOOD_PRESSURE_FEATURES = FeatureList(features=[
             description="Binary indicator for whether an individuals' income "
                         "falls below the 2021 poverty guideline for family of "
                         "four.",
+            name_extended="Binary indicator for whether an individuals' income "
+                          "falls below the 2021 poverty guideline for family of"
+                          " four",
             value_mapping={1: "Yes", 0: "No"}),
     # Type job status; related to early/late shifts which is a risk factor.
     Feature("EMPLOY1", cat_dtype, """Current employment""",
+            name_extended="Current employment status",
             na_values=(9,),
             value_mapping={
                 1: 'Employed for wages', 2: 'Self-employed',
