@@ -27,7 +27,7 @@ from tableshift.core import get_dataset
 dset = get_dataset(experiment, cache_dir)
 ```
 
-The full list of Tableshift IDs for all available datasets is below. 
+The full list of TableShift IDs for all available datasets is below.
 
 If you would like to use a dataset *without* a domain split, replace `get_dataset()` with `get_iid_dataset()`.
 
@@ -45,6 +45,10 @@ train_loader = dset.get_dataloader("train", batch_size=1024)
 for X, y, _, _ in train_loader:
     ...
 ```
+
+For all TableShift datasets, the following splits are available: `train`, `validation`, `id_test`, `ood_validation`, `ood_test`.
+
+For IID datasets (those without a domain split) these splits are available: `train`, `validation`, `test`.
 
 There is a complete example of a training script in `examples/run_expt.py`.
 
@@ -84,3 +88,7 @@ levels are below. The Tableshift ID is the value that should be passed as the `e
 Note that details on the data source, which files to load, and the feature
 codings are provided in the TableShift source code for each dataset and data
 source (see `data_sources.py` and the `tableshift.datasets` module).
+
+More information about the tasks, datasets, splitting variables, data sources, and motivation are available in the TableShift paper; we provide a summary excerpted from the paper below.
+
+<img src="img/tableshift_tasks.png">
