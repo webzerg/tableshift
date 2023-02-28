@@ -1,3 +1,5 @@
+![status](https://github.com/jpgard/tableshift/actions/workflows/python-package-conda.yml/badge.svg)
+
 # TableShift
 
 TableShift is a benchmarking library for machine learning with tabular data. The
