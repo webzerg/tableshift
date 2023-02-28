@@ -521,7 +521,8 @@ def align_brfss_features(df):
     # (See https://www.cdc.gov/brfss/annual_data/2015/pdf/codebook15_llcp.pdf)
     def _align_chol_chk(row):
         """Utility function to code 2015 BRFSS CHOLCHK to match post-2015."""
-        if row["year"] == 2015 and row["CHOL_CHK_PAST_5_YEARS"] in (1, 2, 3, 4):
+        if row["IYEAR"] == 2015 and \
+                row["CHOL_CHK_PAST_5_YEARS"] in (1, 2, 3, 4):
             return row["CHOL_CHK_PAST_5_YEARS"] + 1
         else:
             return row["CHOL_CHK_PAST_5_YEARS"]
