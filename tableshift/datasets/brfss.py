@@ -168,14 +168,15 @@ BMI5CAT_FEATURE = Feature("BMI5CAT", cat_dtype,
                               3: 'Overweight (2500 <= BMI < 3000)',
                               4: 'Obese (3000 <= BMI < 9999)'
                           })
-PHYSICAL_ACTIVITY_FEATURE = Feature("TOTINDA", cat_dtype,
-                                    "Adults who reported doing physical activity or exercise during " \
-                                    "the past 30 days other than their regular job.",
-                                    na_values=(9,), value_mapping={
+PHYSICAL_ACTIVITY_FEATURE = Feature(
+    "TOTINDA", cat_dtype,
+    "Adults who reported doing physical activity or exercise during " \
+    "the past 30 days other than their regular job.",
+    na_values=(9,), value_mapping={
         1: 'Had physical activity or exercise in last 30 days',
         2: 'No physical activity or exercise in last 30 days'},
-                                    name_extended="Physical activity or exercise during the past 30 " \
-                                                  "days other than their regular job")
+    name_extended="Physical activity or exercise during the past 30 " \
+                  "days other than their regular job")
 BRFSS_DIABETES_FEATURES = FeatureList([
     ################ Target ################
     Feature("DIABETES", float,
@@ -633,12 +634,16 @@ def preprocess_brfss_blood_pressure(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df[df["AGEG5YR"] >= 7]
 
-    # Create a binary indicator for poverty. This is based on the 2021 US poverty income guideline for a family of 4,
-    # which was $26,500. https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/prior-hhs-poverty
-    # -guidelines-federal-register-references/2021-poverty-guidelines#threshholds Note that we actually use a
-    # slightly lower threshold of 25,000 due to the response coding in BRFSS.
+    # Create a binary indicator for poverty. This is based on the 2021 US
+    # poverty income guideline for a family of 4, which was $26,
+    # 500. https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty
+    # -guidelines/prior-hhs-poverty
+    # -guidelines-federal-register-references/2021-poverty-guidelines
+    # #threshholds Note that we actually use a slightly lower threshold of
+    # 25,000 due to the response coding in BRFSS.
 
-    # Drop unknown/not responded income levels; otherwise comparison with nan values always returns False.
+    # Drop unknown/not responded income levels; otherwise comparison with nan
+    # values always returns False.
     idxs = idx_where_not_in(df["INCOME"], (77, 99))
     df = df.iloc[idxs]
     df["POVERTY"] = (df["INCOME"] <= 4).astype(int)
