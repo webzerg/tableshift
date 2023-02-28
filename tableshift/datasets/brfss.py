@@ -533,7 +533,7 @@ _BRFSS_INPUT_FEATURES = list(
         list(BRFSS_CROSS_YEAR_FEATURE_MAPPING.keys())))
 
 
-def align_brfss_features(df):
+def align_brfss_features(df: pd.DataFrame):
     """Map BRFSS column names to a consistent format over years.
 
     Some questions are asked over years, but while the options are identical,
@@ -572,7 +572,7 @@ def align_brfss_features(df):
         else:
             return row["CHOL_CHK_PAST_5_YEARS"]
 
-    df["CHOL_CHK_PAST_5_YEARS"] = df.apply(_align_chol_chk)
+    df["CHOL_CHK_PAST_5_YEARS"] = df.apply(_align_chol_chk, axis=1)
     return df
 
 
