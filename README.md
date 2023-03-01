@@ -26,7 +26,7 @@ one of the TableShift datasets, it's as simple as this:
 
 ``` 
 from tableshift import get_dataset
-dset = get_dataset(experiment, cache_dir)
+dset = get_dataset(experiment)
 ```
 
 The full list of TableShift IDs for all available datasets is below.

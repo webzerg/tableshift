@@ -41,7 +41,7 @@ def _make_dataloader_from_dataframes(
 
 @dataclass
 class TabularDatasetConfig:
-    cache_dir: str = "tmp"
+    cache_dir: str = "tableshift_cache"
     download: bool = True
     random_seed: int = 948324
 
