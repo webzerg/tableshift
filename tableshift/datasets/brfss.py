@@ -182,7 +182,8 @@ BRFSS_DIABETES_FEATURES = FeatureList([
     Feature("DIABETES", float,
             '(Ever told) you have diabetes',
             name_extended='(Ever told) you have diabetes',
-            is_target=True, na_values=(7, 9),
+            is_target=True,
+            na_values=(7, 9),
             value_mapping={
                 1: 'Yes',
                 2: 'Yes but female told only during pregnancy',

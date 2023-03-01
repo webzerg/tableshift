@@ -506,13 +506,15 @@ class Preprocessor:
             passthrough_columns.append(domain_label_colname)
         return passthrough_columns
 
-    def map_names_extended(self, colnames: List[str]) -> List[str]:
+    def map_names_extended(self, colnames: List[str], map_targets=False
+                           ) -> List[str]:
         """Map the original feature names to any extended feature names."""
         assert self.feature_list is not None, \
             "Feature list is required to map extended feature names."
         names_out = []
         for c in colnames:
-            if self.feature_list[c].name_extended is not None:
+            if (self.feature_list[c].name_extended is not None) and \
+                    (map_targets or not self.feature_list[c].is_target):
                 names_out.append(self.feature_list[c].name_extended)
             else:
                 names_out.append(c)
