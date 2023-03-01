@@ -25,7 +25,7 @@ with `conda activate tableshift`.
 one of the TableShift datasets, it's as simple as this:
 
 ``` 
-from tableshift.core import get_dataset
+from tableshift import get_dataset
 dset = get_dataset(experiment, cache_dir)
 ```
 
@@ -102,7 +102,7 @@ More information about the tasks, datasets, splitting variables, data sources, a
 A sample training script is located at `examples/run_expt.py`. However, training a scikit-learn model is as simple as:
 
 ``` 
-from tableshift.core import get_dataset
+from tableshift import get_dataset
 from sklearn.ensemble import GradientBoostingClassifier
 
 dset = get_dataset("diabetes_readmission")
