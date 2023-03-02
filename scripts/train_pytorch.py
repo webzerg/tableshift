@@ -1,7 +1,7 @@
 import argparse
 from tableshift.core import get_dataset
 
-from tableshift.configs.experiment_configs import EXPERIMENT_CONFIGS
+from tableshift.configs.benchmark_configs import EXPERIMENT_CONFIGS
 from tableshift.models.utils import get_estimator
 from tableshift.models.training import train
 from tableshift.configs.domain_shift import domain_shift_experiment_configs

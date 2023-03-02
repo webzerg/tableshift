@@ -3,7 +3,7 @@ import argparse
 import logging
 
 from tableshift.core import TabularDataset, TabularDatasetConfig
-from tableshift.configs.experiment_configs import EXPERIMENT_CONFIGS, \
+from tableshift.configs.benchmark_configs import EXPERIMENT_CONFIGS, \
     ExperimentConfig
 from tableshift.configs.domain_shift import domain_shift_experiment_configs
 from tableshift.core.utils import make_uid

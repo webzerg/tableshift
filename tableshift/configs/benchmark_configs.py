@@ -1,3 +1,8 @@
+"""
+Experiment configs for the 'official' TableShift benchmark tasks.
+
+All other configs are in non_benchmark_configs.py.
+"""
 from dataclasses import dataclass
 
 from tableshift.core import RandomSplitter, Grouper, PreprocessorConfig, \
