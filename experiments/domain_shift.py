@@ -11,7 +11,7 @@ from tableshift.core import TabularDataset, TabularDatasetConfig, \
 from tableshift.models.ray_utils import RayExperimentConfig, \
     run_ray_tune_experiment, fetch_postprocessed_results_df, \
     accuracy_metric_name_and_mode_for_model
-from tableshift.configs.experiment_configs import ExperimentConfig
+from tableshift.configs.benchmark_configs import ExperimentConfig
 from tableshift.core.utils import make_uid, timestamp_as_int
 from tableshift.configs.ray_configs import get_default_ray_tmp_dir, \
     get_default_ray_local_dir

@@ -7,7 +7,7 @@ from tableshift.core import Grouper, PreprocessorConfig, DomainSplitter
 from tableshift.datasets import ACS_REGIONS, ACS_YEARS, \
     BRFSS_YEARS, CANDC_STATE_LIST, NHANES_YEARS, ANES_STATES, ANES_YEARS, \
     ANES_REGIONS, MIMIC_EXTRACT_SHARED_FEATURES, MIMIC_EXTRACT_STATIC_FEATURES
-from tableshift.configs.experiment_configs import ExperimentConfig
+from tableshift.configs.benchmark_configs import ExperimentConfig
 
 
 def _to_nested(ary: Sequence[Any]) -> Sequence[Sequence[Any]]:

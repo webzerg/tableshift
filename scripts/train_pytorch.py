@@ -1,7 +1,6 @@
 import argparse
 from tableshift.core import get_dataset
 
-from tableshift.configs.experiment_configs import EXPERIMENT_CONFIGS
 from tableshift.models.utils import get_estimator
 from tableshift.models.training import train
 from tableshift.configs.domain_shift import domain_shift_experiment_configs
@@ -12,9 +11,6 @@ def main(experiment, cache_dir, model, debug: bool):
     if debug:
         print("[INFO] running in debug mode.")
         experiment = "_debug"
-
-    if experiment not in EXPERIMENT_CONFIGS:
-        raise NotImplementedError(f"{experiment} is not implemented.")
 
     dset = get_dataset(name=experiment, cache_dir=cache_dir)
     config = get_default_config(model, dset)

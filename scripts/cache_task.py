@@ -2,10 +2,7 @@
 import argparse
 import logging
 
-from tableshift.core import TabularDataset, TabularDatasetConfig
-from tableshift.configs.experiment_configs import EXPERIMENT_CONFIGS, \
-    ExperimentConfig
-from tableshift.configs.domain_shift import domain_shift_experiment_configs
+from tableshift import get_dataset
 from tableshift.core.utils import make_uid
 
 LOG_LEVEL = logging.DEBUG
@@ -17,21 +14,12 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def _cache_experiment(expt_config: ExperimentConfig, cache_dir,
+def _cache_experiment(experiment: str, cache_dir,
                       overwrite: bool,
                       no_domains_to_subdirectories: bool):
-    dataset_config = TabularDatasetConfig(cache_dir=cache_dir)
-    tabular_dataset_kwargs = expt_config.tabular_dataset_kwargs
-    assert "name" in tabular_dataset_kwargs
-
-    dset = TabularDataset(config=dataset_config,
-                          splitter=expt_config.splitter,
-                          grouper=expt_config.grouper,
-                          preprocessor_config=expt_config.preprocessor_config,
-                          initialize_data=False,
-                          **tabular_dataset_kwargs)
+    dset = get_dataset(experiment, cache_dir)
     if dset.is_cached() and (not overwrite):
-        uid = make_uid(tabular_dataset_kwargs["name"], expt_config.splitter)
+        uid = make_uid(dset.name, dset.splitter)
         logging.info(f"dataset with uid {uid} is already cached; skipping")
 
     else:
@@ -59,21 +47,10 @@ def main(cache_dir,
     }
     logging.debug(f"cache_kwargs is: {cache_kwargs}")
     if experiment:
-        expt_config = EXPERIMENT_CONFIGS[experiment]
-        _cache_experiment(expt_config, **cache_kwargs)
+        _cache_experiment(experiment, **cache_kwargs)
         print("caching tasks complete!")
         return
 
-    domain_shift_expt_config = domain_shift_experiment_configs[
-        domain_shift_experiment]
-
-    for expt_config in domain_shift_expt_config.as_experiment_config_iterator():
-        try:
-            _cache_experiment(expt_config, **cache_kwargs)
-        except Exception as e:
-            print(f"exception when caching experiment with ood values "
-                  f"{expt_config.splitter.domain_split_ood_values}: {e}")
-            continue
     print("caching tasks complete!")
 
 

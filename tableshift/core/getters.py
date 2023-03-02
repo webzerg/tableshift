@@ -2,10 +2,16 @@ import logging
 from typing import Optional
 
 from tableshift.configs.experiment_defaults import DEFAULT_RANDOM_STATE
-from tableshift.configs.experiment_configs import EXPERIMENT_CONFIGS
+from tableshift.configs.benchmark_configs import BENCHMARK_CONFIGS
+from tableshift.configs.non_benchmark_configs import NON_BENCHMARK_CONFIGS
 from .tabular_dataset import TabularDataset, TabularDatasetConfig, CachedDataset
 from .features import PreprocessorConfig
 from .splitter import RandomSplitter
+
+EXPERIMENT_CONFIGS = {
+    **BENCHMARK_CONFIGS,
+    **NON_BENCHMARK_CONFIGS
+}
 
 
 def get_dataset(name: str, cache_dir: str = "tmp",
