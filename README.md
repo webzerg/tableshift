@@ -21,6 +21,8 @@ conda env create -f environment.yml
 Then the tableshift environment can be activated
 with `conda activate tableshift`.
 
+Once the TableShift package has been officially released (very soon!) we will also provide a pip-installable version.
+
 **Accessing datasets:** If you simply want to load and use a standard version of
 one of the TableShift datasets, it's as simple as this:
 
