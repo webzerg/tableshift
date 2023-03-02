@@ -3,25 +3,16 @@ Experiment configs for the 'official' TableShift benchmark tasks.
 
 All other configs are in non_benchmark_configs.py.
 """
-from dataclasses import dataclass
 
+from tableshift.configs.experiment_config import ExperimentConfig
 from tableshift.core import RandomSplitter, Grouper, PreprocessorConfig, \
-    DomainSplitter, FixedSplitter, Splitter
-from tableshift.datasets import BRFSS_YEARS, ANES_YEARS, ACS_YEARS, NHANES_YEARS
+    DomainSplitter
+from tableshift.datasets import BRFSS_YEARS, ACS_YEARS, NHANES_YEARS
 from tableshift.datasets.mimic_extract_feature_lists import \
     MIMIC_EXTRACT_SHARED_FEATURES
 from tableshift.datasets.mimic_extract import MIMIC_EXTRACT_STATIC_FEATURES
 from tableshift.configs.experiment_defaults import DEFAULT_ID_TEST_SIZE, \
     DEFAULT_OOD_VAL_SIZE, DEFAULT_ID_VAL_SIZE, DEFAULT_RANDOM_STATE
-
-
-@dataclass
-class ExperimentConfig:
-    splitter: Splitter
-    grouper: Grouper
-    preprocessor_config: PreprocessorConfig
-    tabular_dataset_kwargs: dict
-
 
 # We passthrough all non-static columns because we use
 # MIMIC-extract's default preprocessing/imputation and do not
@@ -32,7 +23,7 @@ _MIMIC_EXTRACT_PASSTHROUGH_COLUMNS = [
     f for f in MIMIC_EXTRACT_SHARED_FEATURES.names
     if f not in MIMIC_EXTRACT_STATIC_FEATURES.names]
 
-EXPERIMENT_CONFIGS = {
+BENCHMARK_CONFIGS = {
     "acsfoodstamps": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
                                 ood_val_size=DEFAULT_OOD_VAL_SIZE,
@@ -82,11 +73,6 @@ EXPERIMENT_CONFIGS = {
         preprocessor_config=PreprocessorConfig(),
         tabular_dataset_kwargs={"acs_task": "acsunemployment"}),
 
-    "adult": ExperimentConfig(
-        splitter=FixedSplitter(val_size=0.25, random_state=29746),
-        grouper=Grouper({"Race": ["White", ], "Sex": ["Male", ]}, drop=False),
-        preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
-
     # ANES, Split by region; OOD is south: (AL, AR, DE, D.C., FL, GA, KY, LA,
     # MD, MS, NC, OK, SC,TN, TX, VA, WV)
     "anes": ExperimentConfig(
@@ -100,7 +86,7 @@ EXPERIMENT_CONFIGS = {
         grouper=Grouper({"VCF0104": ["1", ], "VCF0105a": ["1.0", ]},
                         drop=False),
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                         dropna=None),
+                                               dropna=None),
         tabular_dataset_kwargs={}),
 
     "brfss_blood_pressure": ExperimentConfig(
@@ -147,31 +133,6 @@ EXPERIMENT_CONFIGS = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
-    "_debug": ExperimentConfig(
-        splitter=DomainSplitter(
-            val_size=0.01,
-            id_test_size=0.2,
-            ood_val_size=0.25,
-            random_state=43406,
-            domain_split_varname="purpose",
-            # Counts by domain are below. We hold out all of the smallest
-            # domains to avoid errors with very small domains during dev.
-            # A48       9
-            # A44      12
-            # A410     12
-            # A45      22
-            # A46      50
-            # A49      97
-            # A41     103
-            # A42     181
-            # A40     234
-            # A43     280
-            domain_split_ood_values=["A44", "A410", "A45", "A46", "A48"]
-        ),
-        grouper=Grouper({"sex": ['1.0', ], "age_geq_median": ['1.0', ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(),
-        tabular_dataset_kwargs={"name": "german"}),
     "diabetes_readmission": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
                                 ood_val_size=DEFAULT_OOD_VAL_SIZE,
@@ -187,12 +148,6 @@ EXPERIMENT_CONFIGS = {
         # This is due to high cardinality of 'diag_*' features.
         preprocessor_config=PreprocessorConfig(min_frequency=0.01),
         tabular_dataset_kwargs={}),
-
-    "german": ExperimentConfig(
-        splitter=RandomSplitter(val_size=0.01, test_size=0.2, random_state=832),
-        grouper=Grouper({"sex": ['1.0', ], "age_geq_median": ['1.0', ]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
     "heloc": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
@@ -233,19 +188,6 @@ EXPERIMENT_CONFIGS = {
             passthrough_columns=_MIMIC_EXTRACT_PASSTHROUGH_COLUMNS),
         tabular_dataset_kwargs={"task": "mort_hosp",
                                 "name": "mimic_extract_mort_hosp"}),
-
-    "mooc": ExperimentConfig(
-        splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
-                                ood_val_size=DEFAULT_OOD_VAL_SIZE,
-                                random_state=DEFAULT_RANDOM_STATE,
-                                id_test_size=DEFAULT_ID_TEST_SIZE,
-                                domain_split_varname="course_id",
-                                domain_split_ood_values=[
-                                    "HarvardX/CB22x/2013_Spring"]),
-        grouper=Grouper({"gender": ["m", ],
-                         "LoE_DI": ["Bachelor's", "Master's", "Doctorate"]},
-                        drop=False),
-        preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
     "nhanes_cholesterol": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
@@ -289,6 +231,6 @@ EXPERIMENT_CONFIGS = {
                                 domain_split_gt_thresh=47.0),
         grouper=None,
         preprocessor_config=PreprocessorConfig(numeric_features="kbins",
-                                         dropna=None),
+                                               dropna=None),
         tabular_dataset_kwargs={"name": "physionet"}),
 }

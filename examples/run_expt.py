@@ -20,7 +20,6 @@ def main(experiment, cache_dir, model, debug: bool):
         experiment = "_debug"
 
     dset = get_dataset(experiment, cache_dir)
-    import ipdb;ipdb.set_trace()
     estimator = get_estimator(model)
     estimator = train(estimator, dset)
     print("training completed!")
