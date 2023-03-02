@@ -564,3 +564,23 @@ class HELOCDataSource(OfflineDataSource):
             https://community.fico.com/s/explainable-machine-learning-challenge
             """
         return pd.read_csv(filename)
+
+
+class MetaMIMICDataSource(OfflineDataSource):
+    """MetaMIMIC data source.
+
+    The dataset must be manually derived from MIMIC using the scripts
+    provided in https://github.com/ModelOriented/metaMIMIC .
+    """
+
+    def __init__(self, preprocess_fn=lambda x: x, **kwargs):
+        super().__init__(preprocess_fn=preprocess_fn, **kwargs)
+
+    def _load_data(self) -> pd.DataFrame:
+        filename = os.path.join(self.cache_dir, "metaMIMIC.csv")
+        assert os.path.exists(filename), \
+            f"file {filename} does not exist. Ensure you have constructed the " \
+            f"metaMIMIC dataset as described at " \
+            f"https://github.com/ModelOriented/metaMIMIC and placed the " \
+            f"resulting file at {filename} ."
+        return pd.read_csv(filename)

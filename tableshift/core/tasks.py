@@ -60,6 +60,30 @@ _TASK_REGISTRY = {
         TaskConfig(GermanDataSource, GERMAN_FEATURES),
     "heloc":
         TaskConfig(HELOCDataSource, HELOC_FEATURES),
+    "metamimic_alcohol":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_ALCOHOL_FEATURES),
+    "metamimic_anemia":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_ANEMIA_FEATURES),
+    "metamimic_atrial":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_ATRIAL_FEATURES),
+    "metamimic_diabetes":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_DIABETES_FEATURES),
+    "metamimic_heart":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_HEART_FEATURES),
+    "metamimic_hypertension":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_HYPERTENSIVE_FEATURES),
+    "metamimic_hypotension":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_HYPOTENSION_FEATURES),
+    "metamimic_ischematic":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_ISCHEMATIC_FEATURES),
+    "metamimic_lipoid":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_LIPOID_FEATURES),
+    "metamimic_overweight":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_OVERWEIGHT_FEATURES),
+    "metamimic_purpura":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_PURPURA_FEATURES),
+    "metamimic_respiratory":
+        TaskConfig(MetaMIMICDataSource, METAMIMIC_RESPIRATORY_FEATURES),
     "mimic_extract_los_3":
         TaskConfig(MIMICExtractDataSource, MIMIC_EXTRACT_LOS_3_FEATURES),
     "mimic_extract_mort_hosp":
