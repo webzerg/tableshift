@@ -54,12 +54,12 @@ For IID datasets (those without a domain split) these splits are available: `tra
 
 There is a complete example of a training script in `examples/run_expt.py`.
 
-# Dataset Availability
+# Benchmark Dataset Availability
 
 *tl;dr: if you want to get started exploring ASAP, use datasets marked as "
 public" below.*
 
-All of the datasets used in TableShift are publicly accessible and open-source.
+All of the datasets used in the TableShift benchmark are publicly accessible and open-source.
 However, some datasets do require signing a data use agreement; as a result,
 some datasets must be manually fetched and stored on your local machine.
 
@@ -128,3 +128,9 @@ accuracy on split ood_test is: 0.619
 ```
 
 Now, please close that domain gap!
+
+# Non-benchmark datasets
+
+We also have several tabular datasets available in TableShift which are not part of the official TableShift benchmark, but which still may be useful for tabular data research. We are continuously adding datasets to the package which meet the criteria discussed in the TableShift paper (forthcoming!). These datasets support all of the same functionality provided for the TableShift benchmark datasets, but we did not include these as an official part of the TableShift benchmark.
+
+For a list of the non-benchmark datasets, see the file `tableshift.configs.non_benchmark_configs.py`.
