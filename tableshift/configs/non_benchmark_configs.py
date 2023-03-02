@@ -48,6 +48,138 @@ NON_BENCHMARK_CONFIGS = {
                         drop=False),
         preprocessor_config=PreprocessorConfig(), tabular_dataset_kwargs={}),
 
+    "metamimic_alcohol": ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_alcohol'}),
+
+    'metamimic_anemia': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_anemia'}),
+
+    'metamimic_atrial': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_atrial'}),
+
+    'metamimic_diabetes': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_diabetes'}),
+
+    'metamimic_heart': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_heart'}),
+
+    'metamimic_hypertension': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_hypertension'}),
+
+    'metamimic_hypotension': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_hypotension'}),
+
+    'metamimic_ischematic': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_ischematic'}),
+
+    'metamimic_lipoid': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_lipoid'}),
+
+    'metamimic_overweight': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_overweight'}),
+
+    'metamimic_purpura': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_purpura'}),
+
+    'metamimic_respiratory': ExperimentConfig(
+        splitter=RandomSplitter(val_size=DEFAULT_ID_VAL_SIZE,
+                                random_state=DEFAULT_RANDOM_STATE,
+                                test_size=DEFAULT_ID_TEST_SIZE),
+        grouper=None,
+        preprocessor_config=PreprocessorConfig(
+            numeric_features="kbins",
+            passthrough_columns=["age"]
+        ),
+        tabular_dataset_kwargs={'name': 'metamimic_respiratory'}),
+
     "mooc": ExperimentConfig(
         splitter=DomainSplitter(val_size=DEFAULT_ID_VAL_SIZE,
                                 ood_val_size=DEFAULT_OOD_VAL_SIZE,
