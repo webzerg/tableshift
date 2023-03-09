@@ -292,7 +292,8 @@ class Preprocessor:
 
     def _get_categorical_transforms(self, data: pd.DataFrame,
                                     passthrough_columns: List[str]) -> List:
-        categorical_columns = get_categorical_columns(data)
+
+        cols = [c for c in get_categorical_columns(data) if c not in passthrough_columns]
 
         if self.config.categorical_features == "passthrough":
             transforms = []
@@ -303,14 +304,13 @@ class Preprocessor:
                  OneHotEncoder(dtype=np.int8, categories=[data[c].unique()],
                                min_frequency=self.config.min_frequency,
                                max_categories=self.config.max_categories), [c])
-                for c in categorical_columns
-                if c not in passthrough_columns]
+                for c in cols]
 
         elif self.config.categorical_features == "map_values":
             assert self.feature_list is not None
             features_to_map = [f for f in self.feature_list
                                if f.value_mapping is not None
-                               and f.name in categorical_columns]
+                               and f.name in cols]
             if not len(features_to_map):
                 # Case: map_values is specified, but there are no features
                 # with mappable values.
@@ -329,8 +329,7 @@ class Preprocessor:
                                           unknown_value=-2,
                                           encoded_missing_value=-1),
                            [c])
-                          for c in categorical_columns
-                          if c not in passthrough_columns]
+                          for c in cols]
 
         else:
             raise ValueError(f"{self.config.categorical_features} is not "
@@ -339,8 +338,10 @@ class Preprocessor:
 
     def _get_numeric_transforms(self, data: pd.DataFrame,
                                 passthrough_columns: List[str] = None) -> List:
-        numeric_columns = get_numeric_columns(data)
-        cols = [c for c in numeric_columns if c not in passthrough_columns]
+
+        cols = [c for c in get_numeric_columns(data)
+                if c not in passthrough_columns]
+
         if self.config.numeric_features == "passthrough":
             transforms = []
 
@@ -348,7 +349,7 @@ class Preprocessor:
             assert self.feature_list is not None
             features_to_map = [f for f in self.feature_list
                                if f.value_mapping is not None
-                               and f.name in numeric_columns]
+                               and f.name in cols]
             if not len(features_to_map):
                 # Case: map_values is specified, but there are no features
                 # with mappable values.
