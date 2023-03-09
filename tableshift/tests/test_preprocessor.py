@@ -35,7 +35,8 @@ class TestPreprocessor(unittest.TestCase):
 
         This tests mimics/tests the pattern used in tabular_dataset.py."""
         feature_list = FeatureList([
-            Feature("int_a", int, is_target=True),
+            Feature("int_a", int, is_target=True,
+                    value_mapping={x: -x for x in range(len(self.df))}),
             Feature("int_b", int),
             Feature("float_a", float),
             Feature("float_b", float),
@@ -45,15 +46,19 @@ class TestPreprocessor(unittest.TestCase):
                 "c": "Diagnosis of disease C"}),
             Feature("cat_a", cat_dtype),
         ])
-        # use preprocessor with all default values
-        preprocessor = Preprocessor(config=PreprocessorConfig())
-        data = copy.deepcopy(self.df)
-        train_idxs = list(range(50))
-        transformed = preprocessor.fit_transform(
-            data, train_idxs=train_idxs,
-            passthrough_columns=[feature_list.target])
-        self.assertListEqual(self.df[feature_list.target].tolist(),
-                             transformed[feature_list.target].tolist())
+        for num_feat_handling in ("map_values", "normalize", "kbins"):
+            preprocessor = Preprocessor(
+                config=PreprocessorConfig(numeric_features=num_feat_handling),
+                feature_list=feature_list)
+            data = copy.deepcopy(self.df)
+            train_idxs = list(range(50))
+            transformed = preprocessor.fit_transform(
+                data, train_idxs=train_idxs,
+                passthrough_columns=[feature_list.target])
+            self.assertListEqual(
+                self.df[feature_list.target].tolist(),
+                transformed[feature_list.target].tolist(),
+                msg=f'Target was transformed with handling {num_feat_handling}')
 
     def test_passthrough_all(self):
         """Test case with no transformations (passthrough="all")."""
