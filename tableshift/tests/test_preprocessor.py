@@ -30,6 +30,31 @@ class TestPreprocessor(unittest.TestCase):
         })
         return
 
+    def test_passthrough_target(self):
+        """Test that the target feature is not transformed.
+
+        This tests mimics/tests the pattern used in tabular_dataset.py."""
+        feature_list = FeatureList([
+            Feature("int_a", int, is_target=True),
+            Feature("int_b", int),
+            Feature("float_a", float),
+            Feature("float_b", float),
+            Feature("string_a", str, value_mapping={
+                "a": "Diagnosis of disease A",
+                "b": "Diagnosis of disease B",
+                "c": "Diagnosis of disease C"}),
+            Feature("cat_a", cat_dtype),
+        ])
+        # use preprocessor with all default values
+        preprocessor = Preprocessor(config=PreprocessorConfig())
+        data = copy.deepcopy(self.df)
+        train_idxs = list(range(50))
+        transformed = preprocessor.fit_transform(
+            data, train_idxs=train_idxs,
+            passthrough_columns=[feature_list.target])
+        self.assertListEqual(self.df[feature_list.target].tolist(),
+                             transformed[feature_list.target].tolist())
+
     def test_passthrough_all(self):
         """Test case with no transformations (passthrough="all")."""
         data = copy.deepcopy(self.df)
