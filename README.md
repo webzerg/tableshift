@@ -1,4 +1,5 @@
 ![status](https://github.com/jpgard/tableshift/actions/workflows/python-package-conda.yml/badge.svg)
+![status](https://github.com/jpgard/tableshift/actions/workflows/run-example-script.yml/badge.svg)
 
 # TableShift
 
