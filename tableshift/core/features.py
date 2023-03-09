@@ -307,7 +307,8 @@ class Preprocessor:
                 for c in cols]
 
         elif self.config.categorical_features == "map_values":
-            assert self.feature_list is not None
+            assert self.feature_list is not None, \
+                "Feature list is required to use value mapping."
             features_to_map = [f for f in self.feature_list
                                if f.value_mapping is not None
                                and f.name in cols]
@@ -346,7 +347,8 @@ class Preprocessor:
             transforms = []
 
         elif self.config.numeric_features == "map_values":
-            assert self.feature_list is not None
+            assert self.feature_list is not None, \
+                "Feature list is required to use value mapping."
             features_to_map = [f for f in self.feature_list
                                if f.value_mapping is not None
                                and f.name in cols]
