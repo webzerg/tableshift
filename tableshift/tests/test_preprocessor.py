@@ -178,7 +178,9 @@ class TestPreprocessor(unittest.TestCase):
         feature_list = FeatureList([
             Feature("int_a", int,
                     name_extended="Integer A value"),
-            Feature("int_b", int),
+            Feature("int_b", int,
+                    name_extended="Integer B value",
+                    is_target=True),
             Feature("float_a", float),
             Feature("float_b", float),
             Feature("string_a", str,
